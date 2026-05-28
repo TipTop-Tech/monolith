@@ -9,10 +9,9 @@ const MUSCLE_TO_GROUP: { [key: string]: string } = {
   "back-deltoids": "back-deltoids",
   "biceps": "biceps",
   "triceps": "triceps",
-  "lats": "lats",
-  "upper-back": "upper-back",
+  "upper-back": "mid-back",
   "lower-back": "lower-back",
-  "trapezius": "trapezius",
+  "trapezius": "upper-back",
   "abs": "abs",
   "obliques": "obliques",
   "quadriceps": "quadriceps",
@@ -63,10 +62,6 @@ export function BodyMap() {
       ]
     : [];
 
-  const handleLatClick = () => {
-    navigate(`/muscle/lats`, { state: { view } });
-  };
-
   const instructionText = isMobile
     ? "TAP ONCE TO HIGHLIGHT, TAP AGAIN TO VIEW EXERCISES"
     : "HOVER TO PREVIEW, TAP MUSCLE TO VIEW EXERCISES";
@@ -115,67 +110,6 @@ export function BodyMap() {
             svgStyle={{ background: "transparent", backgroundColor: "transparent" }}
             onClick={handleMuscleClick}
           />
-
-          {view === "back" ? (
-            <>
-              <button
-                type="button"
-                aria-label="Left lat"
-                onClick={handleLatClick}
-                className="absolute z-10 hidden border border-primary/45 bg-primary/15 shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_0_18px_rgba(255,255,255,0.06)] transition-colors hover:bg-primary/25 focus-visible:bg-primary/25 focus-visible:outline-none sm:block"
-                style={{
-                  left: "32%",
-                  top: "43%",
-                  width: "12%",
-                  height: "14%",
-                  clipPath:
-                    "polygon(22% 0%, 66% 18%, 100% 56%, 70% 66%, 50% 100%, 18% 84%, 0% 46%)",
-                }}
-              />
-              <button
-                type="button"
-                aria-label="Right lat"
-                onClick={handleLatClick}
-                className="absolute z-10 hidden border border-primary/45 bg-primary/15 shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_0_18px_rgba(255,255,255,0.06)] transition-colors hover:bg-primary/25 focus-visible:bg-primary/25 focus-visible:outline-none sm:block"
-                style={{
-                  right: "32%",
-                  top: "43%",
-                  width: "12%",
-                  height: "14%",
-                  clipPath:
-                    "polygon(34% 18%, 78% 0%, 100% 46%, 82% 84%, 50% 100%, 30% 66%, 0% 56%)",
-                }}
-              />
-              <button
-                type="button"
-                aria-label="Left lat"
-                onClick={handleLatClick}
-                className="absolute z-10 border border-primary/45 bg-primary/15 shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_0_18px_rgba(255,255,255,0.06)] transition-colors hover:bg-primary/25 focus-visible:bg-primary/25 focus-visible:outline-none sm:hidden"
-                style={{
-                  left: "23%",
-                  top: "38%",
-                  width: "14%",
-                  height: "14%",
-                  clipPath:
-                    "polygon(22% 0%, 66% 18%, 100% 56%, 70% 66%, 50% 100%, 18% 84%, 0% 46%)",
-                }}
-              />
-              <button
-                type="button"
-                aria-label="Right lat"
-                onClick={handleLatClick}
-                className="absolute z-10 border border-primary/45 bg-primary/15 shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_0_18px_rgba(255,255,255,0.06)] transition-colors hover:bg-primary/25 focus-visible:bg-primary/25 focus-visible:outline-none sm:hidden"
-                style={{
-                  right: "23%",
-                  top: "38%",
-                  width: "14%",
-                  height: "14%",
-                  clipPath:
-                    "polygon(34% 18%, 78% 0%, 100% 46%, 82% 84%, 50% 100%, 30% 66%, 0% 56%)",
-                }}
-              />
-            </>
-          ) : null}
         </div>
       </div>
 

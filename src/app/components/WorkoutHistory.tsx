@@ -13,8 +13,18 @@ export function WorkoutHistory() {
 
   if (!exercise || !exerciseHistory) {
     return (
-      <div className="h-full flex items-center justify-center p-6">
-        <div className="label-font text-muted-foreground">NO HISTORY FOUND</div>
+      <div className="h-full overflow-auto p-8">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors mb-12"
+        >
+          <ArrowLeft size={20} />
+          <span className="label-font">BACK</span>
+        </button>
+
+        <div className="flex items-center justify-center p-6">
+          <div className="label-font text-muted-foreground">NO HISTORY FOUND</div>
+        </div>
       </div>
     );
   }
