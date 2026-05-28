@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { useWorkout } from "../context/WorkoutContext";
 import { Play, Pause, RotateCcw, Plus } from "lucide-react";
+// react-slick has no bundled TypeScript declarations; ignore the missing types here
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: module has no type declarations
 import Slider from "react-slick";
 import { ScrollPicker } from "./ScrollPicker";
 
@@ -120,7 +123,7 @@ export function ActiveWorkout() {
   };
 
   return (
-    <div className="h-full flex flex-col bg-background">
+    <div className="h-full flex flex-col ">
       <div className="flex-1 flex flex-col">
         {/* Exercise Pills */}
         <div className="px-6 pt-8 pb-6 overflow-x-auto">

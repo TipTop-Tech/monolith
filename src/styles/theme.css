@@ -238,6 +238,32 @@
     box-shadow: 0 0 20px rgba(255, 255, 255, 0.03);
   }
 
+  .body-map-model .rbh polygon {
+    transform-box: fill-box;
+    transform-origin: center;
+    transition:
+      transform 180ms ease,
+      filter 180ms ease,
+      opacity 180ms ease,
+      fill 180ms ease;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .body-map-model .rbh polygon:hover {
+      filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.35));
+      transform: scale(1.03);
+      opacity: 1;
+    }
+  }
+
+  .body-map-model .rbh polygon:active {
+    transform: scale(0.98);
+  }
+
+  .body-map-model .rbh polygon[style*="cursor: pointer"] {
+    cursor: pointer;
+  }
+
   .custom-dots {
     bottom: -30px !important;
     display: flex !important;

@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router";
+import { useLocation, useParams, useNavigate } from "react-router";
 import { useWorkout } from "../context/WorkoutContext";
 import { ArrowLeft, ChevronRight } from "lucide-react";
 
@@ -6,19 +6,29 @@ export function MuscleExercises() {
   const { muscleId } = useParams<{ muscleId: string }>();
   const { exercises } = useWorkout();
   const navigate = useNavigate();
+  const location = useLocation();
+  const view =
+    location.state &&
+    typeof location.state === "object" &&
+    "view" in location.state &&
+    location.state.view === "back"
+      ? "back"
+      : "front";
 
   const muscleExercises = exercises.filter((exercise) =>
     exercise.muscleGroups.includes(muscleId || "")
   );
 
   const muscleName = muscleId
-    ? muscleId.charAt(0).toUpperCase() + muscleId.slice(1)
+    ? muscleId
+        .replace(/-/g, " ")
+        .replace(/\b\w/g, (character) => character.toUpperCase())
     : "";
 
   return (
     <div className="h-full overflow-auto p-8">
       <button
-        onClick={() => navigate("/body")}
+        onClick={() => navigate("/body", { state: { view } })}
         className="flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors mb-12"
       >
         <ArrowLeft size={20} />
