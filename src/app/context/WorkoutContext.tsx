@@ -39,6 +39,8 @@ interface WorkoutContextType {
   setCurrentExerciseIndex: (index: number) => void;
   addSet: (exerciseId: string, reps: number, weight: number) => void;
   addRoutine: (routine: Routine) => void;
+  addExerciseToRoutine: (routineId: string, routineExercise: RoutineExercise) => void;
+  removeRoutineExercise: (routineId: string, exerciseIndex: number) => void;
 }
 
 const WorkoutContext = createContext<WorkoutContextType | undefined>(undefined);
@@ -243,6 +245,48 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
     setRoutines((prev) => [...prev, routine]);
   };
 
+  const addExerciseToRoutine = (routineId: string, routineExercise: RoutineExercise) => {
+    setRoutines((prev) => {
+      const nextRoutines = prev.map((routine) =>
+        routine.id === routineId
+          ? {
+              ...routine,
+              exercises: [...routine.exercises, routineExercise],
+            }
+          : routine
+      );
+
+      const updatedRoutine = nextRoutines.find((routine) => routine.id === routineId) ?? null;
+      if (currentRoutine?.id === routineId) {
+        setCurrentRoutine(updatedRoutine);
+      }
+
+      return nextRoutines;
+    });
+  };
+
+  const removeRoutineExercise = (routineId: string, exerciseIndex: number) => {
+    setRoutines((prev) => {
+      const nextRoutines = prev.map((routine) => {
+        if (routine.id !== routineId) {
+          return routine;
+        }
+
+        return {
+          ...routine,
+          exercises: routine.exercises.filter((_, index) => index !== exerciseIndex),
+        };
+      });
+
+      const updatedRoutine = nextRoutines.find((routine) => routine.id === routineId) ?? null;
+      if (currentRoutine?.id === routineId) {
+        setCurrentRoutine(updatedRoutine);
+      }
+
+      return nextRoutines;
+    });
+  };
+
   return (
     <WorkoutContext.Provider
       value={{
@@ -255,6 +299,8 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
         setCurrentExerciseIndex,
         addSet,
         addRoutine,
+        addExerciseToRoutine,
+        removeRoutineExercise,
       }}
     >
       {children}
