@@ -25,6 +25,8 @@ export function ActiveWorkout() {
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [pickerType, setPickerType] = useState<"reps" | "weight" | null>(null);
+  const [workoutSessionStartedAt, setWorkoutSessionStartedAt] = useState<number | null>(null);
+  const [currentSlide, setCurrentSlide] = useState(1);
   const sliderRef = useRef<Slider>(null);
 
   useEffect(() => {
@@ -45,6 +47,15 @@ export function ActiveWorkout() {
     };
   }, [isTimerRunning, timeRemaining]);
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      sliderRef.current?.slickGoTo(1);
+      setCurrentSlide(1);
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [currentRoutine, currentExerciseIndex]);
+
   const currentExercise = currentRoutine
     ? exercises.find(
         (e) => e.id === currentRoutine.exercises[currentExerciseIndex]?.exerciseId
@@ -55,11 +66,26 @@ export function ActiveWorkout() {
     ? history.find((h) => h.exerciseId === currentExercise.id)
     : null;
 
-  const todaysSets = currentExerciseHistory?.sets.filter((set) => {
+  const visibleSets = currentExerciseHistory?.sets.filter((set) => {
     const setDate = new Date(set.date).toDateString();
     const today = new Date().toDateString();
-    return setDate === today;
+    const startedAfterWorkoutBegan =
+      workoutSessionStartedAt === null || new Date(set.date).getTime() >= workoutSessionStartedAt;
+    return setDate === today && startedAfterWorkoutBegan;
   }) || [];
+
+  const handleSelectRoutine = (routine: (typeof routines)[number]) => {
+    setCurrentRoutine(routine);
+    setCurrentExerciseIndex(0);
+    setWorkoutSessionStartedAt(Date.now());
+    setReps(0);
+    setWeight(0);
+    setRestTime(90);
+    setTimeRemaining(0);
+    setIsTimerRunning(false);
+    setPickerType(null);
+    setCurrentSlide(1);
+  };
 
   const handleLogSet = () => {
     if (!currentExercise || reps === 0 || weight === 0) return;
@@ -72,9 +98,20 @@ export function ActiveWorkout() {
 
     setTimeout(() => {
       if (sliderRef.current) {
-        sliderRef.current.slickGoTo(0);
+        sliderRef.current.slickGoTo(1);
       }
     }, 100);
+  };
+
+  const handleEndWorkout = () => {
+    setCurrentRoutine(null);
+    setWorkoutSessionStartedAt(null);
+    setReps(0);
+    setWeight(0);
+    setTimeRemaining(0);
+    setIsTimerRunning(false);
+    setPickerType(null);
+    setCurrentSlide(1);
   };
 
   const formatTime = (seconds: number) => {
@@ -93,10 +130,7 @@ export function ActiveWorkout() {
           {routines.map((routine) => (
             <button
               key={routine.id}
-              onClick={() => {
-                setCurrentRoutine(routine);
-                setCurrentExerciseIndex(0);
-              }}
+              onClick={() => handleSelectRoutine(routine)}
               className="w-full py-6 px-8 bg-accent bevel-element hover:bg-muted transition-all active:scale-98"
             >
               <div className="display-font text-3xl bevel-text mb-1">{routine.name}</div>
@@ -111,23 +145,27 @@ export function ActiveWorkout() {
   }
 
   const sliderSettings = {
-    dots: true,
+    dots: false,
     infinite: false,
     speed: 300,
     slidesToShow: 1,
     slidesToScroll: 1,
     arrows: false,
+    initialSlide: 1,
     centerMode: true,
     centerPadding: "40px",
-    dotsClass: "slick-dots custom-dots",
+    beforeChange: (_current: number, next: number) => setCurrentSlide(next),
+    afterChange: (index: number) => setCurrentSlide(index),
   };
 
+  const slideCount = visibleSets.length + 2;
+
   return (
-    <div className="h-full flex flex-col ">
-      <div className="flex-1 flex flex-col">
+    <div className="h-full flex flex-col min-h-0">
+      <div className="flex-1 min-h-0 flex flex-col">
         {/* Exercise Pills */}
-        <div className="px-6 pt-8 pb-6 overflow-x-auto">
-          <div className="flex gap-4 pb-2">
+        <div className="px-4 sm:px-6 pt-4 sm:pt-8 pb-3 sm:pb-6 overflow-x-auto">
+          <div className="flex gap-2 sm:gap-4 pb-2">
             {currentRoutine.exercises.map((routineExercise, index) => {
               const exercise = exercises.find((e) => e.id === routineExercise.exerciseId);
               const isActive = index === currentExerciseIndex;
@@ -149,14 +187,14 @@ export function ActiveWorkout() {
         </div>
 
         {/* Rest Timer - Massive Typography */}
-        <div className="flex-1 flex flex-col items-center justify-center px-6 py-8">
-          <div className="label-font text-muted-foreground mb-4">REST TIME</div>
-          <div className="display-font text-[min(40vw,180px)] leading-none bevel-text-large mb-8">
+        <div className="flex flex-col items-center justify-center px-4 sm:px-6 py-[100px] sm:py-5 shrink-0">
+          <div className="label-font text-muted-foreground mb-3 sm:mb-4">REST TIME</div>
+          <div className="display-font text-[min(30vw,150px)] sm:text-[min(40vw,180px)] leading-none bevel-text-large mb-4 sm:mb-8">
             {timeRemaining > 0 ? formatTime(timeRemaining) : "--:--"}
           </div>
 
           {/* Progress Bar - Directional Lighting */}
-          <div className="w-full max-w-sm h-1 bg-secondary mb-8 overflow-hidden">
+          <div className="w-full max-w-sm h-1 bg-secondary mb-4 sm:mb-8 overflow-hidden">
             <div
               className="h-full bg-primary transition-all duration-1000 ease-out"
               style={{
@@ -166,92 +204,119 @@ export function ActiveWorkout() {
             />
           </div>
 
-          <div className="flex gap-6">
+          <div className="flex gap-4 sm:gap-6">
             <button
               onClick={() => setIsTimerRunning(!isTimerRunning)}
-              className="w-14 h-14 flex items-center justify-center bg-accent bevel-element hover:bg-muted transition-all active:scale-95 disabled:opacity-30"
+              className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center bg-accent bevel-element hover:bg-muted transition-all active:scale-95 disabled:opacity-30"
               disabled={timeRemaining === 0}
             >
-              {isTimerRunning ? <Pause size={24} /> : <Play size={24} />}
+              {isTimerRunning ? <Pause size={20} className="sm:w-6 sm:h-6" /> : <Play size={20} className="sm:w-6 sm:h-6" />}
             </button>
             <button
               onClick={() => {
                 setTimeRemaining(restTime);
                 setIsTimerRunning(false);
               }}
-              className="w-14 h-14 flex items-center justify-center bg-accent bevel-element hover:bg-muted transition-all active:scale-95"
+              className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center bg-accent bevel-element hover:bg-muted transition-all active:scale-95"
             >
-              <RotateCcw size={24} />
+              <RotateCcw size={20} className="sm:w-6 sm:h-6" />
             </button>
           </div>
         </div>
 
         {/* Set View - Zero Chrome */}
-        <div className="px-6 pb-12 [&_.slick-list]:bg-transparent [&_.slick-track]:bg-transparent [&_.slick-slide]:bg-transparent">
+        <div className="px-4 sm:px-6 pb-6 sm:pb-12 [&_.slick-list]:bg-transparent [&_.slick-track]:bg-transparent [&_.slick-slide]:bg-transparent">
           <Slider ref={sliderRef} {...sliderSettings}>
             <div className="px-2">
-              <div className="flex flex-col items-center justify-center py-12 gap-6">
+              <div className="flex flex-col items-center justify-center py-4 sm:py-8 min-h-[clamp(14rem,32vh,22rem)] gap-4 sm:gap-6">
+                <button
+                  onClick={handleEndWorkout}
+                  className="w-[min(64vw,16rem)] aspect-square max-w-none px-6 bg-secondary bevel-element hover:bg-accent transition-all active:scale-98 flex items-center justify-center"
+                >
+                  <div className="display-font text-[50px] sm:text-sm tracking-[0.3em] text-muted-foreground">END WORKOUT</div>
+                </button>
+              </div>
+            </div>
+
+            <div className="px-2">
+              <div className="flex flex-col items-center justify-center py-6 sm:py-12 gap-4 sm:gap-6">
                 <button
                   onClick={() => setPickerType("reps")}
-                  className="w-3/4 py-4 bg-secondary bevel-element hover:bg-accent transition-all active:scale-98"
+                  className="w-3/4 max-w-[12rem] py-3 sm:py-4 bg-secondary bevel-element hover:bg-accent transition-all active:scale-98"
                 >
                   {reps > 0 ? (
-                    <div className="display-font text-4xl bevel-text">{reps}</div>
+                    <div className="display-font text-2xl sm:text-3xl bevel-text">{reps}</div>
                   ) : (
-                    <div className="label-font text-muted-foreground">REPS</div>
+                    <div className="label-font text-[10px] text-muted-foreground">REPS</div>
                   )}
                 </button>
 
                 <button
                   onClick={() => setPickerType("weight")}
-                  className="w-3/4 py-4 bg-secondary bevel-element hover:bg-accent transition-all active:scale-98"
+                  className="w-3/4 max-w-[12rem] py-3 sm:py-4 bg-secondary bevel-element hover:bg-accent transition-all active:scale-98"
                 >
                   {weight > 0 ? (
-                    <div className="display-font text-4xl bevel-text">{weight}</div>
+                    <div className="display-font text-2xl sm:text-3xl bevel-text">{weight}</div>
                   ) : (
-                    <div className="label-font text-muted-foreground">WEIGHT</div>
+                    <div className="label-font text-[10px] text-muted-foreground">WEIGHT</div>
                   )}
                 </button>
 
                 <button
                   onClick={handleLogSet}
                   disabled={reps === 0 || weight === 0}
-                  className="w-3/4 py-4 bg-primary text-primary-foreground bevel-element hover:opacity-90 transition-all active:scale-98 disabled:opacity-20 flex items-center justify-center gap-2"
+                  className="w-3/4 max-w-[12rem] py-3 sm:py-4 bg-primary text-primary-foreground bevel-element hover:opacity-90 transition-all active:scale-98 disabled:opacity-20 flex items-center justify-center gap-2"
                 >
-                  <Plus size={20} />
+                  <Plus size={18} className="sm:w-5 sm:h-5" />
                   <span className="label-font">LOG SET</span>
                 </button>
               </div>
             </div>
 
-            {[...todaysSets].reverse().map((set, index) => (
-              <div key={index} className="px-2">
-                <div className="flex flex-col items-center justify-center py-12">
-                  <div className="label-font text-muted-foreground mb-8">
-                    SET {todaysSets.length - index}
+            {[...visibleSets].reverse().map((set, index) => (
+              <div key={index} className="px-1 sm:px-2">
+                <div className="flex flex-col items-center justify-center py-8 sm:py-14">
+                  <div className="label-font text-[11px] sm:text-xs text-muted-foreground mb-5 sm:mb-8">
+                    SET {visibleSets.length - index}
                   </div>
-                  <div className="display-font text-[min(25vw,120px)] leading-none bevel-text-large mb-2">
-                    {set.reps}
+                  <div className="flex w-full max-w-sm sm:max-w-md items-end justify-center gap-4 sm:gap-6 mx-auto">
+                    <div className="flex flex-1 flex-col items-center text-center">
+                      <div className="display-font text-[min(18vw,92px)] sm:text-[min(22vw,112px)] leading-none bevel-text-large mb-2">
+                        {set.reps}
+                      </div>
+                      <div className="label-font text-[11px] sm:text-xs text-muted-foreground">REPS</div>
+                    </div>
+                    <div className="flex flex-1 flex-col items-center text-center">
+                      <div className="display-font text-[min(18vw,92px)] sm:text-[min(22vw,112px)] leading-none bevel-text-large mb-2">
+                        {set.weight}
+                      </div>
+                      <div className="label-font text-[11px] sm:text-xs text-muted-foreground">LBS</div>
+                    </div>
                   </div>
-                  <div className="label-font text-muted-foreground mb-8">REPS</div>
-                  <div className="display-font text-[min(20vw,100px)] leading-none bevel-text-large">
-                    {set.weight}
-                  </div>
-                  <div className="label-font text-muted-foreground">LBS</div>
                 </div>
               </div>
             ))}
           </Slider>
-        </div>
-      </div>
 
-      <div className="px-6 pb-8">
-        <button
-          onClick={() => setCurrentRoutine(null)}
-          className="w-full py-3 label-font text-muted-foreground hover:text-foreground transition-colors"
-        >
-          END WORKOUT
-        </button>
+          <div className="mt-3 sm:mt-5 flex items-center justify-center gap-1.5 sm:gap-2 pb-0 sm:pb-1" aria-label="Set view position">
+            {Array.from({ length: slideCount }).map((_, index) => {
+              const isActive = index === currentSlide;
+
+              return (
+                <button
+                  key={index}
+                  type="button"
+                  onClick={() => sliderRef.current?.slickGoTo(index)}
+                  aria-label={`Go to slide ${index + 1}`}
+                  aria-current={isActive ? "true" : undefined}
+                  className={`h-2 rounded-full transition-all duration-200 ${
+                    isActive ? "w-6 bg-primary" : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/60"
+                  }`}
+                />
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {pickerType === "reps" && (

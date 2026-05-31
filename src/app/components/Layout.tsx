@@ -14,11 +14,11 @@ export function Layout() {
 
   return (
     <WorkoutProvider>
-      <div className="h-full flex flex-col">
-        <main className="flex-1 overflow-auto">
+      <div className="h-full flex flex-col min-h-0">
+        <main className="flex-1 min-h-0 overflow-auto">
           <Outlet />
         </main>
-        <nav className="bg-background/95 backdrop-blur-xl">
+        <nav className="shrink-0 bg-background/95 backdrop-blur-xl">
           <div className="flex justify-around items-center h-20 px-4">
             <Link
               to="/"
