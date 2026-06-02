@@ -1,5 +1,5 @@
 import { useLocation, useParams, useNavigate } from "react-router";
-import { useWorkout } from "../context/WorkoutContext";
+import { useWorkout } from "../../context/WorkoutContext";
 import { ArrowLeft, ChevronRight } from "lucide-react";
 
 export function MuscleExercises() {

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { useWorkout } from "../context/WorkoutContext";
+import { useWorkout } from "../../context/WorkoutContext";
+import { useNavigate, useLocation } from "react-router";
 import { Play, Pause, RotateCcw, Plus } from "lucide-react";
 // react-slick has no bundled TypeScript declarations; ignore the missing types here
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -8,6 +9,8 @@ import Slider from "react-slick";
 import { ScrollPicker } from "./ScrollPicker";
 
 export function ActiveWorkout() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const {
     currentRoutine,
     currentExerciseIndex,
@@ -27,6 +30,8 @@ export function ActiveWorkout() {
   const [pickerType, setPickerType] = useState<"reps" | "weight" | null>(null);
   const [workoutSessionStartedAt, setWorkoutSessionStartedAt] = useState<number | null>(null);
   const [currentSlide, setCurrentSlide] = useState(1);
+  const [currentView, setCurrentView] = useState(0);
+  
   const sliderRef = useRef<Slider>(null);
 
   useEffect(() => {
@@ -74,18 +79,22 @@ export function ActiveWorkout() {
     return setDate === today && startedAfterWorkoutBegan;
   }) || [];
 
+  const [selectedRoutineId, setSelectedRoutineId] = useState<string | null>(null);
+
   const handleSelectRoutine = (routine: (typeof routines)[number]) => {
-    setCurrentRoutine(routine);
-    setCurrentExerciseIndex(0);
-    setWorkoutSessionStartedAt(Date.now());
-    setReps(0);
-    setWeight(0);
-    setRestTime(90);
-    setTimeRemaining(0);
-    setIsTimerRunning(false);
+    // open picker locally when selecting a routine from this screen
     setPickerType(null);
-    setCurrentSlide(1);
+    setSelectedRoutineId(routine.id);
   };
+
+  useEffect(() => {
+    const state = (location as any).state as { openRoutineId?: string } | undefined;
+    if (state?.openRoutineId) {
+      setSelectedRoutineId(state.openRoutineId);
+      // remove navigation state
+      navigate("/", { replace: true });
+    }
+  }, [location]);
 
   const handleLogSet = () => {
     if (!currentExercise || reps === 0 || weight === 0) return;
@@ -114,6 +123,18 @@ export function ActiveWorkout() {
     setCurrentSlide(1);
   };
 
+  const handleEndExercise = () => {
+    setCurrentRoutine(null);
+    setWorkoutSessionStartedAt(null);
+    setReps(0);
+    setWeight(0);
+    setTimeRemaining(0);
+    setIsTimerRunning(false);
+    setPickerType(null);
+    setCurrentView(0);
+  };
+
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -123,6 +144,77 @@ export function ActiveWorkout() {
   const progress = timeRemaining > 0 ? (timeRemaining / restTime) * 100 : 0;
 
   if (!currentRoutine) {
+    // If a routine has been selected for picking, show the picker UI here
+    if (selectedRoutineId) {
+      const pickerRoutine = routines.find((r) => r.id === selectedRoutineId) ?? null;
+
+      if (!pickerRoutine) {
+        setSelectedRoutineId(null);
+      } else {
+        return (
+          <div className="h-full overflow-auto p-8 pb-28">
+            <button
+              onClick={() => {
+                setSelectedRoutineId(null);
+                navigate(-1);
+              }}
+              className="flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors mb-10"
+            >
+              <span className="label-font">BACK</span>
+            </button>
+
+            <div className="label-font text-muted-foreground mb-4">SELECT EXERCISE</div>
+            <div className="display-font text-5xl bevel-text-large mb-3">{pickerRoutine.name}</div>
+            <div className="label-font text-muted-foreground mb-12">CHOOSE THE EXERCISE YOU WANT TO START WITH</div>
+
+            {pickerRoutine.exercises.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-border/60 px-6 py-8 label-font text-xs tracking-[0.25em] text-muted-foreground">
+                NO EXERCISES IN THIS ROUTINE
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {pickerRoutine.exercises.map((routineExercise, index) => {
+                  const exercise = exercises.find((e) => e.id === routineExercise.exerciseId);
+                  return (
+                    <button
+                      key={`${pickerRoutine.id}-${routineExercise.exerciseId}-${index}`}
+                      type="button"
+                      onClick={() => {
+                        // start selected exercise
+                        setCurrentRoutine(pickerRoutine);
+                        setCurrentExerciseIndex(index);
+                        setWorkoutSessionStartedAt(Date.now());
+                        setReps(0);
+                        setWeight(0);
+                        setRestTime(90);
+                        setTimeRemaining(0);
+                        setIsTimerRunning(false);
+                        setPickerType(null);
+                        setSelectedRoutineId(null);
+                        navigate("/");
+                      }}
+                      className="w-full flex items-center justify-between gap-6 py-5 px-6 bg-secondary bevel-element hover:bg-accent transition-all active:scale-[0.99]"
+                    >
+                      <div className="text-left">
+                        <div className="display-font text-2xl bevel-text">{exercise?.name ?? "Unknown Exercise"}</div>
+                        <div className="label-font text-muted-foreground mt-1">{routineExercise.sets} SETS × {routineExercise.targetReps} REPS</div>
+                      </div>
+
+                      <div className="flex items-center gap-3 text-muted-foreground">
+                        <span className="label-font text-[10px] tracking-[0.3em]">START</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      }
+    }
+
+// Choose Routine for Active Workout (View 1)
+if (currentView === 0) 
     return (
       <div className="h-full flex flex-col items-center justify-center p-8">
         <div className="label-font text-muted-foreground mb-12">SELECT ROUTINE</div>
@@ -135,7 +227,7 @@ export function ActiveWorkout() {
             >
               <div className="display-font text-3xl bevel-text mb-1">{routine.name}</div>
               <div className="label-font text-muted-foreground">
-                {routine.exercises.length} EXERCISES
+                {routine.exercises.length} EXERCISES 
               </div>
             </button>
           ))}
@@ -163,7 +255,7 @@ export function ActiveWorkout() {
   return (
     <div className="h-full flex flex-col min-h-0">
       <div className="flex-1 min-h-0 flex flex-col">
-        {/* Exercise Pills */}
+        {/* Exercise Pills
         <div className="px-4 sm:px-6 pt-4 sm:pt-8 pb-3 sm:pb-6 overflow-x-auto">
           <div className="flex gap-2 sm:gap-4 pb-2">
             {currentRoutine.exercises.map((routineExercise, index) => {
@@ -184,7 +276,7 @@ export function ActiveWorkout() {
               );
             })}
           </div>
-        </div>
+        </div> */}
 
         {/* Rest Timer - Massive Typography */}
         <div className="flex flex-col items-center justify-center px-4 sm:px-6 py-[100px] sm:py-5 shrink-0">
@@ -230,10 +322,10 @@ export function ActiveWorkout() {
             <div className="px-2">
               <div className="flex flex-col items-center justify-center py-4 sm:py-8 min-h-[clamp(14rem,32vh,22rem)] gap-4 sm:gap-6">
                 <button
-                  onClick={handleEndWorkout}
+                  onClick={handleEndExercise}
                   className="w-[min(64vw,16rem)] aspect-square max-w-none px-6 bg-secondary bevel-element hover:bg-accent transition-all active:scale-98 flex items-center justify-center"
                 >
-                  <div className="display-font text-[50px] sm:text-sm tracking-[0.3em] text-muted-foreground">END WORKOUT</div>
+                  <div className="display-font text-[50px] sm:text-sm tracking-[0.3em] text-muted-foreground">END EXERCISE</div>
                 </button>
               </div>
             </div>

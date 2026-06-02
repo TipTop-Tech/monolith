@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router";
-import { useWorkout } from "../context/WorkoutContext";
+import { useWorkout } from "../../context/WorkoutContext";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { ArrowLeft } from "lucide-react";
 

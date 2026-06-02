@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from "react-router";
 import { useState } from "react";
 import Model from "react-body-highlighter";
-import { useIsMobile } from "./ui/use-mobile";
+import { useIsMobile } from "../ui/use-mobile";
 
 const MUSCLE_TO_GROUP: { [key: string]: string } = {
   "chest": "chest",
