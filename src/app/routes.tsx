@@ -1,10 +1,10 @@
 import { createBrowserRouter } from "react-router";
 import { Layout } from "./components/Layout";
-import { ActiveWorkout } from "./components/ActiveWorkout";
-import { Routines } from "./components/Routines";
-import { WorkoutHistory } from "./components/WorkoutHistory";
-import { BodyMap } from "./components/BodyMap";
-import { MuscleExercises } from "./components/MuscleExercises";
+import { ActiveWorkout } from "./components/active-workout/ActiveWorkout";
+import { Routines } from "./components/routines/Routines";
+import { WorkoutHistory } from "./components/routines/WorkoutHistory";
+import { BodyMap } from "./components/body/BodyMap";
+import { MuscleExercises } from "./components/body/MuscleExercises";
 
 export const router = createBrowserRouter([
   {

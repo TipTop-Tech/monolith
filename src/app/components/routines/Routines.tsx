@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { useWorkout } from "../context/WorkoutContext";
+import { useWorkout } from "../../context/WorkoutContext";
 import { useNavigate } from "react-router";
 import { ChevronDown, ChevronRight, ChevronUp, Plus, Trash2 } from "lucide-react";
-import { Button } from "./ui/button";
+import { Button } from "../ui/button";
 import {
   Dialog,
   DialogContent,
@@ -10,7 +10,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "./ui/dialog";
+} from "../ui/dialog";
 import {
   Select,
   SelectContent,
@@ -20,8 +20,8 @@ import {
   SelectSeparator,
   SelectTrigger,
   SelectValue,
-} from "./ui/select";
-import { Input } from "./ui/input";
+} from "../ui/select";
+import { Input } from "../ui/input";
 
 const BODY_PARTS = [
   { key: "chest", label: "Chest" },
@@ -187,10 +187,10 @@ export function Routines() {
   const scrollRootRef = useRef<HTMLDivElement>(null);
   const routineRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [isAddRoutineOpen, setIsAddRoutineOpen] = useState(false);
-  const [newRoutineName, setNewRoutineName] = useState("");
+  const [newRoutineName, setNewRoutineName] = useState("/")
   const [isAddWorkoutOpen, setIsAddWorkoutOpen] = useState(false);
   const [selectedRoutineId, setSelectedRoutineId] = useState<string | null>(null);
-  const [selectedExerciseId, setSelectedExerciseId] = useState("");
+  const [selectedExerciseId, setSelectedExerciseId] = useState("/");
   const [activeRoutineIndex, setActiveRoutineIndex] = useState(0);
 
   const selectedRoutine = routines.find((routine) => routine.id === selectedRoutineId) ?? null;
@@ -364,7 +364,14 @@ export function Routines() {
                         <div className="label-font text-muted-foreground mb-3">
                           ROUTINE {String(routineIndex + 1).padStart(2, "0")} / {String(routines.length).padStart(2, "0")}
                         </div>
-                        <div className="display-font text-4xl md:text-5xl bevel-text">{routine.name}</div>
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/routines/${routine.id}`)}
+                          className="group flex items-center gap-3 text-left"
+                        >
+                          <div className="display-font text-4xl md:text-5xl bevel-text">{routine.name}</div>
+                          <ChevronRight size={20} className="text-muted-foreground transition-transform group-hover:translate-x-1" />
+                        </button>
                       </div>
                     </div>
 
