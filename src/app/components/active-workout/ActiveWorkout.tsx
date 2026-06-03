@@ -285,8 +285,8 @@ if (currentView == 3) {
 
         {/* Rest Timer - Massive Typography */}
 
-        <div className="flex flex-col items-center justify-center px-4 sm:px-6 py-[80px] sm:py-5 shrink-0">
-          <div className="label-font text-muted-foreground mb-3 sm:mb-4">EXERCISE {currentRoutine?.exercises[currentExerciseIndex]?.exerciseId}</div>
+        <div className="flex flex-col items-center justify-center px-4 sm:px-6 py-[60px] sm:py-5 shrink-0">
+          <div className="display-font text-4xl md:text-5xl bevel-text">{currentExercise?.name ?? "EXERCISE"}</div>
 
           <div className="label-font text-muted-foreground mb-3 sm:mb-4">REST TIME</div>
           <div className="display-font text-[min(30vw,150px)] sm:text-[min(40vw,180px)] leading-none bevel-text-large mb-4 sm:mb-8">
