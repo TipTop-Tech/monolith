@@ -30,7 +30,7 @@ export function ActiveWorkout() {
   const [pickerType, setPickerType] = useState<"reps" | "weight" | null>(null);
   const [workoutSessionStartedAt, setWorkoutSessionStartedAt] = useState<number | null>(null);
   const [currentSlide, setCurrentSlide] = useState(1);
-  const [currentView, setCurrentView] = useState(0);
+  const [currentView, setCurrentView] = useState(1);
   
   const sliderRef = useRef<Slider>(null);
 
@@ -85,8 +85,22 @@ export function ActiveWorkout() {
     // open picker locally when selecting a routine from this screen
     setPickerType(null);
     setSelectedRoutineId(routine.id);
+    setCurrentView(2);
   };
 
+const handleSelectExercise = (routine: (typeof routines)[number], exerciseIndex: number) => {
+  setCurrentRoutine(routine);
+  setCurrentExerciseIndex(exerciseIndex);
+  setWorkoutSessionStartedAt(Date.now());
+  setReps(0);
+  setWeight(0);
+  setRestTime(90);
+  setTimeRemaining(0);
+  setIsTimerRunning(false);
+  setPickerType(null);
+  // setSelectedRoutineId(null);
+  setCurrentView(3);
+};
   useEffect(() => {
     const state = (location as any).state as { openRoutineId?: string } | undefined;
     if (state?.openRoutineId) {
@@ -124,14 +138,14 @@ export function ActiveWorkout() {
   };
 
   const handleEndExercise = () => {
-    setCurrentRoutine(null);
+    
     setWorkoutSessionStartedAt(null);
     setReps(0);
     setWeight(0);
     setTimeRemaining(0);
     setIsTimerRunning(false);
     setPickerType(null);
-    setCurrentView(0);
+    setCurrentView(2);
   };
 
 
@@ -143,20 +157,18 @@ export function ActiveWorkout() {
 
   const progress = timeRemaining > 0 ? (timeRemaining / restTime) * 100 : 0;
 
-  if (!currentRoutine) {
-    // If a routine has been selected for picking, show the picker UI here
-    if (selectedRoutineId) {
-      const pickerRoutine = routines.find((r) => r.id === selectedRoutineId) ?? null;
-
-      if (!pickerRoutine) {
-        setSelectedRoutineId(null);
-      } else {
+// Choose which exercise you want to choose from the routine (View 2)
+  if (currentView == 2) {
+    
+    const pickerRoutine = routines.find((r) => r.id === selectedRoutineId) ?? null;
+    if (!pickerRoutine) return null;
+      else {
         return (
           <div className="h-full overflow-auto p-8 pb-28">
             <button
               onClick={() => {
                 setSelectedRoutineId(null);
-                navigate(-1);
+                setCurrentView(1);
               }}
               className="flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors mb-10"
             >
@@ -180,18 +192,7 @@ export function ActiveWorkout() {
                       key={`${pickerRoutine.id}-${routineExercise.exerciseId}-${index}`}
                       type="button"
                       onClick={() => {
-                        // start selected exercise
-                        setCurrentRoutine(pickerRoutine);
-                        setCurrentExerciseIndex(index);
-                        setWorkoutSessionStartedAt(Date.now());
-                        setReps(0);
-                        setWeight(0);
-                        setRestTime(90);
-                        setTimeRemaining(0);
-                        setIsTimerRunning(false);
-                        setPickerType(null);
-                        setSelectedRoutineId(null);
-                        navigate("/");
+                        handleSelectExercise(pickerRoutine, index);
                       }}
                       className="w-full flex items-center justify-between gap-6 py-5 px-6 bg-secondary bevel-element hover:bg-accent transition-all active:scale-[0.99]"
                     >
@@ -210,11 +211,12 @@ export function ActiveWorkout() {
             )}
           </div>
         );
-      }
-    }
+  }
+}
+      
 
 // Choose Routine for Active Workout (View 1)
-if (currentView === 0) 
+if (currentView == 1) {
     return (
       <div className="h-full flex flex-col items-center justify-center p-8">
         <div className="label-font text-muted-foreground mb-12">SELECT ROUTINE</div>
@@ -234,6 +236,7 @@ if (currentView === 0)
         </div>
       </div>
     );
+  
   }
 
   const sliderSettings = {
@@ -252,6 +255,8 @@ if (currentView === 0)
 
   const slideCount = visibleSets.length + 2;
 
+// Active Workout View (View 3)
+if (currentView == 3) {
   return (
     <div className="h-full flex flex-col min-h-0">
       <div className="flex-1 min-h-0 flex flex-col">
@@ -279,7 +284,10 @@ if (currentView === 0)
         </div> */}
 
         {/* Rest Timer - Massive Typography */}
-        <div className="flex flex-col items-center justify-center px-4 sm:px-6 py-[100px] sm:py-5 shrink-0">
+
+        <div className="flex flex-col items-center justify-center px-4 sm:px-6 py-[80px] sm:py-5 shrink-0">
+          <div className="label-font text-muted-foreground mb-3 sm:mb-4">EXERCISE {currentRoutine?.exercises[currentExerciseIndex]?.exerciseId}</div>
+
           <div className="label-font text-muted-foreground mb-3 sm:mb-4">REST TIME</div>
           <div className="display-font text-[min(30vw,150px)] sm:text-[min(40vw,180px)] leading-none bevel-text-large mb-4 sm:mb-8">
             {timeRemaining > 0 ? formatTime(timeRemaining) : "--:--"}
@@ -438,4 +446,5 @@ if (currentView === 0)
       )}
     </div>
   );
+}
 }
