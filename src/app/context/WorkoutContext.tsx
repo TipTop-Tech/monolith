@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { getHistoryFromDB, saveHistoryToDB, migrateFromLocalStorage } from "../../utils/storage";
 
 export interface Exercise {
   id: string;
@@ -206,20 +207,48 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
     const stored = localStorage.getItem("workoutRoutines");
     return stored ? JSON.parse(stored) : SAMPLE_ROUTINES;
   });
-  const [history, setHistory] = useState<WorkoutHistory[]>(() => {
-    const stored = localStorage.getItem("workoutHistory");
-    return stored ? JSON.parse(stored) : generateSampleHistory();
-  });
+  const [history, setHistory] = useState<WorkoutHistory[]>([]);
+  const [isHistoryLoaded, setIsHistoryLoaded] = useState(false);
   const [currentRoutine, setCurrentRoutine] = useState<Routine | null>(null);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
-
+  /*
+  Initliazes user's workout history on applicaiton startup
+  
+  - It runs only once on mount
+  - Attempts local storage migration
+    - Retrieves from indexedDB if local storage migration fails
+    - Loads SAMPLE_EXERCISES if no data is found <=== want to display 'No Data Found' instead
+  - Updates states to reflect the user's workout history
+  */
+  useEffect(() => {
+    const initHistory = async () => {
+      let data = await migrateFromLocalStorage();
+      if (!data) {
+        data = await getHistoryFromDB();
+      }
+      if (!data || data.length === 0) {
+        data = generateSampleHistory();
+      }
+      setHistory(data);
+      setIsHistoryLoaded(true);
+    };
+    initHistory();
+  }, []);
+  /**
+   * This useEffect saves the user's workout routines to local storage
+   * 
+   * - It runs whenever the 'routines' state changes
+   * - Saves the routines in a JSON format
+   */
   useEffect(() => {
     localStorage.setItem("workoutRoutines", JSON.stringify(routines));
   }, [routines]);
 
   useEffect(() => {
-    localStorage.setItem("workoutHistory", JSON.stringify(history));
-  }, [history]);
+    if (isHistoryLoaded) {
+      saveHistoryToDB(history).catch(e => console.error("Failed to save history to IndexedDB", e));
+    }
+  }, [history, isHistoryLoaded]);
 
   const addSet = (exerciseId: string, reps: number, weight: number) => {
     setHistory((prev) => {
@@ -260,9 +289,9 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
       const nextRoutines = prev.map((routine) =>
         routine.id === routineId
           ? {
-              ...routine,
-              exercises: [...routine.exercises, routineExercise],
-            }
+            ...routine,
+            exercises: [...routine.exercises, routineExercise],
+          }
           : routine
       );
 
@@ -314,7 +343,10 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
         removeRoutineExercise,
       }}
     >
-      {children}
+      {/*
+        Only renders the children when the history is loaded
+      */}
+      {isHistoryLoaded ? children : null}
     </WorkoutContext.Provider>
   );
 }
