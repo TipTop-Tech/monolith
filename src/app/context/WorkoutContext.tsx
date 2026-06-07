@@ -179,28 +179,6 @@ const SAMPLE_ROUTINES: Routine[] = [
   },
 ];
 
-const generateSampleHistory = (): WorkoutHistory[] => {
-  const history: WorkoutHistory[] = [];
-  const today = new Date();
-
-  SAMPLE_EXERCISES.forEach((exercise) => {
-    const sets: WorkoutSet[] = [];
-    for (let i = 0; i < 10; i++) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i * 3);
-      const baseWeight = 50 + Math.floor(Math.random() * 100);
-      sets.push({
-        reps: 8 + Math.floor(Math.random() * 4),
-        weight: baseWeight + i * 2.5,
-        date: date.toISOString(),
-      });
-    }
-    history.push({ exerciseId: exercise.id, sets: sets.reverse() });
-  });
-
-  return history;
-};
-
 export function WorkoutProvider({ children }: { children: ReactNode }) {
   const [exercises] = useState<Exercise[]>(SAMPLE_EXERCISES);
   const [routines, setRoutines] = useState<Routine[]>(() => {
@@ -217,7 +195,6 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
   - It runs only once on mount
   - Attempts local storage migration
     - Retrieves from indexedDB if local storage migration fails
-    - Loads SAMPLE_EXERCISES if no data is found <=== want to display 'No Data Found' instead
   - Updates states to reflect the user's workout history
   */
   useEffect(() => {
@@ -227,7 +204,7 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
         data = await getHistoryFromDB();
       }
       if (!data || data.length === 0) {
-        data = generateSampleHistory();
+        data = [];
       }
       setHistory(data);
       setIsHistoryLoaded(true);
