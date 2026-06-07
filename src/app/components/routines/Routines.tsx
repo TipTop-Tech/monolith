@@ -78,6 +78,8 @@ function getPrimaryBodyPart(exerciseMuscleGroups: string[]) {
   return rankedGroups[0]?.muscleGroup ?? null;
 }
 
+import { SwipeableRow } from "../ui/SwipeableRow";
+
 type RoutineExerciseRowProps = {
   exerciseName: string;
   sets: number;
@@ -98,86 +100,33 @@ function RoutineExerciseRow({
   onOpen,
   onRemove,
 }: RoutineExerciseRowProps) {
-  const [swipeOffset, setSwipeOffset] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const touchStartX = useRef<number | null>(null);
-  const swipeOffsetRef = useRef(0);
-  const blockNextClickRef = useRef(false);
-
-  const resetSwipe = () => {
-    touchStartX.current = null;
-    swipeOffsetRef.current = 0;
-    setSwipeOffset(0);
-    setIsDragging(false);
-  };
-
-  const handleTouchStart = (event: React.TouchEvent<HTMLButtonElement>) => {
-    touchStartX.current = event.touches[0].clientX;
-    blockNextClickRef.current = false;
-    setIsDragging(true);
-  };
-
-  const handleTouchMove = (event: React.TouchEvent<HTMLButtonElement>) => {
-    if (touchStartX.current === null) return;
-
-    const deltaX = event.touches[0].clientX - touchStartX.current;
-    const nextOffset = deltaX < 0 ? Math.max(deltaX, -160) : 0;
-
-    swipeOffsetRef.current = nextOffset;
-    setSwipeOffset(nextOffset);
-  };
-
-  const handleTouchEnd = () => {
-    setIsDragging(false);
-
-    if (swipeOffsetRef.current < -90) {
-      blockNextClickRef.current = true;
-      onRemove();
-      return;
-    }
-
-    resetSwipe();
-  };
-
   return (
-    <div className="relative overflow-hidden">
-      <div className="absolute inset-0 flex items-center justify-end gap-2 bg-secondary/95 pr-6 text-muted-foreground">
-        <Trash2 size={18} className="text-destructive" />
-        <span className="label-font text-[10px] tracking-[0.3em]">REMOVE</span>
-      </div>
-      <button
-        type="button"
-        onClick={() => {
-          if (blockNextClickRef.current) {
-            blockNextClickRef.current = false;
-            return;
-          }
-
-          onOpen();
-        }}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        onTouchCancel={resetSwipe}
-        style={{
-          transform: `translateX(${swipeOffset}px)`,
-          transition: isDragging ? "none" : "transform 180ms ease",
-          touchAction: "pan-y",
-          WebkitTapHighlightColor: "transparent",
-        }}
-        className="relative z-10 w-full flex items-center justify-between py-4 px-6 bg-secondary bevel-element outline-none transition-all hover:bg-accent active:scale-[0.99] focus:outline-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
-      >
-        <div className="text-left">
-          <div className="display-font text-xl bevel-text">{exerciseName}</div>
-          <div className="label-font text-muted-foreground mt-1">
-            {lastSet
-              ? `${lastSet.reps} REPS × ${lastSet.weight} lbs`
-              : `${sets} SETS × ${targetReps} REPS`}
-          </div>
+    /**
+     * Component for a row that is clickable and has a swipeable delete functionality
+     * 
+     * Props:
+     *  - exerciseName: string
+     *  - sets: number
+     *  - targetReps: number
+     *  - lastSet: { reps: number, weight: number } | null
+     *  - onOpen: () => void
+     *  - onRemove: () => void
+     */
+    <SwipeableRow
+      onRemove={onRemove}
+      onClick={onOpen}
+      className="flex items-center justify-between py-4 px-6 bg-secondary bevel-element"
+    >
+      <div className="text-left">
+        <div className="display-font text-xl bevel-text">{exerciseName}</div>
+        <div className="label-font text-muted-foreground mt-1">
+          {lastSet
+            ? `${lastSet.reps} REPS × ${lastSet.weight} lbs`
+            : `${sets} SETS × ${targetReps} REPS`}
         </div>
-        <ChevronRight size={20} className="text-muted-foregrouund" />
-      </button>
-    </div>
+      </div>
+      <ChevronRight size={20} className="text-muted-foreground" />
+    </SwipeableRow>
   );
 }
 

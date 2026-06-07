@@ -39,6 +39,7 @@ interface WorkoutContextType {
   setCurrentRoutine: (routine: Routine | null) => void;
   setCurrentExerciseIndex: (index: number) => void;
   addSet: (exerciseId: string, reps: number, weight: number) => void;
+  removeSet: (exerciseId: string, setIndex: number) => void;
   addRoutine: (routine: Routine) => void;
   removeRoutine: (routineId: string) => void;
   addExerciseToRoutine: (routineId: string, routineExercise: RoutineExercise) => void;
@@ -247,6 +248,25 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
       }
     });
   };
+  /**
+   * This handles the removal of a set from the history.
+   * 
+   * @param exerciseId - The ID of the exercise to remove the set from
+   * @param setIndex - The index of the set to remove
+   */
+  const removeSet = (exerciseId: string, setIndex: number) => {
+    setHistory((prev) => {
+      return prev
+        .map((h) => {
+          if (h.exerciseId !== exerciseId) return h;
+          return {
+            ...h,
+            sets: h.sets.filter((_, index) => index !== setIndex),
+          };
+        })
+        .filter((h) => h.sets.length > 0);
+    });
+  };
 
   const addRoutine = (routine: Routine) => {
     setRoutines((prev) => [...prev, routine]);
@@ -314,6 +334,7 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
         setCurrentRoutine,
         setCurrentExerciseIndex,
         addSet,
+        removeSet,
         addRoutine,
         removeRoutine,
         addExerciseToRoutine,
