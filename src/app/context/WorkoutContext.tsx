@@ -112,6 +112,15 @@ const SAMPLE_EXERCISES: Exercise[] = [
   { id: "61", name: "Straight Arm Pulldown", muscleGroups: ["lats", "triceps"] },
   { id: "62", name: "Resistance Band Pull-Aparts", muscleGroups: ["upper-back", "back-deltoids", "mid-back"] },
   { id: "63", name: "Bird Dog", muscleGroups: ["lower-back", "abs"] },
+  { id: "64", name: "Wide Grip Row", muscleGroups: ["upper-back"] },
+  { id: "65", name: "Row Machine", muscleGroups: ["mid-back", "lower-back"] },
+  { id: "66", name: "Cable Hammer Curls", muscleGroups: ["biceps", "forearm"] },
+  { id: "67", name: "Smith Chest Press", muscleGroups: ["chest"] },
+  { id: "68", name: "Tricep Pushdown", muscleGroups: ["triceps"] },
+  { id: "69", name: "Smith Squat", muscleGroups: ["quadriceps"] },
+  { id: "70", name: "Decline Crunches", muscleGroups: ["abs"] },
+  { id: "71", name: "Decline Twists", muscleGroups: ["abs"] },
+  { id: "72", name: "Calf Extension Machine", muscleGroups: ["calves"] },
 ];
 
 const SAMPLE_ROUTINES: Routine[] = [
