@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useWorkout } from "../../context/WorkoutContext";
 import { useNavigate } from "react-router";
-import { ChevronDown, ChevronRight, ChevronUp, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronUp, MoreVertical, Plus, Trash2 } from "lucide-react";
 import { Button } from "../ui/button";
 import {
   Dialog,
@@ -134,7 +134,8 @@ export function Routines() {
   const { routines, exercises, addRoutine, removeRoutine, addExerciseToRoutine, removeRoutineExercise, history } = useWorkout();
   const navigate = useNavigate();
   const scrollRootRef = useRef<HTMLDivElement>(null);
-  const routineRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const routineRefs = useRef<(HTMLElement | null)[]>([]);
+  const sectionRefs = useRef<Record<string, HTMLElement>>({});
   const [isAddRoutineOpen, setIsAddRoutineOpen] = useState(false);
   const [newRoutineName, setNewRoutineName] = useState("/")
   const [isAddWorkoutOpen, setIsAddWorkoutOpen] = useState(false);
@@ -231,6 +232,28 @@ export function Routines() {
     });
 
     setIsAddWorkoutOpen(false);
+
+    /**
+     * This code block runs after the routine has been added to the state.
+     * 
+     * Why? 
+     *  - We need the updated list of exercises to calculate the target page index
+     *  - We use requestAnimationFrame and setTimeout to ensure 
+     *    that the state has been updated before calculating the target page index
+     */
+    const routine = routines.find(r => r.id === selectedRoutineId);
+    if (routine) {
+      const newLength = routine.exercises.length + 1;
+      const targetPageIndex = Math.floor((newLength - 1) / 5);
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          const node = sectionRefs.current[`${selectedRoutineId}-page-${targetPageIndex}`];
+          if (node) {
+            node.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+        }, 100);
+      });
+    }
   };
 
   useEffect(() => {
@@ -248,9 +271,13 @@ export function Routines() {
           return;
         }
 
-        const index = routineRefs.current.findIndex((node) => node === visibleEntry.target);
-        if (index >= 0) {
-          setActiveRoutineIndex(index);
+        /**
+         * This code block updates the active routine index based on the 
+         * currently visible section.
+         */
+        const routineIndexAttr = visibleEntry.target.getAttribute("data-routine-index");
+        if (routineIndexAttr !== null) {
+          setActiveRoutineIndex(Number(routineIndexAttr));
         }
       },
       {
@@ -259,14 +286,17 @@ export function Routines() {
       }
     );
 
-    routineRefs.current.forEach((node) => {
+    /**
+     * When a page is scrolled into view, it is added to the observer.
+     */
+    Object.values(sectionRefs.current).forEach((node) => {
       if (node) {
         observer.observe(node);
       }
     });
 
     return () => observer.disconnect();
-  }, [routines.length]);
+  }, [routines]);
 
   useEffect(() => {
     if (routines.length === 0 && activeRoutineIndex !== 0) {
@@ -299,96 +329,143 @@ export function Routines() {
               className="h-full overflow-y-scroll scroll-smooth snap-y snap-mandatory hide-scrollbar"
               style={{ WebkitOverflowScrolling: "touch" }}
             >
-              {routines.map((routine, routineIndex) => (
-                <section
-                  key={routine.id}
-                  ref={(node) => {
-                    routineRefs.current[routineIndex] = node;
-                  }}
-                  className="relative h-full min-h-full snap-start px-6 py-8 md:px-8"
-                >
-                  <div className="flex h-full min-h-full flex-col">
-                    <div className="mb-6 flex items-end gap-4">
-                      <div>
-                        <div className="label-font text-muted-foreground mb-3">
-                          ROUTINE {String(routineIndex + 1).padStart(2, "0")} / {String(routines.length).padStart(2, "0")}
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => navigate(`/routines/${routine.id}`)}
-                          className="group flex items-center gap-3 text-left"
-                        >
-                          <div className="display-font text-4xl md:text-5xl bevel-text">{routine.name}</div>
-                          <ChevronRight size={20} className="text-muted-foreground transition-transform group-hover:translate-x-1" />
-                        </button>
-                      </div>
-                    </div>
+              {
+                /**
+                 * routines.flatMap iterates through all the routines
+                 * For each routine, it splits it into pages of 5 exercises
+                 * If a routine has no exercises, it creates a single page with no exercises
+                 */
+              }
+              {routines.flatMap((routine, routineIndex) => {
+                const pages = [];
+                for (let i = 0; i < routine.exercises.length; i += 5) {
+                  pages.push(routine.exercises.slice(i, i + 5));
+                }
+                if (pages.length === 0) pages.push([]);
+                /**
+                 * This maps the pages array into section componenets containing at most 
+                 * five exercises
+                 */
+                return pages.map((pageExercises, pageIndex) => {
+                  const globalIndexOffset = pageIndex * 5;
+                  const isLastRoutine = routineIndex === routines.length - 1;
+                  const isLastPage = pageIndex === pages.length - 1;
 
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveRoutine(routine.id, routine.name)}
-                      aria-label={`Remove ${routine.name}`}
-                      className="absolute right-6 top-8 h-10 w-10 flex items-center justify-center bg-secondary/75 bevel-element hover:bg-accent/75 transition-all active:scale-[0.98] md:right-8"
+                  return (
+                    <section
+                      key={`${routine.id}-page-${pageIndex}`}
+                      ref={(node) => {
+                        if (node) {
+                          sectionRefs.current[`${routine.id}-page-${pageIndex}`] = node;
+                          if (pageIndex === 0) {
+                            routineRefs.current[routineIndex] = node;
+                          }
+                        }
+                      }}
+                      data-routine-index={routineIndex}
+                      data-page-index={pageIndex}
+                      className="relative h-full min-h-full snap-start px-6 py-8 md:px-8"
                     >
-                      <Trash2 size={18} className="text-destructive" />
-                    </button>
-
-                    <div className="space-y-3">
-                      {routine.exercises.length === 0 ? (
-                        <div className="rounded-2xl border border-dashed border-border/60 px-6 py-5 label-font text-xs tracking-[0.25em] text-muted-foreground">
-                          NO WORKOUTS IN THIS ROUTINE
+                      <div className="flex h-full min-h-full flex-col">
+                        <div className="mb-6 flex items-end gap-4">
+                          <div>
+                            <div className="flex items-center gap-4 mb-3">
+                              <div className="label-font text-muted-foreground">
+                                ROUTINE {String(routineIndex + 1).padStart(2, "0")} / {String(routines.length).padStart(2, "0")}
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => navigate(`/routines/${routine.id}`)}
+                              className="group flex items-center gap-3 text-left"
+                            >
+                              <div className="display-font text-4xl md:text-5xl bevel-text">{routine.name}</div>
+                              <ChevronRight size={20} className="text-muted-foreground transition-transform group-hover:translate-x-1" />
+                            </button>
+                          </div>
                         </div>
-                      ) : (
-                        routine.exercises.map((routineExercise, index) => {
-                          const exercise = exercises.find((e) => e.id === routineExercise.exerciseId);
-                          const exerciseHistory = history.find(
-                            (h) => h.exerciseId === routineExercise.exerciseId
-                          );
-                          const lastSet =
-                            exerciseHistory && exerciseHistory.sets.length > 0
-                              ? exerciseHistory.sets[exerciseHistory.sets.length - 1]
-                              : null;
 
-                          return (
-                            <RoutineExerciseRow
-                              key={`${routine.id}-${routineExercise.exerciseId}-${index}`}
-                              exerciseName={exercise?.name ?? "Unknown Exercise"}
-                              sets={routineExercise.sets}
-                              targetReps={routineExercise.targetReps}
-                              lastSet={lastSet}
-                              onOpen={() => navigate(`/workout/${routineExercise.exerciseId}`)}
-                              onRemove={() => removeRoutineExercise(routine.id, index)}
-                            />
-                          );
-                        })
+                        {pageIndex === 0 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveRoutine(routine.id, routine.name)}
+                            aria-label={`Remove ${routine.name}`}
+                            className="absolute right-6 top-8 h-10 w-10 flex items-center justify-center bg-secondary/75 bevel-element hover:bg-accent/75 transition-all active:scale-[0.98] md:right-8"
+                          >
+                            <Trash2 size={18} className="text-destructive" />
+                          </button>
+                        )}
+
+                        <div className="space-y-3">
+                          {pageExercises.length === 0 ? (
+                            <div className="rounded-2xl border border-dashed border-border/60 px-6 py-5 label-font text-xs tracking-[0.25em] text-muted-foreground">
+                              NO WORKOUTS IN THIS ROUTINE
+                            </div>
+                          ) : (
+                            pageExercises.map((routineExercise, localIndex) => {
+                              const globalIndex = globalIndexOffset + localIndex;
+                              const exercise = exercises.find((e) => e.id === routineExercise.exerciseId);
+                              const exerciseHistory = history.find(
+                                (h) => h.exerciseId === routineExercise.exerciseId
+                              );
+                              const lastSet =
+                                exerciseHistory && exerciseHistory.sets.length > 0
+                                  ? exerciseHistory.sets[exerciseHistory.sets.length - 1]
+                                  : null;
+
+                              return (
+                                <RoutineExerciseRow
+                                  key={`${routine.id}-${routineExercise.exerciseId}-${globalIndex}`}
+                                  exerciseName={exercise?.name ?? "Unknown Exercise"}
+                                  sets={routineExercise.sets}
+                                  targetReps={routineExercise.targetReps}
+                                  lastSet={lastSet}
+                                  onOpen={() => navigate(`/workout/${routineExercise.exerciseId}`)}
+                                  onRemove={() => removeRoutineExercise(routine.id, globalIndex)}
+                                />
+                              );
+                            })
+                          )}
+                        </div>
+
+                        {isLastPage && routine.exercises.length < 10 && (
+                          <div className={isLastRoutine && isLastPage ? "mt-3 mb-28 space-y-3" : "mt-3 space-y-3"}>
+                            <button
+                              type="button"
+                              onClick={() => openAddWorkout(routine.id)}
+                              className="relative z-10 w-full flex items-center justify-between py-4 px-6 bg-secondary bevel-element hover:bg-accent transition-all active:scale-[0.99]"
+                            >
+                              <span className="label-font text-left">ADD WORKOUT</span>
+                              <Plus size={20} className="text-muted-foreground" />
+                            </button>
+                          </div>
+                        )}
+                        {/* Ensure scrolling space for bottom button */}
+                        {isLastPage && routine.exercises.length >= 10 && isLastRoutine && (
+                          <div className="mt-3 mb-28" />
+                        )}
+                        {!isLastPage && (
+                          <div className="flex justify-center mt-auto py-2">
+                            <MoreVertical size={24} className="text-muted-foreground animate-bounce" />
+                          </div>
+                        )}
+                      </div>
+
+                      {isLastRoutine && isLastPage && (
+                        <div className="pointer-events-none absolute inset-x-6 bottom-3 z-20 md:inset-x-8">
+                          <button
+                            type="button"
+                            onClick={() => setIsAddRoutineOpen(true)}
+                            className="pointer-events-auto w-full py-4 px-6 bg-secondary/65 border border-white/15 backdrop-blur-md bevel-element hover:bg-accent/70 transition-all active:scale-[0.99]"
+                          >
+                            <span className="label-font text-left">ADD ROUTINE</span>
+                          </button>
+                        </div>
                       )}
-                    </div>
-
-                    <div className={routineIndex === routines.length - 1 ? "mt-3 mb-28 space-y-3" : "mt-3 space-y-3"}>
-                      <button
-                        type="button"
-                        onClick={() => openAddWorkout(routine.id)}
-                        className="relative z-10 w-full flex items-center justify-between py-4 px-6 bg-secondary bevel-element hover:bg-accent transition-all active:scale-[0.99]"
-                      >
-                        <span className="label-font text-left">ADD WORKOUT</span>
-                        <Plus size={20} className="text-muted-foreground" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {routineIndex === routines.length - 1 ? (
-                    <div className="pointer-events-none absolute inset-x-6 bottom-3 z-20 md:inset-x-8">
-                      <button
-                        type="button"
-                        onClick={() => setIsAddRoutineOpen(true)}
-                        className="pointer-events-auto w-full py-4 px-6 bg-secondary/65 border border-white/15 backdrop-blur-md bevel-element hover:bg-accent/70 transition-all active:scale-[0.99]"
-                      >
-                        <span className="label-font text-left">ADD ROUTINE</span>
-                      </button>
-                    </div>
-                  ) : null}
-                </section>
-              ))}
+                    </section>
+                  );
+                });
+              })}
             </div>
 
             {/*
