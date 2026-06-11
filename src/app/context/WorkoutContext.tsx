@@ -45,6 +45,30 @@ interface WorkoutContextType {
   removeRoutine: (routineId: string) => void;
   addExerciseToRoutine: (routineId: string, routineExercise: RoutineExercise) => void;
   removeRoutineExercise: (routineId: string, exerciseIndex: number) => void;
+
+  // Active Workout UI State
+  reps: number;
+  setReps: (val: number) => void;
+  weight: number;
+  setWeight: (val: number) => void;
+  restTime: number;
+  setRestTime: (val: number) => void;
+  timeRemaining: number;
+  setTimeRemaining: (val: number | ((prev: number) => number)) => void;
+  isTimerRunning: boolean;
+  setIsTimerRunning: (val: boolean) => void;
+  pickerType: "reps" | "weight" | "restTime" | null;
+  setPickerType: (val: "reps" | "weight" | "restTime" | null) => void;
+  weightUnit: string;
+  setWeightUnit: (val: string) => void;
+  workoutSessionStartedAt: number | null;
+  setWorkoutSessionStartedAt: (val: number | null) => void;
+  currentSlide: number;
+  setCurrentSlide: (val: number) => void;
+  currentView: number;
+  setCurrentView: (val: number) => void;
+  selectedRoutineId: string | null;
+  setSelectedRoutineId: (val: string | null) => void;
 }
 
 const WorkoutContext = createContext<WorkoutContextType | undefined>(undefined);
@@ -200,6 +224,37 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
   const [isHistoryLoaded, setIsHistoryLoaded] = useState(false);
   const [currentRoutine, setCurrentRoutine] = useState<Routine | null>(null);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
+
+  // Active Workout UI State
+  const [reps, setReps] = useState(0);
+  const [weight, setWeight] = useState(0);
+  const [restTime, setRestTime] = useState(90);
+  const [timeRemaining, setTimeRemaining] = useState(0);
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [pickerType, setPickerType] = useState<"reps" | "weight" | "restTime" | null>(null);
+  const [weightUnit, setWeightUnit] = useState("LB");
+  const [workoutSessionStartedAt, setWorkoutSessionStartedAt] = useState<number | null>(null);
+  const [currentSlide, setCurrentSlide] = useState(1);
+  const [currentView, setCurrentView] = useState(1);
+  const [selectedRoutineId, setSelectedRoutineId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let interval: number | undefined;
+    if (isTimerRunning && timeRemaining > 0) {
+      interval = window.setInterval(() => {
+        setTimeRemaining((prev) => {
+          if (prev <= 1) {
+            setIsTimerRunning(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isTimerRunning, timeRemaining]);
   /*
   Initliazes user's workout history on applicaiton startup
   
@@ -361,6 +416,17 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
         removeRoutine,
         addExerciseToRoutine,
         removeRoutineExercise,
+        reps, setReps,
+        weight, setWeight,
+        restTime, setRestTime,
+        timeRemaining, setTimeRemaining,
+        isTimerRunning, setIsTimerRunning,
+        pickerType, setPickerType,
+        weightUnit, setWeightUnit,
+        workoutSessionStartedAt, setWorkoutSessionStartedAt,
+        currentSlide, setCurrentSlide,
+        currentView, setCurrentView,
+        selectedRoutineId, setSelectedRoutineId,
       }}
     >
       {/*

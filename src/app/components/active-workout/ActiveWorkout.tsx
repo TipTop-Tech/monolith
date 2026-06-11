@@ -33,51 +33,39 @@ export function ActiveWorkout() {
     routines,
     setCurrentRoutine,
     history,
+    reps, setReps,
+    weight, setWeight,
+    restTime, setRestTime,
+    timeRemaining, setTimeRemaining,
+    isTimerRunning, setIsTimerRunning,
+    pickerType, setPickerType,
+    weightUnit, setWeightUnit,
+    workoutSessionStartedAt, setWorkoutSessionStartedAt,
+    currentSlide, setCurrentSlide,
+    currentView, setCurrentView,
+    selectedRoutineId, setSelectedRoutineId
   } = useWorkout();
 
-  const [reps, setReps] = useState(0);
-  const [weight, setWeight] = useState(0);
-  const [restTime, setRestTime] = useState(90);
-  const [timeRemaining, setTimeRemaining] = useState(0);
-  const [isTimerRunning, setIsTimerRunning] = useState(false);
-  const [pickerType, setPickerType] = useState<"reps" | "weight" | "restTime" | null>(null);
-  const [weightUnit, setWeightUnit] = useState("LB");
-  const [workoutSessionStartedAt, setWorkoutSessionStartedAt] = useState<number | null>(null);
-  const [currentSlide, setCurrentSlide] = useState(1);
-  const [currentView, setCurrentView] = useState(1);
   const [editingSetIndex, setEditingSetIndex] = useState<number | null>(null);
   const [setToDelete, setSetToDelete] = useState<number | null>(null);
 
   const { showWarning, storageStatus, checkStorage, dismissWarning } = useStorageWarning();
 
   const sliderRef = useRef<Slider>(null);
+  const isFirstRender = useRef(true);
 
   useEffect(() => {
-    let interval: number | undefined;
-    if (isTimerRunning && timeRemaining > 0) {
-      interval = window.setInterval(() => {
-        setTimeRemaining((prev) => {
-          if (prev <= 1) {
-            setIsTimerRunning(false);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
     }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isTimerRunning, timeRemaining]);
-
-  useEffect(() => {
     const timer = window.setTimeout(() => {
       sliderRef.current?.slickGoTo(1);
       setCurrentSlide(1);
     }, 0);
 
     return () => window.clearTimeout(timer);
-  }, [currentRoutine, currentExerciseIndex]);
+  }, [currentRoutine, currentExerciseIndex, setCurrentSlide]);
 
   const currentExercise = currentRoutine
     ? exercises.find(
@@ -96,8 +84,6 @@ export function ActiveWorkout() {
       workoutSessionStartedAt === null || new Date(set.date).getTime() >= workoutSessionStartedAt;
     return setDate === today && startedAfterWorkoutBegan;
   }) || [];
-
-  const [selectedRoutineId, setSelectedRoutineId] = useState<string | null>(null);
 
   const handleSelectRoutine = (routine: (typeof routines)[number]) => {
     // open picker locally when selecting a routine from this screen
@@ -275,7 +261,7 @@ export function ActiveWorkout() {
     slidesToShow: 1,
     slidesToScroll: 1,
     arrows: false,
-    initialSlide: 1,
+    initialSlide: currentSlide,
     centerMode: true,
     centerPadding: "40px",
     beforeChange: (_current: number, next: number) => setCurrentSlide(next),
