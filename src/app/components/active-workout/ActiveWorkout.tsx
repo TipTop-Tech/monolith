@@ -48,6 +48,7 @@ export function ActiveWorkout() {
 
   const [editingSetIndex, setEditingSetIndex] = useState<number | null>(null);
   const [setToDelete, setSetToDelete] = useState<number | null>(null);
+  const [showEndExerciseConfirm, setShowEndExerciseConfirm] = useState(false);
 
   const { showWarning, storageStatus, checkStorage, dismissWarning } = useStorageWarning();
 
@@ -152,7 +153,6 @@ export function ActiveWorkout() {
   };
 
   const handleEndExercise = () => {
-
     setWorkoutSessionStartedAt(null);
     setReps(0);
     setWeight(0);
@@ -161,6 +161,7 @@ export function ActiveWorkout() {
     setPickerType(null);
     setCurrentView(2);
     setEditingSetIndex(null);
+    setShowEndExerciseConfirm(false);
   };
 
 
@@ -363,7 +364,7 @@ export function ActiveWorkout() {
               <div className="px-2">
                 <div className="flex flex-col items-center justify-center py-4 sm:py-8 min-h-[clamp(14rem,32vh,22rem)] gap-4 sm:gap-6">
                   <button
-                    onClick={handleEndExercise}
+                    onClick={() => setShowEndExerciseConfirm(true)}
                     className="w-[min(64vw,16rem)] aspect-square max-w-none px-6 bg-secondary bevel-element hover:bg-accent transition-all active:scale-98 flex items-center justify-center"
                   >
                     <div className="display-font text-[50px] sm:text-sm tracking-[0.3em] text-muted-foreground">END EXERCISE</div>
@@ -599,6 +600,23 @@ export function ActiveWorkout() {
                 setSetToDelete(null);
               }} className="label-font bg-destructive text-destructive-foreground hover:bg-destructive/90 bevel-element">
                 DELETE
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+        {/* End Exercise Confirmation Modal */}
+        <AlertDialog open={showEndExerciseConfirm} onOpenChange={setShowEndExerciseConfirm}>
+          <AlertDialogContent className="bg-background border-border bevel-element">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="display-font text-2xl bevel-text">End Exercise</AlertDialogTitle>
+              <AlertDialogDescription className="label-font text-muted-foreground">
+                Are you sure you are done with this exercise?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setShowEndExerciseConfirm(false)} className="label-font bg-secondary text-foreground hover:bg-accent border-none bevel-element">CANCEL</AlertDialogCancel>
+              <AlertDialogAction onClick={handleEndExercise} className="label-font bg-primary text-primary-foreground hover:bg-primary/90 bevel-element">
+                CONFIRM
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

@@ -22,6 +22,16 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Input } from "../ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../ui/alert-dialog";
 
 const BODY_PARTS = [
   { key: "chest", label: "Chest" },
@@ -142,6 +152,7 @@ export function Routines() {
   const [selectedRoutineId, setSelectedRoutineId] = useState<string | null>(null);
   const [selectedExerciseId, setSelectedExerciseId] = useState("/");
   const [activeRoutineIndex, setActiveRoutineIndex] = useState(0);
+  const [routineToDelete, setRoutineToDelete] = useState<{ id: string, name: string } | null>(null);
 
   const selectedRoutine = routines.find((routine) => routine.id === selectedRoutineId) ?? null;
   const sortedExercises = [...exercises].sort((leftExercise, rightExercise) => {
@@ -214,12 +225,13 @@ export function Routines() {
   };
 
   const handleRemoveRoutine = (routineId: string, routineName: string) => {
-    const confirmed = window.confirm(`Delete routine \"${routineName}\"?`);
-    if (!confirmed) {
-      return;
-    }
+    setRoutineToDelete({ id: routineId, name: routineName });
+  };
 
-    removeRoutine(routineId);
+  const confirmRemoveRoutine = () => {
+    if (!routineToDelete) return;
+    removeRoutine(routineToDelete.id);
+    setRoutineToDelete(null);
   };
 
   const handleAddWorkout = () => {
@@ -312,6 +324,24 @@ export function Routines() {
   return (
     <>
       <div className="relative h-full">
+        {/* Delete Routine Confirmation Modal */}
+        <AlertDialog open={routineToDelete !== null} onOpenChange={(open) => !open && setRoutineToDelete(null)}>
+          <AlertDialogContent className="bg-background border-border bevel-element">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="display-font text-2xl bevel-text text-destructive">Delete Routine</AlertDialogTitle>
+              <AlertDialogDescription className="label-font text-muted-foreground">
+                "{routineToDelete?.name}" will be deleted. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setRoutineToDelete(null)} className="label-font bg-secondary text-foreground hover:bg-accent border-none bevel-element">CANCEL</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmRemoveRoutine} className="label-font bg-destructive text-destructive-foreground hover:bg-destructive/90 bevel-element">
+                DELETE
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         {routines.length === 0 ? (
           <div className="h-full flex items-center justify-center p-8 pb-24">
             <div className="text-center space-y-4">
