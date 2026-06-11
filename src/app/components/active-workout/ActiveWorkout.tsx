@@ -40,7 +40,8 @@ export function ActiveWorkout() {
   const [restTime, setRestTime] = useState(90);
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
-  const [pickerType, setPickerType] = useState<"reps" | "weight" | null>(null);
+  const [pickerType, setPickerType] = useState<"reps" | "weight" | "restTime" | null>(null);
+  const [weightUnit, setWeightUnit] = useState("LB");
   const [workoutSessionStartedAt, setWorkoutSessionStartedAt] = useState<number | null>(null);
   const [currentSlide, setCurrentSlide] = useState(1);
   const [currentView, setCurrentView] = useState(1);
@@ -317,9 +318,12 @@ export function ActiveWorkout() {
             <div className="display-font text-4xl md:text-5xl bevel-text">{currentExercise?.name ?? "EXERCISE"}</div>
 
             <div className="label-font text-muted-foreground mt-7 sm:mt-8">REST TIME</div>
-            <div className="display-font text-[min(30vw,150px)] sm:text-[min(40vw,180px)] leading-none bevel-text-large mt-2 sm:mt-4">
+            <button 
+              onClick={() => setPickerType("restTime")}
+              className="display-font text-[min(30vw,150px)] sm:text-[min(40vw,180px)] leading-none bevel-text-large mt-2 sm:mt-4 transition-all hover:scale-105 active:scale-95"
+            >
               {timeRemaining > 0 ? formatTime(timeRemaining) : "--:--"}
-            </div>
+            </button>
 
             {/* Progress Bar - Directional Lighting */}
             <div className="w-full max-w-sm h-1 bg-secondary mb-4 sm:mb-8 overflow-hidden">
@@ -332,22 +336,37 @@ export function ActiveWorkout() {
               />
             </div>
 
-            <div className="flex gap-4 sm:gap-6">
+            <div className="flex gap-3 sm:gap-4 mt-2 items-center justify-center">
+              <button
+                onClick={() => setTimeRemaining(prev => Math.max(0, prev - 10))}
+                className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center bg-secondary bevel-element hover:bg-accent transition-all active:scale-95 label-font text-xs text-muted-foreground"
+              >
+                -10S
+              </button>
+
               <button
                 onClick={() => setIsTimerRunning(!isTimerRunning)}
-                className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center bg-accent bevel-element hover:bg-muted transition-all active:scale-95 disabled:opacity-30"
+                className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center bg-primary text-primary-foreground bevel-element hover:bg-primary/90 transition-all active:scale-95 disabled:opacity-30"
                 disabled={timeRemaining === 0}
               >
-                {isTimerRunning ? <Pause size={20} className="sm:w-6 sm:h-6" /> : <Play size={20} className="sm:w-6 sm:h-6" />}
+                {isTimerRunning ? <Pause size={24} /> : <Play size={24} />}
               </button>
+              
               <button
                 onClick={() => {
                   setTimeRemaining(restTime);
                   setIsTimerRunning(false);
                 }}
-                className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center bg-accent bevel-element hover:bg-muted transition-all active:scale-95"
+                className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center bg-accent bevel-element hover:bg-muted transition-all active:scale-95"
               >
-                <RotateCcw size={20} className="sm:w-6 sm:h-6" />
+                <RotateCcw size={20} />
+              </button>
+
+              <button
+                onClick={() => setTimeRemaining(prev => prev + 30)}
+                className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center bg-secondary bevel-element hover:bg-accent transition-all active:scale-95 label-font text-xs text-muted-foreground"
+              >
+                +30S
               </button>
             </div>
           </div>
@@ -517,6 +536,27 @@ export function ActiveWorkout() {
             suffix=""
             title="WEIGHT"
             onClose={() => setPickerType(null)}
+            allowCustomInput={true}
+            unitOptions={["LB", "KG"]}
+            selectedUnit={weightUnit}
+            onUnitChange={setWeightUnit}
+          />
+        )}
+
+        {pickerType === "restTime" && (
+          <ScrollPicker
+            value={restTime}
+            onChange={(val) => {
+              setRestTime(val);
+              setTimeRemaining(val);
+              setIsTimerRunning(false);
+            }}
+            min={15}
+            max={300}
+            step={15}
+            title="SET REST TIME"
+            onClose={() => setPickerType(null)}
+            formatValue={formatTime}
           />
         )}
 
