@@ -14,7 +14,7 @@ export function Layout() {
 
   return (
     <WorkoutProvider>
-      <div className="h-full flex flex-col min-h-0">
+      <div className="h-full flex flex-col min-h-0 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"> 
         <main className="flex-1 min-h-0 overflow-auto">
           <Outlet />
         </main>
