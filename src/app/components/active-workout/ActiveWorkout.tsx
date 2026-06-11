@@ -8,10 +8,11 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogAction,
+  AlertDialogCancel,
 } from "../ui/alert-dialog";
 import { useWorkout } from "../../context/WorkoutContext";
 import { useNavigate, useLocation } from "react-router";
-import { Play, Pause, RotateCcw, Plus } from "lucide-react";
+import { Play, Pause, RotateCcw, Plus, Trash2, Edit2, X } from "lucide-react";
 // react-slick has no bundled TypeScript declarations; ignore the missing types here
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: module has no type declarations
@@ -27,6 +28,8 @@ export function ActiveWorkout() {
     setCurrentExerciseIndex,
     exercises,
     addSet,
+    removeSet,
+    updateSet,
     routines,
     setCurrentRoutine,
     history,
@@ -41,6 +44,8 @@ export function ActiveWorkout() {
   const [workoutSessionStartedAt, setWorkoutSessionStartedAt] = useState<number | null>(null);
   const [currentSlide, setCurrentSlide] = useState(1);
   const [currentView, setCurrentView] = useState(1);
+  const [editingSetIndex, setEditingSetIndex] = useState<number | null>(null);
+  const [setToDelete, setSetToDelete] = useState<number | null>(null);
 
   const { showWarning, storageStatus, checkStorage, dismissWarning } = useStorageWarning();
 
@@ -125,11 +130,18 @@ export function ActiveWorkout() {
   const handleLogSet = () => {
     if (!currentExercise || reps === 0 || weight === 0) return;
 
-    addSet(currentExercise.id, reps, weight);
-    setReps(0);
-    setWeight(0);
-    setTimeRemaining(restTime);
-    setIsTimerRunning(true);
+    if (editingSetIndex !== null) {
+      updateSet(currentExercise.id, editingSetIndex, reps, weight);
+      setEditingSetIndex(null);
+      setReps(0);
+      setWeight(0);
+    } else {
+      addSet(currentExercise.id, reps, weight);
+      setReps(0);
+      setWeight(0);
+      setTimeRemaining(restTime);
+      setIsTimerRunning(true);
+    }
 
     setTimeout(() => {
       if (sliderRef.current) {
@@ -149,6 +161,7 @@ export function ActiveWorkout() {
     setIsTimerRunning(false);
     setPickerType(null);
     setCurrentSlide(1);
+    setEditingSetIndex(null);
   };
 
   const handleEndExercise = () => {
@@ -160,6 +173,7 @@ export function ActiveWorkout() {
     setIsTimerRunning(false);
     setPickerType(null);
     setCurrentView(2);
+    setEditingSetIndex(null);
   };
 
 
@@ -354,6 +368,19 @@ export function ActiveWorkout() {
 
               <div className="px-2">
                 <div className="flex flex-col items-center justify-center py-6 sm:py-12 gap-4 sm:gap-6">
+                  {editingSetIndex !== null && (
+                    <div className="label-font text-[10px] sm:text-xs text-primary mb-2 tracking-[0.2em] bevel-element px-3 py-1 bg-primary/10 rounded-full flex items-center gap-2">
+                      <Edit2 size={12} /> EDITING SET
+                      <button onClick={() => {
+                        setEditingSetIndex(null);
+                        setReps(0);
+                        setWeight(0);
+                      }} className="ml-2 text-muted-foreground hover:text-foreground p-1">
+                        <X size={12} />
+                      </button>
+                    </div>
+                  )}
+
                   <button
                     onClick={() => setPickerType("reps")}
                     className="w-3/4 max-w-[12rem] py-3 sm:py-4 bg-secondary bevel-element hover:bg-accent transition-all active:scale-98"
@@ -379,19 +406,50 @@ export function ActiveWorkout() {
                   <button
                     onClick={handleLogSet}
                     disabled={reps === 0 || weight === 0}
-                    className="w-3/4 max-w-[12rem] py-3 sm:py-4 bg-primary text-primary-foreground bevel-element hover:opacity-90 transition-all active:scale-98 disabled:opacity-20 flex items-center justify-center gap-2"
+                    className={`w-3/4 max-w-[12rem] py-3 sm:py-4 text-primary-foreground bevel-element hover:opacity-90 transition-all active:scale-98 disabled:opacity-20 flex items-center justify-center gap-2 ${editingSetIndex !== null ? 'bg-orange-500' : 'bg-primary'}`}
                   >
-                    <Plus size={18} className="sm:w-5 sm:h-5" />
-                    <span className="label-font">LOG SET</span>
+                    {editingSetIndex !== null ? <Edit2 size={18} className="sm:w-5 sm:h-5" /> : <Plus size={18} className="sm:w-5 sm:h-5" />}
+                    <span className="label-font">{editingSetIndex !== null ? 'SAVE EDIT' : 'LOG SET'}</span>
                   </button>
                 </div>
               </div>
 
-              {[...visibleSets].reverse().map((set, index) => (
-                <div key={index} className="px-1 sm:px-2">
+              {[...visibleSets].reverse().map((set, index) => {
+                const originalIndex = currentExerciseHistory?.sets.indexOf(set) ?? -1;
+                return (
+                <div key={set.date} className="px-1 sm:px-2">
                   <div className="flex flex-col items-center justify-center py-8 sm:py-14">
-                    <div className="label-font text-[11px] sm:text-xs text-muted-foreground mb-5 sm:mb-8">
-                      SET {visibleSets.length - index}
+                    <div className="flex items-center justify-center gap-3 mb-5 sm:mb-8">
+                      <div className="label-font text-[11px] sm:text-xs text-muted-foreground">
+                        SET {visibleSets.length - index}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => {
+                            if (originalIndex !== -1 && currentExercise) {
+                              setEditingSetIndex(originalIndex);
+                              setReps(set.reps);
+                              setWeight(set.weight);
+                              sliderRef.current?.slickGoTo(1);
+                            }
+                          }}
+                          className="text-muted-foreground/50 hover:text-orange-500 transition-colors active:scale-95 p-1"
+                          aria-label="Edit set"
+                        >
+                          <Edit2 size={14} />
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (originalIndex !== -1 && currentExercise) {
+                              setSetToDelete(originalIndex);
+                            }
+                          }}
+                          className="text-muted-foreground/50 hover:text-destructive transition-colors active:scale-95 p-1"
+                          aria-label="Delete set"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </div>
                     <div className="flex w-full max-w-sm sm:max-w-md items-end justify-center gap-4 sm:gap-6 mx-auto">
                       <div className="flex flex-1 flex-col items-center text-center">
@@ -409,10 +467,11 @@ export function ActiveWorkout() {
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </Slider>
 
-            <div className="mt-3 sm:mt-5 flex items-center justify-center gap-1.5 sm:gap-2 pb-0 sm:pb-1" aria-label="Set view position">
+            <div className="mt-1 sm:mt-3 flex items-center justify-center gap-0 pb-0 sm:pb-1" aria-label="Set view position">
               {Array.from({ length: slideCount }).map((_, index) => {
                 const isActive = index === currentSlide;
 
@@ -423,9 +482,12 @@ export function ActiveWorkout() {
                     onClick={() => sliderRef.current?.slickGoTo(index)}
                     aria-label={`Go to slide ${index + 1}`}
                     aria-current={isActive ? "true" : undefined}
-                    className={`h-2 rounded-full transition-all duration-200 ${isActive ? "w-6 bg-primary" : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/60"
-                      }`}
-                  />
+                    className="py-4 px-2"
+                  >
+                    <div 
+                      className={`h-2 rounded-full transition-all duration-200 mx-auto ${isActive ? "w-6 bg-primary" : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/60"}`}
+                    />
+                  </button>
                 );
               })}
             </div>
@@ -480,6 +542,37 @@ export function ActiveWorkout() {
             <AlertDialogFooter>
               <AlertDialogAction onClick={dismissWarning} className="label-font bg-primary text-primary-foreground bevel-element hover:opacity-90 transition-all active:scale-98">
                 CONTINUE
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog open={setToDelete !== null} onOpenChange={(open) => !open && setSetToDelete(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="display-font text-2xl bevel-text">Delete Set</AlertDialogTitle>
+              <AlertDialogDescription className="label-font text-muted-foreground">
+                Are you sure you want to delete this set? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setSetToDelete(null)} className="label-font bg-secondary text-foreground hover:bg-accent border-none bevel-element">CANCEL</AlertDialogCancel>
+              <AlertDialogAction onClick={() => {
+                if (setToDelete !== null && currentExercise) {
+                  removeSet(currentExercise.id, setToDelete);
+                  if (editingSetIndex !== null) {
+                    if (editingSetIndex === setToDelete) {
+                      setEditingSetIndex(null);
+                      setReps(0);
+                      setWeight(0);
+                    } else if (setToDelete < editingSetIndex) {
+                      setEditingSetIndex(editingSetIndex - 1);
+                    }
+                  }
+                }
+                setSetToDelete(null);
+              }} className="label-font bg-destructive text-destructive-foreground hover:bg-destructive/90 bevel-element">
+                DELETE
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

@@ -40,6 +40,7 @@ interface WorkoutContextType {
   setCurrentExerciseIndex: (index: number) => void;
   addSet: (exerciseId: string, reps: number, weight: number) => void;
   removeSet: (exerciseId: string, setIndex: number) => void;
+  updateSet: (exerciseId: string, setIndex: number, reps: number, weight: number) => void;
   addRoutine: (routine: Routine) => void;
   removeRoutine: (routineId: string) => void;
   addExerciseToRoutine: (routineId: string, routineExercise: RoutineExercise) => void;
@@ -277,6 +278,17 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const updateSet = (exerciseId: string, setIndex: number, reps: number, weight: number) => {
+    setHistory((prev) => {
+      return prev.map((h) => {
+        if (h.exerciseId !== exerciseId) return h;
+        const newSets = [...h.sets];
+        newSets[setIndex] = { ...newSets[setIndex], reps, weight };
+        return { ...h, sets: newSets };
+      });
+    });
+  };
+
   const addRoutine = (routine: Routine) => {
     setRoutines((prev) => [...prev, routine]);
   };
@@ -344,6 +356,7 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
         setCurrentExerciseIndex,
         addSet,
         removeSet,
+        updateSet,
         addRoutine,
         removeRoutine,
         addExerciseToRoutine,
