@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { getHistoryFromDB, saveHistoryToDB, migrateFromLocalStorage } from "../../utils/storage";
 
 export interface Exercise {
   id: string;
@@ -16,8 +17,6 @@ export interface RoutineExercise {
   exerciseId: string;
   sets: number;
   targetReps: number;
-  suggestedWeightLbs?: number;
-  coachNotes?: string;
 }
 
 export interface Routine {
@@ -40,6 +39,7 @@ interface WorkoutContextType {
   setCurrentRoutine: (routine: Routine | null) => void;
   setCurrentExerciseIndex: (index: number) => void;
   addSet: (exerciseId: string, reps: number, weight: number) => void;
+  removeSet: (exerciseId: string, setIndex: number) => void;
   addRoutine: (routine: Routine) => void;
   removeRoutine: (routineId: string) => void;
   addExerciseToRoutine: (routineId: string, routineExercise: RoutineExercise) => void;
@@ -112,6 +112,15 @@ const SAMPLE_EXERCISES: Exercise[] = [
   { id: "61", name: "Straight Arm Pulldown", muscleGroups: ["lats", "triceps"] },
   { id: "62", name: "Resistance Band Pull-Aparts", muscleGroups: ["upper-back", "back-deltoids", "mid-back"] },
   { id: "63", name: "Bird Dog", muscleGroups: ["lower-back", "abs"] },
+  { id: "64", name: "Wide Grip Row", muscleGroups: ["upper-back"] },
+  { id: "65", name: "Row Machine", muscleGroups: ["mid-back", "lower-back"] },
+  { id: "66", name: "Cable Hammer Curls", muscleGroups: ["biceps", "forearm"] },
+  { id: "67", name: "Smith Chest Press", muscleGroups: ["chest"] },
+  { id: "68", name: "Tricep Pushdown", muscleGroups: ["triceps"] },
+  { id: "69", name: "Smith Squat", muscleGroups: ["quadriceps"] },
+  { id: "70", name: "Decline Crunches", muscleGroups: ["abs"] },
+  { id: "71", name: "Decline Twists", muscleGroups: ["abs"] },
+  { id: "72", name: "Calf Extension Machine", muscleGroups: ["calves"] },
 ];
 
 const SAMPLE_ROUTINES: Routine[] = [
@@ -180,48 +189,53 @@ const SAMPLE_ROUTINES: Routine[] = [
   },
 ];
 
-const generateSampleHistory = (): WorkoutHistory[] => {
-  const history: WorkoutHistory[] = [];
-  const today = new Date();
-
-  SAMPLE_EXERCISES.forEach((exercise) => {
-    const sets: WorkoutSet[] = [];
-    for (let i = 0; i < 10; i++) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i * 3);
-      const baseWeight = 50 + Math.floor(Math.random() * 100);
-      sets.push({
-        reps: 8 + Math.floor(Math.random() * 4),
-        weight: baseWeight + i * 2.5,
-        date: date.toISOString(),
-      });
-    }
-    history.push({ exerciseId: exercise.id, sets: sets.reverse() });
-  });
-
-  return history;
-};
-
 export function WorkoutProvider({ children }: { children: ReactNode }) {
   const [exercises] = useState<Exercise[]>(SAMPLE_EXERCISES);
   const [routines, setRoutines] = useState<Routine[]>(() => {
     const stored = localStorage.getItem("workoutRoutines");
     return stored ? JSON.parse(stored) : SAMPLE_ROUTINES;
   });
-  const [history, setHistory] = useState<WorkoutHistory[]>(() => {
-    const stored = localStorage.getItem("workoutHistory");
-    return stored ? JSON.parse(stored) : generateSampleHistory();
-  });
+  const [history, setHistory] = useState<WorkoutHistory[]>([]);
+  const [isHistoryLoaded, setIsHistoryLoaded] = useState(false);
   const [currentRoutine, setCurrentRoutine] = useState<Routine | null>(null);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
-
+  /*
+  Initliazes user's workout history on applicaiton startup
+  
+  - It runs only once on mount
+  - Attempts local storage migration
+    - Retrieves from indexedDB if local storage migration fails
+  - Updates states to reflect the user's workout history
+  */
+  useEffect(() => {
+    const initHistory = async () => {
+      let data = await migrateFromLocalStorage();
+      if (!data) {
+        data = await getHistoryFromDB();
+      }
+      if (!data || data.length === 0) {
+        data = [];
+      }
+      setHistory(data);
+      setIsHistoryLoaded(true);
+    };
+    initHistory();
+  }, []);
+  /**
+   * This useEffect saves the user's workout routines to local storage
+   * 
+   * - It runs whenever the 'routines' state changes
+   * - Saves the routines in a JSON format
+   */
   useEffect(() => {
     localStorage.setItem("workoutRoutines", JSON.stringify(routines));
   }, [routines]);
 
   useEffect(() => {
-    localStorage.setItem("workoutHistory", JSON.stringify(history));
-  }, [history]);
+    if (isHistoryLoaded) {
+      saveHistoryToDB(history).catch(e => console.error("Failed to save history to IndexedDB", e));
+    }
+  }, [history, isHistoryLoaded]);
 
   const addSet = (exerciseId: string, reps: number, weight: number) => {
     setHistory((prev) => {
@@ -243,6 +257,25 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
       }
     });
   };
+  /**
+   * This handles the removal of a set from the history.
+   * 
+   * @param exerciseId - The ID of the exercise to remove the set from
+   * @param setIndex - The index of the set to remove
+   */
+  const removeSet = (exerciseId: string, setIndex: number) => {
+    setHistory((prev) => {
+      return prev
+        .map((h) => {
+          if (h.exerciseId !== exerciseId) return h;
+          return {
+            ...h,
+            sets: h.sets.filter((_, index) => index !== setIndex),
+          };
+        })
+        .filter((h) => h.sets.length > 0);
+    });
+  };
 
   const addRoutine = (routine: Routine) => {
     setRoutines((prev) => [...prev, routine]);
@@ -262,9 +295,9 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
       const nextRoutines = prev.map((routine) =>
         routine.id === routineId
           ? {
-              ...routine,
-              exercises: [...routine.exercises, routineExercise],
-            }
+            ...routine,
+            exercises: [...routine.exercises, routineExercise],
+          }
           : routine
       );
 
@@ -310,13 +343,17 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
         setCurrentRoutine,
         setCurrentExerciseIndex,
         addSet,
+        removeSet,
         addRoutine,
         removeRoutine,
         addExerciseToRoutine,
         removeRoutineExercise,
       }}
     >
-      {children}
+      {/*
+        Only renders the children when the history is loaded
+      */}
+      {isHistoryLoaded ? children : null}
     </WorkoutContext.Provider>
   );
 }

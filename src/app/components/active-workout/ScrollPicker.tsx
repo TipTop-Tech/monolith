@@ -129,11 +129,10 @@ export function ScrollPicker({
                   }}
                 >
                   <span
-                    className={`display-font leading-none ${
-                      val === selectedValue
-                        ? "text-[min(30vw,140px)] text-primary bevel-text-large"
-                        : "text-[min(20vw,80px)] text-muted-foreground"
-                    }`}
+                    className={`display-font leading-none ${val === selectedValue
+                      ? "text-[min(25vw,90px)] text-primary bevel-text-large"
+                      : "text-[min(20vw,50px)] text-muted-foreground"
+                      }`}
                   >
                     {val}
                     {suffix}
