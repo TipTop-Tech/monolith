@@ -17,6 +17,8 @@ export interface RoutineExercise {
   exerciseId: string;
   sets: number;
   targetReps: number;
+  suggestedWeightLbs?: number;
+  coachNotes?: string;
 }
 
 export interface Routine {
@@ -189,12 +191,31 @@ const SAMPLE_ROUTINES: Routine[] = [
   },
 ];
 
+const generateSampleHistory = (): WorkoutHistory[] => {
+  const history: WorkoutHistory[] = [];
+  const today = new Date();
+
+  SAMPLE_EXERCISES.forEach((exercise) => {
+    const sets: WorkoutSet[] = [];
+    for (let i = 0; i < 10; i++) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i * 3);
+      const baseWeight = 50 + Math.floor(Math.random() * 100);
+      sets.push({
+        reps: 8 + Math.floor(Math.random() * 4),
+        weight: baseWeight + i * 2.5,
+        date: date.toISOString(),
 export function WorkoutProvider({ children }: { children: ReactNode }) {
   const [exercises] = useState<Exercise[]>(SAMPLE_EXERCISES);
   const [routines, setRoutines] = useState<Routine[]>(() => {
     const stored = localStorage.getItem("workoutRoutines");
     return stored ? JSON.parse(stored) : SAMPLE_ROUTINES;
   });
+  // const [history, setHistory] = useState<WorkoutHistory[]>(() => {
+  //   const stored = localStorage.getItem("workoutHistory");
+  //   return stored ? JSON.parse(stored) : generateSampleHistory();
+  // });
+
   const [history, setHistory] = useState<WorkoutHistory[]>([]);
   const [isHistoryLoaded, setIsHistoryLoaded] = useState(false);
   const [currentRoutine, setCurrentRoutine] = useState<Routine | null>(null);
@@ -236,6 +257,8 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
       saveHistoryToDB(history).catch(e => console.error("Failed to save history to IndexedDB", e));
     }
   }, [history, isHistoryLoaded]);
+  //   localStorage.setItem("workoutHistory", JSON.stringify(history));
+  // }, [history]);
 
   const addSet = (exerciseId: string, reps: number, weight: number) => {
     setHistory((prev) => {
@@ -350,10 +373,7 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
         removeRoutineExercise,
       }}
     >
-      {/*
-        Only renders the children when the history is loaded
-      */}
-      {isHistoryLoaded ? children : null}
+      {children}
     </WorkoutContext.Provider>
   );
 }

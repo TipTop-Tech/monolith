@@ -1,4 +1,12 @@
 import { useState, useEffect, useRef } from "react";
+import { useWorkout } from "../../context/WorkoutContext";
+import { useNavigate, useLocation } from "react-router";
+import { Play, Pause, RotateCcw, Plus } from "lucide-react";
+// react-slick has no bundled TypeScript declarations; ignore the missing types here
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: module has no type declarations
+import Slider from "react-slick";
+import { ScrollPicker } from "./ScrollPicker";
 import { useStorageWarning } from "../../hooks/useStorageWarning";
 import {
   AlertDialog,
@@ -9,14 +17,7 @@ import {
   AlertDialogFooter,
   AlertDialogAction,
 } from "../ui/alert-dialog";
-import { useWorkout } from "../../context/WorkoutContext";
-import { useNavigate, useLocation } from "react-router";
-import { Play, Pause, RotateCcw, Plus } from "lucide-react";
-// react-slick has no bundled TypeScript declarations; ignore the missing types here
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore: module has no type declarations
-import Slider from "react-slick";
-import { ScrollPicker } from "./ScrollPicker";
+
 
 export function ActiveWorkout() {
   const navigate = useNavigate();
@@ -41,7 +42,6 @@ export function ActiveWorkout() {
   const [workoutSessionStartedAt, setWorkoutSessionStartedAt] = useState<number | null>(null);
   const [currentSlide, setCurrentSlide] = useState(1);
   const [currentView, setCurrentView] = useState(1);
-
   const { showWarning, storageStatus, checkStorage, dismissWarning } = useStorageWarning();
 
   const sliderRef = useRef<Slider>(null);
@@ -101,11 +101,12 @@ export function ActiveWorkout() {
   };
 
   const handleSelectExercise = (routine: (typeof routines)[number], exerciseIndex: number) => {
+    const routineExercise = routine.exercises[exerciseIndex];
     setCurrentRoutine(routine);
     setCurrentExerciseIndex(exerciseIndex);
     setWorkoutSessionStartedAt(Date.now());
-    setReps(0);
-    setWeight(0);
+    setReps(routineExercise?.targetReps ?? 0);
+    setWeight(routineExercise?.suggestedWeightLbs ?? 0);
     setRestTime(90);
     setTimeRemaining(0);
     setIsTimerRunning(false);
@@ -117,10 +118,11 @@ export function ActiveWorkout() {
     const state = (location as any).state as { openRoutineId?: string } | undefined;
     if (state?.openRoutineId) {
       setSelectedRoutineId(state.openRoutineId);
+      setCurrentView(2);
       // remove navigation state
       navigate("/", { replace: true });
     }
-  }, [location]);
+  }, [location, navigate]);
 
   const handleLogSet = () => {
     if (!currentExercise || reps === 0 || weight === 0) return;
@@ -136,8 +138,6 @@ export function ActiveWorkout() {
         sliderRef.current.slickGoTo(1);
       }
     }, 100);
-    // Checks to see if storage >= 150mb
-    checkStorage();
   };
 
   const handleEndWorkout = () => {
@@ -213,6 +213,11 @@ export function ActiveWorkout() {
                     <div className="text-left">
                       <div className="display-font text-2xl bevel-text">{exercise?.name ?? "Unknown Exercise"}</div>
                       <div className="label-font text-muted-foreground mt-1">{routineExercise.sets} SETS × {routineExercise.targetReps} REPS</div>
+                      {routineExercise.suggestedWeightLbs ? (
+                        <div className="label-font text-[10px] tracking-[0.22em] text-muted-foreground/80 mt-1">
+                          AI START ≈ {routineExercise.suggestedWeightLbs} LBS
+                        </div>
+                      ) : null}
                     </div>
 
                     <div className="flex items-center gap-3 text-muted-foreground">
