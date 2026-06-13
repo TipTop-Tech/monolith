@@ -205,6 +205,14 @@ const generateSampleHistory = (): WorkoutHistory[] => {
         reps: 8 + Math.floor(Math.random() * 4),
         weight: baseWeight + i * 2.5,
         date: date.toISOString(),
+      });
+    }
+    history.push({ exerciseId: exercise.id, sets: sets.reverse() });
+  });
+
+  return history;
+};
+
 export function WorkoutProvider({ children }: { children: ReactNode }) {
   const [exercises] = useState<Exercise[]>(SAMPLE_EXERCISES);
   const [routines, setRoutines] = useState<Routine[]>(() => {
