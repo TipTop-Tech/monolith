@@ -13,7 +13,8 @@ let dbInstance: SQLiteDBConnection | null = null;
  * Creates the workoutHistory table if it doesn't exist.
  */
 export const initDB = async (): Promise<SQLiteDBConnection> => {
-  if (dbInstance) return dbInstance;
+  // Bypass caching in test environments to allow isolated mocking
+  if (dbInstance && process.env.NODE_ENV !== 'test') return dbInstance;
 
   // Initialize the web store engine if running in the browser
   if (Capacitor.getPlatform() === 'web') {

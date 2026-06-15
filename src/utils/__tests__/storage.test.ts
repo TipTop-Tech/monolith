@@ -9,9 +9,9 @@ vi.mock('@capacitor/core', () => ({
   },
 }));
 
-const { 
+const {
   mockExecute, mockQuery, mockRun, mockOpen,
-  mockIsConnection, mockRetrieveConnection, mockCreateConnection, mockInitWebStore 
+  mockIsConnection, mockRetrieveConnection, mockCreateConnection, mockInitWebStore
 } = vi.hoisted(() => ({
   mockExecute: vi.fn(),
   mockQuery: vi.fn(),
@@ -46,7 +46,7 @@ describe('storage utilities', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
-    
+
     // Default mock implementations
     mockIsConnection.mockResolvedValue({ result: false });
     mockCreateConnection.mockResolvedValue(mockConnection);
@@ -94,10 +94,10 @@ describe('storage utilities', () => {
 
     it('returns parsed records if found', async () => {
       const mockData = [{ exerciseId: '1', name: 'Squat' }];
-      mockQuery.mockResolvedValue({ 
+      mockQuery.mockResolvedValue({
         values: [
           { data: JSON.stringify(mockData[0]) }
-        ] 
+        ]
       });
       const result = await getHistoryFromDB();
       expect(result).toEqual(mockData);
@@ -123,7 +123,7 @@ describe('storage utilities', () => {
         { exerciseId: 'ex2', sets: [] }
       ];
       await saveHistoryToDB(mockHistory as any);
-      
+
       expect(mockExecute).toHaveBeenCalledWith('DELETE FROM workoutHistory;');
       expect(mockRun).toHaveBeenCalledWith(
         'INSERT INTO workoutHistory (exerciseId, data) VALUES (?, ?), (?, ?)',
@@ -146,7 +146,7 @@ describe('storage utilities', () => {
       localStorage.setItem('workoutHistory', JSON.stringify(mockData));
 
       const result = await migrateFromLocalStorage();
-      
+
       expect(result).toEqual(mockData);
       expect(mockRun).toHaveBeenCalled(); // via saveHistoryToDB
       expect(localStorage.getItem('workoutHistory')).toBeNull();
