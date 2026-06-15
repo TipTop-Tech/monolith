@@ -16,6 +16,8 @@ export interface RoutineExercise {
   exerciseId: string;
   sets: number;
   targetReps: number;
+  suggestedWeightLbs?: number;
+  coachNotes?: string;
 }
 
 export interface Routine {
@@ -24,14 +26,50 @@ export interface Routine {
   exercises: RoutineExercise[];
 }
 
-
+export interface WorkoutHistory {
+  exerciseId: string;
+  sets: WorkoutSet[];
+}
 
 interface WorkoutContextType {
   exercises: Exercise[];
   routines: Routine[];
+  history: WorkoutHistory[];
+  currentRoutine: Routine | null;
+  currentExerciseIndex: number;
+  setCurrentRoutine: (routine: Routine | null) => void;
+  setCurrentExerciseIndex: (index: number) => void;
+  addSet: (exerciseId: string, reps: number, weight: number) => void;
+  removeSet: (exerciseId: string, setIndex: number) => void;
+  updateSet: (exerciseId: string, setIndex: number, reps: number, weight: number) => void;
+  addRoutine: (routine: Routine) => void;
   removeRoutine: (routineId: string) => void;
   addExerciseToRoutine: (routineId: string, routineExercise: RoutineExercise) => void;
   removeRoutineExercise: (routineId: string, exerciseIndex: number) => void;
+
+  // Active Workout UI State
+  reps: number;
+  setReps: (val: number) => void;
+  weight: number;
+  setWeight: (val: number) => void;
+  restTime: number;
+  setRestTime: (val: number) => void;
+  timeRemaining: number;
+  setTimeRemaining: (val: number | ((prev: number) => number)) => void;
+  isTimerRunning: boolean;
+  setIsTimerRunning: (val: boolean) => void;
+  pickerType: "reps" | "weight" | "restTime" | null;
+  setPickerType: (val: "reps" | "weight" | "restTime" | null) => void;
+  weightUnit: string;
+  setWeightUnit: (val: string) => void;
+  workoutSessionStartedAt: number | null;
+  setWorkoutSessionStartedAt: (val: number | null) => void;
+  currentSlide: number;
+  setCurrentSlide: (val: number) => void;
+  currentView: number;
+  setCurrentView: (val: number) => void;
+  selectedRoutineId: string | null;
+  setSelectedRoutineId: (val: string | null) => void;
 }
 
 const WorkoutContext = createContext<WorkoutContextType | undefined>(undefined);
@@ -177,15 +215,73 @@ const SAMPLE_ROUTINES: Routine[] = [
   },
 ];
 
+const generateSampleHistory = (): WorkoutHistory[] => {
+  const history: WorkoutHistory[] = [];
+  const today = new Date();
+
+  SAMPLE_EXERCISES.forEach((exercise) => {
+    const sets: WorkoutSet[] = [];
+    for (let i = 0; i < 10; i++) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i * 3);
+      const baseWeight = 50 + Math.floor(Math.random() * 100);
+      sets.push({
+        reps: 8 + Math.floor(Math.random() * 4),
+        weight: baseWeight + i * 2.5,
+        date: date.toISOString(),
+      });
+    }
+    history.push({ exerciseId: exercise.id, sets: sets.reverse() });
+  });
+
+  return history;
+};
+
 export function WorkoutProvider({ children }: { children: ReactNode }) {
   const [exercises] = useState<Exercise[]>(SAMPLE_EXERCISES);
   const [routines, setRoutines] = useState<Routine[]>(() => {
     const stored = localStorage.getItem("workoutRoutines");
     return stored ? JSON.parse(stored) : SAMPLE_ROUTINES;
   });
+  // const [history, setHistory] = useState<WorkoutHistory[]>(() => {
+  //   const stored = localStorage.getItem("workoutHistory");
+  //   return stored ? JSON.parse(stored) : generateSampleHistory();
+  // });
+
+  const [history, setHistory] = useState<WorkoutHistory[]>([]);
   const [currentRoutine, setCurrentRoutine] = useState<Routine | null>(null);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
 
+  // Active Workout UI State
+  const [reps, setReps] = useState(0);
+  const [weight, setWeight] = useState(0);
+  const [restTime, setRestTime] = useState(90);
+  const [timeRemaining, setTimeRemaining] = useState(0);
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [pickerType, setPickerType] = useState<"reps" | "weight" | "restTime" | null>(null);
+  const [weightUnit, setWeightUnit] = useState("LB");
+  const [workoutSessionStartedAt, setWorkoutSessionStartedAt] = useState<number | null>(null);
+  const [currentSlide, setCurrentSlide] = useState(1);
+  const [currentView, setCurrentView] = useState(1);
+  const [selectedRoutineId, setSelectedRoutineId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let interval: number | undefined;
+    if (isTimerRunning && timeRemaining > 0) {
+      interval = window.setInterval(() => {
+        setTimeRemaining((prev) => {
+          if (prev <= 1) {
+            setIsTimerRunning(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isTimerRunning, timeRemaining]);
   /**
    * This useEffect saves the user's workout routines to local storage
    * 
@@ -195,6 +291,57 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     localStorage.setItem("workoutRoutines", JSON.stringify(routines));
   }, [routines]);
+
+  const addSet = (exerciseId: string, reps: number, weight: number) => {
+    setHistory((prev) => {
+      const exerciseHistory = prev.find((h) => h.exerciseId === exerciseId);
+      const newSet: WorkoutSet = {
+        reps,
+        weight,
+        date: new Date().toISOString(),
+      };
+
+      if (exerciseHistory) {
+        return prev.map((h) =>
+          h.exerciseId === exerciseId
+            ? { ...h, sets: [...h.sets, newSet] }
+            : h
+        );
+      } else {
+        return [...prev, { exerciseId, sets: [newSet] }];
+      }
+    });
+  };
+  /**
+   * This handles the removal of a set from the history.
+   * 
+   * @param exerciseId - The ID of the exercise to remove the set from
+   * @param setIndex - The index of the set to remove
+   */
+  const removeSet = (exerciseId: string, setIndex: number) => {
+    setHistory((prev) => {
+      return prev
+        .map((h) => {
+          if (h.exerciseId !== exerciseId) return h;
+          return {
+            ...h,
+            sets: h.sets.filter((_, index) => index !== setIndex),
+          };
+        })
+        .filter((h) => h.sets.length > 0);
+    });
+  };
+
+  const updateSet = (exerciseId: string, setIndex: number, reps: number, weight: number) => {
+    setHistory((prev) => {
+      return prev.map((h) => {
+        if (h.exerciseId !== exerciseId) return h;
+        const newSets = [...h.sets];
+        newSets[setIndex] = { ...newSets[setIndex], reps, weight };
+        return { ...h, sets: newSets };
+      });
+    });
+  };
 
   const addRoutine = (routine: Routine) => {
     setRoutines((prev) => [...prev, routine]);
@@ -260,10 +407,24 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
         currentExerciseIndex,
         setCurrentRoutine,
         setCurrentExerciseIndex,
+        addSet,
+        removeSet,
+        updateSet,
         addRoutine,
         removeRoutine,
         addExerciseToRoutine,
         removeRoutineExercise,
+        reps, setReps,
+        weight, setWeight,
+        restTime, setRestTime,
+        timeRemaining, setTimeRemaining,
+        isTimerRunning, setIsTimerRunning,
+        pickerType, setPickerType,
+        weightUnit, setWeightUnit,
+        workoutSessionStartedAt, setWorkoutSessionStartedAt,
+        currentSlide, setCurrentSlide,
+        currentView, setCurrentView,
+        selectedRoutineId, setSelectedRoutineId,
       }}
     >
       {children}

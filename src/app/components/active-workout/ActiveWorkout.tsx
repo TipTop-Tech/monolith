@@ -9,15 +9,17 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogAction,
+  AlertDialogCancel,
 } from "../ui/alert-dialog";
 import { useWorkout } from "../../context/WorkoutContext";
 import { useNavigate, useLocation } from "react-router";
-import { Play, Pause, RotateCcw, Plus } from "lucide-react";
+import { Play, Pause, RotateCcw, Plus, Edit2, X, Trash2 } from "lucide-react";
 // react-slick has no bundled TypeScript declarations; ignore the missing types here
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: module has no type declarations
 import Slider from "react-slick";
 import { ScrollPicker } from "./ScrollPicker";
+
 
 export function ActiveWorkout() {
   const navigate = useNavigate();
@@ -29,7 +31,10 @@ export function ActiveWorkout() {
     exercises,
     routines,
     setCurrentRoutine,
+    weightUnit,
+    setWeightUnit,
   } = useWorkout();
+
   const db = usePowerSync();
 
   const [reps, setReps] = useState(0);
@@ -41,37 +46,27 @@ export function ActiveWorkout() {
   const [workoutSessionStartedAt, setWorkoutSessionStartedAt] = useState<number | null>(null);
   const [currentSlide, setCurrentSlide] = useState(1);
   const [currentView, setCurrentView] = useState(1);
+  const [editingSetId, setEditingSetId] = useState<string | null>(null);
+  const [setToDeleteId, setSetToDeleteId] = useState<string | null>(null);
+  const [showEndExerciseConfirm, setShowEndExerciseConfirm] = useState(false);
 
   const { showWarning, storageStatus, checkStorage, dismissWarning } = useStorageWarning();
 
   const sliderRef = useRef<Slider>(null);
+  const isFirstRender = useRef(true);
 
   useEffect(() => {
-    let interval: number | undefined;
-    if (isTimerRunning && timeRemaining > 0) {
-      interval = window.setInterval(() => {
-        setTimeRemaining((prev) => {
-          if (prev <= 1) {
-            setIsTimerRunning(false);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
     }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isTimerRunning, timeRemaining]);
-
-  useEffect(() => {
     const timer = window.setTimeout(() => {
       sliderRef.current?.slickGoTo(1);
       setCurrentSlide(1);
     }, 0);
 
     return () => window.clearTimeout(timer);
-  }, [currentRoutine, currentExerciseIndex]);
+  }, [currentRoutine, currentExerciseIndex, setCurrentSlide]);
 
   const currentExercise = currentRoutine
     ? exercises.find(
@@ -102,11 +97,12 @@ export function ActiveWorkout() {
   };
 
   const handleSelectExercise = (routine: (typeof routines)[number], exerciseIndex: number) => {
+    const routineExercise = routine.exercises[exerciseIndex];
     setCurrentRoutine(routine);
     setCurrentExerciseIndex(exerciseIndex);
     setWorkoutSessionStartedAt(Date.now());
-    setReps(0);
-    setWeight(0);
+    setReps(routineExercise?.targetReps ?? 0);
+    setWeight(routineExercise?.suggestedWeightLbs ?? 0);
     setRestTime(90);
     setTimeRemaining(0);
     setIsTimerRunning(false);
@@ -118,31 +114,40 @@ export function ActiveWorkout() {
     const state = (location as any).state as { openRoutineId?: string } | undefined;
     if (state?.openRoutineId) {
       setSelectedRoutineId(state.openRoutineId);
+      setCurrentView(2);
       // remove navigation state
       navigate("/", { replace: true });
     }
-  }, [location]);
+  }, [location, navigate]);
 
   const handleLogSet = async () => {
     if (!currentExercise || reps === 0 || weight === 0) return;
 
-    await db.execute(
-      'INSERT INTO workoutHistory (id, exerciseId, reps, weight, date) VALUES (uuid(), ?, ?, ?, ?)',
-      [currentExercise.id, reps, weight, new Date().toISOString()]
-    );
-    
-    setReps(0);
-    setWeight(0);
-    setTimeRemaining(restTime);
-    setIsTimerRunning(true);
+    if (editingSetId !== null) {
+      await db.execute(
+        'UPDATE workoutHistory SET reps = ?, weight = ? WHERE id = ?',
+        [reps, weight, editingSetId]
+      );
+      setEditingSetId(null);
+      setReps(0);
+      setWeight(0);
+    } else {
+      await db.execute(
+        'INSERT INTO workoutHistory (id, exerciseId, reps, weight, date) VALUES (uuid(), ?, ?, ?, ?)',
+        [currentExercise.id, reps, weight, new Date().toISOString()]
+      );
+
+      setReps(0);
+      setWeight(0);
+      setTimeRemaining(restTime);
+      setIsTimerRunning(true);
+    }
 
     setTimeout(() => {
       if (sliderRef.current) {
         sliderRef.current.slickGoTo(1);
       }
     }, 100);
-    // Checks to see if storage >= 150mb
-    checkStorage();
   };
 
   const handleEndWorkout = () => {
@@ -154,10 +159,10 @@ export function ActiveWorkout() {
     setIsTimerRunning(false);
     setPickerType(null);
     setCurrentSlide(1);
+    setEditingSetId(null);
   };
 
   const handleEndExercise = () => {
-
     setWorkoutSessionStartedAt(null);
     setReps(0);
     setWeight(0);
@@ -165,6 +170,8 @@ export function ActiveWorkout() {
     setIsTimerRunning(false);
     setPickerType(null);
     setCurrentView(2);
+    setEditingSetId(null);
+    setShowEndExerciseConfirm(false);
   };
 
 
@@ -218,6 +225,11 @@ export function ActiveWorkout() {
                     <div className="text-left">
                       <div className="display-font text-2xl bevel-text">{exercise?.name ?? "Unknown Exercise"}</div>
                       <div className="label-font text-muted-foreground mt-1">{routineExercise.sets} SETS × {routineExercise.targetReps} REPS</div>
+                      {routineExercise.suggestedWeightLbs ? (
+                        <div className="label-font text-[10px] tracking-[0.22em] text-muted-foreground/80 mt-1">
+                          AI START ≈ {routineExercise.suggestedWeightLbs} LBS
+                        </div>
+                      ) : null}
                     </div>
 
                     <div className="flex items-center gap-3 text-muted-foreground">
@@ -265,7 +277,7 @@ export function ActiveWorkout() {
     slidesToShow: 1,
     slidesToScroll: 1,
     arrows: false,
-    initialSlide: 1,
+    initialSlide: currentSlide,
     centerMode: true,
     centerPadding: "40px",
     beforeChange: (_current: number, next: number) => setCurrentSlide(next),
@@ -308,9 +320,12 @@ export function ActiveWorkout() {
             <div className="display-font text-4xl md:text-5xl bevel-text">{currentExercise?.name ?? "EXERCISE"}</div>
 
             <div className="label-font text-muted-foreground mt-7 sm:mt-8">REST TIME</div>
-            <div className="display-font text-[min(30vw,150px)] sm:text-[min(40vw,180px)] leading-none bevel-text-large mt-2 sm:mt-4">
+            <button
+              onClick={() => setPickerType("restTime")}
+              className="display-font text-[min(30vw,150px)] sm:text-[min(40vw,180px)] leading-none bevel-text-large mt-2 sm:mt-4 transition-all hover:scale-105 active:scale-95"
+            >
               {timeRemaining > 0 ? formatTime(timeRemaining) : "--:--"}
-            </div>
+            </button>
 
             {/* Progress Bar - Directional Lighting */}
             <div className="w-full max-w-sm h-1 bg-secondary mb-4 sm:mb-8 overflow-hidden">
@@ -323,22 +338,37 @@ export function ActiveWorkout() {
               />
             </div>
 
-            <div className="flex gap-4 sm:gap-6">
+            <div className="flex gap-3 sm:gap-4 mt-2 items-center justify-center">
+              <button
+                onClick={() => setTimeRemaining(prev => Math.max(0, prev - 10))}
+                className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center bg-secondary bevel-element hover:bg-accent transition-all active:scale-95 label-font text-xs text-muted-foreground"
+              >
+                -10S
+              </button>
+
               <button
                 onClick={() => setIsTimerRunning(!isTimerRunning)}
-                className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center bg-accent bevel-element hover:bg-muted transition-all active:scale-95 disabled:opacity-30"
+                className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center bg-primary text-primary-foreground bevel-element hover:bg-primary/90 transition-all active:scale-95 disabled:opacity-30"
                 disabled={timeRemaining === 0}
               >
-                {isTimerRunning ? <Pause size={20} className="sm:w-6 sm:h-6" /> : <Play size={20} className="sm:w-6 sm:h-6" />}
+                {isTimerRunning ? <Pause size={24} /> : <Play size={24} />}
               </button>
+
               <button
                 onClick={() => {
                   setTimeRemaining(restTime);
                   setIsTimerRunning(false);
                 }}
-                className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center bg-accent bevel-element hover:bg-muted transition-all active:scale-95"
+                className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center bg-accent bevel-element hover:bg-muted transition-all active:scale-95"
               >
-                <RotateCcw size={20} className="sm:w-6 sm:h-6" />
+                <RotateCcw size={20} />
+              </button>
+
+              <button
+                onClick={() => setTimeRemaining(prev => prev + 30)}
+                className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center bg-secondary bevel-element hover:bg-accent transition-all active:scale-95 label-font text-xs text-muted-foreground"
+              >
+                +30S
               </button>
             </div>
           </div>
@@ -349,7 +379,7 @@ export function ActiveWorkout() {
               <div className="px-2">
                 <div className="flex flex-col items-center justify-center py-4 sm:py-8 min-h-[clamp(14rem,32vh,22rem)] gap-4 sm:gap-6">
                   <button
-                    onClick={handleEndExercise}
+                    onClick={() => setShowEndExerciseConfirm(true)}
                     className="w-[min(64vw,16rem)] aspect-square max-w-none px-6 bg-secondary bevel-element hover:bg-accent transition-all active:scale-98 flex items-center justify-center"
                   >
                     <div className="display-font text-[50px] sm:text-sm tracking-[0.3em] text-muted-foreground">END EXERCISE</div>
@@ -359,6 +389,19 @@ export function ActiveWorkout() {
 
               <div className="px-2">
                 <div className="flex flex-col items-center justify-center py-6 sm:py-12 gap-4 sm:gap-6">
+                  {editingSetId !== null && (
+                    <div className="label-font text-[10px] sm:text-xs text-primary mb-2 tracking-[0.2em] bevel-element px-3 py-1 bg-primary/10 rounded-full flex items-center gap-2">
+                      <Edit2 size={12} /> EDITING SET
+                      <button onClick={() => {
+                        setEditingSetId(null);
+                        setReps(0);
+                        setWeight(0);
+                      }} className="ml-2 text-muted-foreground hover:text-foreground p-1">
+                        <X size={12} />
+                      </button>
+                    </div>
+                  )}
+
                   <button
                     onClick={() => setPickerType("reps")}
                     className="w-3/4 max-w-[12rem] py-3 sm:py-4 bg-secondary bevel-element hover:bg-accent transition-all active:scale-98"
@@ -384,40 +427,71 @@ export function ActiveWorkout() {
                   <button
                     onClick={handleLogSet}
                     disabled={reps === 0 || weight === 0}
-                    className="w-3/4 max-w-[12rem] py-3 sm:py-4 bg-primary text-primary-foreground bevel-element hover:opacity-90 transition-all active:scale-98 disabled:opacity-20 flex items-center justify-center gap-2"
+                    className={`w-3/4 max-w-[12rem] py-3 sm:py-4 text-primary-foreground bevel-element hover:opacity-90 transition-all active:scale-98 disabled:opacity-20 flex items-center justify-center gap-2 ${editingSetId !== null ? 'bg-orange-500' : 'bg-primary'}`}
                   >
-                    <Plus size={18} className="sm:w-5 sm:h-5" />
-                    <span className="label-font">LOG SET</span>
+                    {editingSetId !== null ? <Edit2 size={18} className="sm:w-5 sm:h-5" /> : <Plus size={18} className="sm:w-5 sm:h-5" />}
+                    <span className="label-font">{editingSetId !== null ? 'SAVE EDIT' : 'LOG SET'}</span>
                   </button>
                 </div>
               </div>
 
-              {[...visibleSets].reverse().map((set, index) => (
-                <div key={index} className="px-1 sm:px-2">
-                  <div className="flex flex-col items-center justify-center py-8 sm:py-14">
-                    <div className="label-font text-[11px] sm:text-xs text-muted-foreground mb-5 sm:mb-8">
-                      SET {visibleSets.length - index}
-                    </div>
-                    <div className="flex w-full max-w-sm sm:max-w-md items-end justify-center gap-4 sm:gap-6 mx-auto">
-                      <div className="flex flex-1 flex-col items-center text-center">
-                        <div className="display-font text-[min(18vw,92px)] sm:text-[min(22vw,112px)] leading-none bevel-text-large mb-2">
-                          {set.reps}
+              {[...visibleSets].reverse().map((set, index) => {
+                return (
+                  <div key={set.date} className="px-1 sm:px-2">
+                    <div className="flex flex-col items-center justify-center py-8 sm:py-14">
+                      <div className="flex items-center justify-center gap-3 mb-5 sm:mb-8">
+                        <div className="label-font text-[11px] sm:text-xs text-muted-foreground">
+                          SET {visibleSets.length - index}
                         </div>
-                        <div className="label-font text-[11px] sm:text-xs text-muted-foreground">REPS</div>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => {
+                              if (currentExercise) {
+                                setEditingSetId(set.id);
+                                setReps(set.reps);
+                                setWeight(set.weight);
+                                sliderRef.current?.slickGoTo(1);
+                              }
+                            }}
+                            className="text-muted-foreground/50 hover:text-orange-500 transition-colors active:scale-95 p-1"
+                            aria-label="Edit set"
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (currentExercise) {
+                                setSetToDeleteId(set.id);
+                              }
+                            }}
+                            className="text-muted-foreground/50 hover:text-destructive transition-colors active:scale-95 p-1"
+                            aria-label="Delete set"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex flex-1 flex-col items-center text-center">
-                        <div className="display-font text-[min(18vw,92px)] sm:text-[min(22vw,112px)] leading-none bevel-text-large mb-2">
-                          {set.weight}
+                      <div className="flex w-full max-w-sm sm:max-w-md items-end justify-center gap-4 sm:gap-6 mx-auto">
+                        <div className="flex flex-1 flex-col items-center text-center">
+                          <div className="display-font text-[min(18vw,92px)] sm:text-[min(22vw,112px)] leading-none bevel-text-large mb-2">
+                            {set.reps}
+                          </div>
+                          <div className="label-font text-[11px] sm:text-xs text-muted-foreground">REPS</div>
                         </div>
-                        <div className="label-font text-[11px] sm:text-xs text-muted-foreground">LBS</div>
+                        <div className="flex flex-1 flex-col items-center text-center">
+                          <div className="display-font text-[min(18vw,92px)] sm:text-[min(22vw,112px)] leading-none bevel-text-large mb-2">
+                            {set.weight}
+                          </div>
+                          <div className="label-font text-[11px] sm:text-xs text-muted-foreground">LBS</div>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </Slider>
 
-            <div className="mt-3 sm:mt-5 flex items-center justify-center gap-1.5 sm:gap-2 pb-0 sm:pb-1" aria-label="Set view position">
+            <div className="mt-1 sm:mt-3 flex items-center justify-center gap-0 pb-0 sm:pb-1" aria-label="Set view position">
               {Array.from({ length: slideCount }).map((_, index) => {
                 const isActive = index === currentSlide;
 
@@ -428,9 +502,12 @@ export function ActiveWorkout() {
                     onClick={() => sliderRef.current?.slickGoTo(index)}
                     aria-label={`Go to slide ${index + 1}`}
                     aria-current={isActive ? "true" : undefined}
-                    className={`h-2 rounded-full transition-all duration-200 ${isActive ? "w-6 bg-primary" : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/60"
-                      }`}
-                  />
+                    className="py-4 px-2"
+                  >
+                    <div
+                      className={`h-2 rounded-full transition-all duration-200 mx-auto ${isActive ? "w-6 bg-primary" : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/60"}`}
+                    />
+                  </button>
                 );
               })}
             </div>
@@ -460,6 +537,27 @@ export function ActiveWorkout() {
             suffix=""
             title="WEIGHT"
             onClose={() => setPickerType(null)}
+            allowCustomInput={true}
+            unitOptions={["LB", "KG"]}
+            selectedUnit={weightUnit}
+            onUnitChange={setWeightUnit}
+          />
+        )}
+
+        {pickerType === "restTime" && (
+          <ScrollPicker
+            value={restTime}
+            onChange={(val) => {
+              setRestTime(val);
+              setTimeRemaining(val);
+              setIsTimerRunning(false);
+            }}
+            min={15}
+            max={300}
+            step={15}
+            title="SET REST TIME"
+            onClose={() => setPickerType(null)}
+            formatValue={formatTime}
           />
         )}
 
@@ -485,6 +583,50 @@ export function ActiveWorkout() {
             <AlertDialogFooter>
               <AlertDialogAction onClick={dismissWarning} className="label-font bg-primary text-primary-foreground bevel-element hover:opacity-90 transition-all active:scale-98">
                 CONTINUE
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog open={setToDeleteId !== null} onOpenChange={(open) => !open && setSetToDeleteId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="display-font text-2xl bevel-text">Delete Set</AlertDialogTitle>
+              <AlertDialogDescription className="label-font text-muted-foreground">
+                Are you sure you want to delete this set? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setSetToDeleteId(null)} className="label-font bg-secondary text-foreground hover:bg-accent border-none bevel-element">CANCEL</AlertDialogCancel>
+              <AlertDialogAction onClick={async () => {
+                if (setToDeleteId !== null) {
+                  await db.execute('DELETE FROM workoutHistory WHERE id = ?', [setToDeleteId]);
+                  if (editingSetId === setToDeleteId) {
+                    setEditingSetId(null);
+                    setReps(0);
+                    setWeight(0);
+                  }
+                }
+                setSetToDeleteId(null);
+              }} className="label-font bg-destructive text-destructive-foreground hover:bg-destructive/90 bevel-element">
+                DELETE
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+        {/* End Exercise Confirmation Modal */}
+        <AlertDialog open={showEndExerciseConfirm} onOpenChange={setShowEndExerciseConfirm}>
+          <AlertDialogContent className="bg-background border-border bevel-element">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="display-font text-2xl bevel-text">End Exercise</AlertDialogTitle>
+              <AlertDialogDescription className="label-font text-muted-foreground">
+                Are you sure you are done with this exercise?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setShowEndExerciseConfirm(false)} className="label-font bg-secondary text-foreground hover:bg-accent border-none bevel-element">CANCEL</AlertDialogCancel>
+              <AlertDialogAction onClick={handleEndExercise} className="label-font bg-primary text-primary-foreground hover:bg-primary/90 bevel-element">
+                CONFIRM
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
