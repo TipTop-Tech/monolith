@@ -23,9 +23,7 @@ export default defineConfig({
     react(),
     tailwindcss()
   ],
-  optimizeDeps: {
-    exclude: ['jeep-sqlite']
-  },
+
   resolve: {
     alias: {
       // Alias @ to the src directory
