@@ -1,23 +1,55 @@
-import { PowerSyncBackendConnector, AbstractPowerSyncDatabase, UpdateType } from '@powersync/web';
+import { PowerSyncBackendConnector, AbstractPowerSyncDatabase } from '@powersync/web';
+import { supabase } from './supabase';
 
 export class Connector implements PowerSyncBackendConnector {
   async fetchCredentials() {
-    // Implement fetchCredentials to obtain a JWT from your authentication service.
-    // See https://docs.powersync.com/installation/authentication-setup
-    // If you're using Supabase or Firebase, you can re-use the JWT from those clients, see
-    // - https://docs.powersync.com/installation/authentication-setup/supabase-auth
-    // - https://docs.powersync.com/installation/authentication-setup/firebase-auth
+    let { data: { session }, error } = await supabase.auth.getSession();
+    
+    if (error || !session) {
+      // Attempt anonymous sign-in if no session exists
+      const { data: signInData, error: signInError } = await supabase.auth.signInAnonymously();
+      if (signInError) {
+        throw new Error(`Failed to sign in anonymously: ${signInError.message}`);
+      }
+      session = signInData.session;
+    }
+    
+    if (!session) {
+      throw new Error('Failed to obtain a session');
+    }
+    
     return {
-        endpoint: 'https://6a2f6aef35ca576ca0dcc181.powersync.journeyapps.com',
-        // Use a development token (see Authentication Setup https://docs.powersync.com/installation/authentication-setup/development-tokens) to get up and running quickly
-        token: 'An authentication token' // Replace with your actual development token or fetch it dynamically
+        endpoint: import.meta.env.VITE_POWERSYNC_URL || 'https://6a2f6aef35ca576ca0dcc181.powersync.journeyapps.com',
+        token: session.access_token || ''
     };
   }
 
   async uploadData(database: AbstractPowerSyncDatabase) {
-    // Implement uploadData to send local changes to your backend service.
-    // You can omit this method if you only want to sync data from the database to the client
+    const transaction = await database.getNextCrudTransaction();
 
-    // See example implementation here: https://docs.powersync.com/client-sdk-references/javascript-web#3-integrate-with-your-backend
+    if (!transaction) {
+      return;
+    }
+
+    try {
+      for (const operation of transaction.crud) {
+        const table = operation.table;
+        if (operation.op === 'PUT') {
+          const dataToInsert = { ...operation.opData, id: operation.id };
+          const { error } = await supabase.from(table).upsert(dataToInsert);
+          if (error) throw new Error(`Could not insert into ${table}: ${error.message}`);
+        } else if (operation.op === 'PATCH') {
+          const { error } = await supabase.from(table).update(operation.opData).eq('id', operation.id);
+          if (error) throw new Error(`Could not update ${table}: ${error.message}`);
+        } else if (operation.op === 'DELETE') {
+          const { error } = await supabase.from(table).delete().eq('id', operation.id);
+          if (error) throw new Error(`Could not delete from ${table}: ${error.message}`);
+        }
+      }
+      await transaction.complete();
+    } catch (ex: any) {
+      console.error('Data upload error:', ex.message);
+      throw ex;
+    }
   }
 }

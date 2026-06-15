@@ -1,0 +1,7 @@
+bucket_definitions:
+  # This is a global bucket that synchronizes all data to all clients.
+  # For production, consider using parameterized buckets to restrict data per user.
+  global:
+    data:
+      - SELECT * FROM users
+      - SELECT * FROM "workoutHistory"

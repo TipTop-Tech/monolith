@@ -12,14 +12,14 @@ export const AppSchema = new Schema({
    * Represents users of the app.
    */
   users: new Table({
-    username: column.text,
-    email: column.text,
+    // username: column.text,
+    // email: column.text,
   }),
   /**
    * Tracks individual sets a user has accomplished for an exercise.
    */
   workoutHistory: new Table({
-    username: column.text,
+    // username: column.text,
     exerciseId: column.text,
     reps: column.integer,
     weight: column.real,
