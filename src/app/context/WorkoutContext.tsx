@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { getHistoryFromDB, saveHistoryToDB, migrateFromLocalStorage } from "../../utils/storage";
 
 export interface Exercise {
   id: string;
@@ -25,22 +24,11 @@ export interface Routine {
   exercises: RoutineExercise[];
 }
 
-export interface WorkoutHistory {
-  exerciseId: string;
-  sets: WorkoutSet[];
-}
+
 
 interface WorkoutContextType {
   exercises: Exercise[];
   routines: Routine[];
-  history: WorkoutHistory[];
-  currentRoutine: Routine | null;
-  currentExerciseIndex: number;
-  setCurrentRoutine: (routine: Routine | null) => void;
-  setCurrentExerciseIndex: (index: number) => void;
-  addSet: (exerciseId: string, reps: number, weight: number) => void;
-  removeSet: (exerciseId: string, setIndex: number) => void;
-  addRoutine: (routine: Routine) => void;
   removeRoutine: (routineId: string) => void;
   addExerciseToRoutine: (routineId: string, routineExercise: RoutineExercise) => void;
   removeRoutineExercise: (routineId: string, exerciseIndex: number) => void;
@@ -195,32 +183,9 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
     const stored = localStorage.getItem("workoutRoutines");
     return stored ? JSON.parse(stored) : SAMPLE_ROUTINES;
   });
-  const [history, setHistory] = useState<WorkoutHistory[]>([]);
-  const [isHistoryLoaded, setIsHistoryLoaded] = useState(false);
   const [currentRoutine, setCurrentRoutine] = useState<Routine | null>(null);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
-  /*
-  Initliazes user's workout history on applicaiton startup
-  
-  - It runs only once on mount
-  - Attempts local storage migration
-    - Retrieves from indexedDB if local storage migration fails
-  - Updates states to reflect the user's workout history
-  */
-  useEffect(() => {
-    const initHistory = async () => {
-      let data = await migrateFromLocalStorage();
-      if (!data) {
-        data = await getHistoryFromDB();
-      }
-      if (!data || data.length === 0) {
-        data = [];
-      }
-      setHistory(data);
-      setIsHistoryLoaded(true);
-    };
-    initHistory();
-  }, []);
+
   /**
    * This useEffect saves the user's workout routines to local storage
    * 
@@ -230,52 +195,6 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     localStorage.setItem("workoutRoutines", JSON.stringify(routines));
   }, [routines]);
-
-  useEffect(() => {
-    if (isHistoryLoaded) {
-      saveHistoryToDB(history).catch(e => console.error("Failed to save history to IndexedDB", e));
-    }
-  }, [history, isHistoryLoaded]);
-
-  const addSet = (exerciseId: string, reps: number, weight: number) => {
-    setHistory((prev) => {
-      const exerciseHistory = prev.find((h) => h.exerciseId === exerciseId);
-      const newSet: WorkoutSet = {
-        reps,
-        weight,
-        date: new Date().toISOString(),
-      };
-
-      if (exerciseHistory) {
-        return prev.map((h) =>
-          h.exerciseId === exerciseId
-            ? { ...h, sets: [...h.sets, newSet] }
-            : h
-        );
-      } else {
-        return [...prev, { exerciseId, sets: [newSet] }];
-      }
-    });
-  };
-  /**
-   * This handles the removal of a set from the history.
-   * 
-   * @param exerciseId - The ID of the exercise to remove the set from
-   * @param setIndex - The index of the set to remove
-   */
-  const removeSet = (exerciseId: string, setIndex: number) => {
-    setHistory((prev) => {
-      return prev
-        .map((h) => {
-          if (h.exerciseId !== exerciseId) return h;
-          return {
-            ...h,
-            sets: h.sets.filter((_, index) => index !== setIndex),
-          };
-        })
-        .filter((h) => h.sets.length > 0);
-    });
-  };
 
   const addRoutine = (routine: Routine) => {
     setRoutines((prev) => [...prev, routine]);
@@ -337,23 +256,17 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
       value={{
         exercises,
         routines,
-        history,
         currentRoutine,
         currentExerciseIndex,
         setCurrentRoutine,
         setCurrentExerciseIndex,
-        addSet,
-        removeSet,
         addRoutine,
         removeRoutine,
         addExerciseToRoutine,
         removeRoutineExercise,
       }}
     >
-      {/*
-        Only renders the children when the history is loaded
-      */}
-      {isHistoryLoaded ? children : null}
+      {children}
     </WorkoutContext.Provider>
   );
 }

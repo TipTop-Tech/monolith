@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router";
+import { useQuery, usePowerSync } from '@powersync/react';
 import { useWorkout } from "../../context/WorkoutContext";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { ArrowLeft } from "lucide-react";
@@ -16,32 +17,37 @@ import { Button } from "../ui/button";
 
 export function WorkoutHistory() {
   const { exerciseId } = useParams<{ exerciseId: string }>();
-  const { exercises, history, removeSet } = useWorkout();
+  const { exercises } = useWorkout();
+  const db = usePowerSync();
   const navigate = useNavigate();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [setToDelete, setSetToDelete] = useState<{ index: number } | null>(null);
+  const [setToDelete, setSetToDelete] = useState<{ id: string } | null>(null);
+
+  const { data: exerciseHistoryRecords } = useQuery(
+    'SELECT * FROM workoutHistory WHERE exerciseId = ? ORDER BY date ASC',
+    [exerciseId]
+  );
 
   /**
-   * Deleets the set from the history at the given index.
-   * @param originalIndex The index of the set to delete.
+   * Deleets the set from the history at the given id.
+   * @param id The id of the set to delete.
    */
-  const handleDeleteRequest = (originalIndex: number) => {
-    setSetToDelete({ index: originalIndex });
+  const handleDeleteRequest = (id: string) => {
+    setSetToDelete({ id });
     setIsDeleteDialogOpen(true);
   };
   /**
    * Confirms the deletion of a set from the history.
    */
-  const confirmDelete = () => {
-    if (exerciseId && setToDelete !== null) {
-      removeSet(exerciseId, setToDelete.index);
+  const confirmDelete = async () => {
+    if (setToDelete !== null) {
+      await db.execute('DELETE FROM workoutHistory WHERE id = ?', [setToDelete.id]);
     }
     setIsDeleteDialogOpen(false);
     setSetToDelete(null);
   };
 
   const exercise = exercises.find((e) => e.id === exerciseId);
-  const exerciseHistory = history.find((h) => h.exerciseId === exerciseId);
 
   if (!exercise) {
     return (
@@ -61,10 +67,10 @@ export function WorkoutHistory() {
     );
   }
 
-  const hasHistory = !!exerciseHistory && exerciseHistory.sets.length > 0;
+  const hasHistory = !!exerciseHistoryRecords && exerciseHistoryRecords.length > 0;
 
   const chartData = hasHistory
-    ? exerciseHistory.sets
+    ? exerciseHistoryRecords
       .map((set) => ({
         date: new Date(set.date).toLocaleDateString("en-US", {
           month: "short",
@@ -144,19 +150,16 @@ export function WorkoutHistory() {
 
       <div>
         <div className="label-font text-muted-foreground mb-6">ALL SETS</div>
-        {hasHistory && exerciseHistory ? (
+        {hasHistory && exerciseHistoryRecords ? (
           <div className="space-y-4">
             {/**
              * Loops through the sets in the history and displays them in a swipeable row.
-             * @param set The set to display.
-             * @param mappedIndex The index of the set in the history.
              */}
-            {exerciseHistory.sets.slice().reverse().map((set, mappedIndex) => {
-              const originalIndex = exerciseHistory.sets.length - 1 - mappedIndex;
+            {exerciseHistoryRecords.slice().reverse().map((set) => {
               return (
                 <SwipeableRow
-                  key={originalIndex}
-                  onRemove={() => handleDeleteRequest(originalIndex)}
+                  key={set.id}
+                  onRemove={() => handleDeleteRequest(set.id)}
                   className="flex items-center justify-between py-4 px-6 bg-secondary bevel-element"
                 >
                   <div className="label-font text-muted-foreground">

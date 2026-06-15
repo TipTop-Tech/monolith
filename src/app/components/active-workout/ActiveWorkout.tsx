@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useQuery, usePowerSync } from '@powersync/react';
 import { useStorageWarning } from "../../hooks/useStorageWarning";
 import {
   AlertDialog,
@@ -26,11 +27,10 @@ export function ActiveWorkout() {
     currentExerciseIndex,
     setCurrentExerciseIndex,
     exercises,
-    addSet,
     routines,
     setCurrentRoutine,
-    history,
   } = useWorkout();
+  const db = usePowerSync();
 
   const [reps, setReps] = useState(0);
   const [weight, setWeight] = useState(0);
@@ -79,11 +79,12 @@ export function ActiveWorkout() {
     )
     : null;
 
-  const currentExerciseHistory = currentExercise
-    ? history.find((h) => h.exerciseId === currentExercise.id)
-    : null;
+  const { data: exerciseHistoryRecords } = useQuery(
+    'SELECT * FROM workoutHistory WHERE exerciseId = ? ORDER BY date ASC',
+    [currentExercise?.id]
+  );
 
-  const visibleSets = currentExerciseHistory?.sets.filter((set) => {
+  const visibleSets = exerciseHistoryRecords?.filter((set) => {
     const setDate = new Date(set.date).toDateString();
     const today = new Date().toDateString();
     const startedAfterWorkoutBegan =
@@ -122,10 +123,14 @@ export function ActiveWorkout() {
     }
   }, [location]);
 
-  const handleLogSet = () => {
+  const handleLogSet = async () => {
     if (!currentExercise || reps === 0 || weight === 0) return;
 
-    addSet(currentExercise.id, reps, weight);
+    await db.execute(
+      'INSERT INTO workoutHistory (id, exerciseId, reps, weight, date) VALUES (uuid(), ?, ?, ?, ?)',
+      [currentExercise.id, reps, weight, new Date().toISOString()]
+    );
+    
     setReps(0);
     setWeight(0);
     setTimeRemaining(restTime);

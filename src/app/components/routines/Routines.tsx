@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useQuery } from '@powersync/react';
 import { useWorkout } from "../../context/WorkoutContext";
 import { useNavigate } from "react-router";
 import { ChevronDown, ChevronRight, ChevronUp, MoreVertical, Plus, Trash2 } from "lucide-react";
@@ -131,7 +132,9 @@ function RoutineExerciseRow({
 }
 
 export function Routines() {
-  const { routines, exercises, addRoutine, removeRoutine, addExerciseToRoutine, removeRoutineExercise, history } = useWorkout();
+  const { routines, exercises, addRoutine, removeRoutine, addExerciseToRoutine, removeRoutineExercise } = useWorkout();
+  
+  const { data: allWorkoutHistoryRecords } = useQuery('SELECT * FROM workoutHistory ORDER BY date ASC');
   const navigate = useNavigate();
   const scrollRootRef = useRef<HTMLDivElement>(null);
   const routineRefs = useRef<(HTMLElement | null)[]>([]);
@@ -405,12 +408,12 @@ export function Routines() {
                             pageExercises.map((routineExercise, localIndex) => {
                               const globalIndex = globalIndexOffset + localIndex;
                               const exercise = exercises.find((e) => e.id === routineExercise.exerciseId);
-                              const exerciseHistory = history.find(
+                              const exerciseHistoryRecords = allWorkoutHistoryRecords?.filter(
                                 (h) => h.exerciseId === routineExercise.exerciseId
-                              );
+                              ) || [];
                               const lastSet =
-                                exerciseHistory && exerciseHistory.sets.length > 0
-                                  ? exerciseHistory.sets[exerciseHistory.sets.length - 1]
+                                exerciseHistoryRecords.length > 0
+                                  ? exerciseHistoryRecords[exerciseHistoryRecords.length - 1]
                                   : null;
 
                               return (
