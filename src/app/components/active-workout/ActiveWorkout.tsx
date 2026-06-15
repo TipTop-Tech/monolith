@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useWorkout } from "../../context/WorkoutContext";
 import { useNavigate, useLocation } from "react-router";
-import { Play, Pause, RotateCcw, Plus } from "lucide-react";
+import { Play, Pause, RotateCcw, Plus, Edit2, X, Trash2 } from "lucide-react";
 // react-slick has no bundled TypeScript declarations; ignore the missing types here
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: module has no type declarations
@@ -18,14 +18,6 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
 } from "../ui/alert-dialog";
-import { useWorkout } from "../../context/WorkoutContext";
-import { useNavigate, useLocation } from "react-router";
-import { Play, Pause, RotateCcw, Plus, Trash2, Edit2, X } from "lucide-react";
-// react-slick has no bundled TypeScript declarations; ignore the missing types here
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore: module has no type declarations
-import Slider from "react-slick";
-import { ScrollPicker } from "./ScrollPicker";
 
 export function ActiveWorkout() {
   const navigate = useNavigate();
