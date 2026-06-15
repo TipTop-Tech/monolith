@@ -303,29 +303,21 @@ export function Routines() {
     });
 
     setIsAddWorkoutOpen(false);
-  };
 
-  /**
-     * This code block runs after the routine has been added to the state.
-     * 
-     * Why? 
-     *  - We need the updated list of exercises to calculate the target page index
-     *  - We use requestAnimationFrame and setTimeout to ensure 
-     *    that the state has been updated before calculating the target page index
-     */
-  const routine = routines.find(r => r.id === selectedRoutineId);
-  if (routine) {
-    const newLength = routine.exercises.length + 1;
-    const targetPageIndex = Math.floor((newLength - 1) / 5);
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        const node = sectionRefs.current[`${selectedRoutineId}-page-${targetPageIndex}`];
-        if (node) {
-          node.scrollIntoView({ behavior: "smooth", block: "start" });
-        }
-      }, 100);
-    });
-  }
+    const routine = routines.find(r => r.id === selectedRoutineId);
+    if (routine) {
+      const newLength = routine.exercises.length + 1;
+      const targetPageIndex = Math.floor((newLength - 1) / 5);
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          const node = sectionRefs.current[`${selectedRoutineId}-page-${targetPageIndex}`];
+          if (node) {
+            node.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+        }, 100);
+      });
+    }
+  };
 
   const openAIRoutine = () => {
     setAiResult(null);
@@ -419,7 +411,7 @@ export function Routines() {
   }, [activeRoutineIndex, routines.length]);
 
   const CreateRoutineButtons = ({ compact = false }: { compact?: boolean }) => (
-    <div className={compact ? "grid grid-cols-2 gap-3" : "grid grid-cols-1 gap-3"}>
+    <div className={(compact ? "grid grid-cols-2 gap-3" : "grid grid-cols-1 gap-3") + " pointer-events-auto"}>
       <button
         type="button"
         onClick={() => {
@@ -564,10 +556,6 @@ export function Routines() {
 
 
 
-                        <div className="mb-4">
-                          <CreateRoutineButtons compact />
-                        </div>
-
                         {isLastPage && routine.exercises.length < 10 && (
                           <div className={isLastRoutine && isLastPage ? "mt-3 mb-28 space-y-3" : "mt-3 space-y-3"}>
                             <button
@@ -593,13 +581,7 @@ export function Routines() {
 
                       {isLastRoutine && isLastPage && (
                         <div className="pointer-events-none absolute inset-x-6 bottom-3 z-20 md:inset-x-8">
-                          <button
-                            type="button"
-                            onClick={() => setIsAddRoutineOpen(true)}
-                            className="pointer-events-auto w-full py-4 px-6 bg-secondary/65 border border-white/15 backdrop-blur-md bevel-element hover:bg-accent/70 transition-all active:scale-[0.99]"
-                          >
-                            <span className="label-font text-left">ADD ROUTINE</span>
-                          </button>
+                          <CreateRoutineButtons compact />
                         </div>
 
                       )}
