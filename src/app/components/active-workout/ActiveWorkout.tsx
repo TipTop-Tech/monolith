@@ -1,4 +1,12 @@
 import { useState, useEffect, useRef } from "react";
+import { useWorkout } from "../../context/WorkoutContext";
+import { useNavigate, useLocation } from "react-router";
+import { Play, Pause, RotateCcw, Plus } from "lucide-react";
+// react-slick has no bundled TypeScript declarations; ignore the missing types here
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: module has no type declarations
+import Slider from "react-slick";
+import { ScrollPicker } from "./ScrollPicker";
 import { useStorageWarning } from "../../hooks/useStorageWarning";
 import {
   AlertDialog,
@@ -94,11 +102,12 @@ export function ActiveWorkout() {
   };
 
   const handleSelectExercise = (routine: (typeof routines)[number], exerciseIndex: number) => {
+    const routineExercise = routine.exercises[exerciseIndex];
     setCurrentRoutine(routine);
     setCurrentExerciseIndex(exerciseIndex);
     setWorkoutSessionStartedAt(Date.now());
-    setReps(0);
-    setWeight(0);
+    setReps(routineExercise?.targetReps ?? 0);
+    setWeight(routineExercise?.suggestedWeightLbs ?? 0);
     setRestTime(90);
     setTimeRemaining(0);
     setIsTimerRunning(false);
@@ -110,10 +119,11 @@ export function ActiveWorkout() {
     const state = (location as any).state as { openRoutineId?: string } | undefined;
     if (state?.openRoutineId) {
       setSelectedRoutineId(state.openRoutineId);
+      setCurrentView(2);
       // remove navigation state
       navigate("/", { replace: true });
     }
-  }, [location]);
+  }, [location, navigate]);
 
   const handleLogSet = () => {
     if (!currentExercise || reps === 0 || weight === 0) return;
@@ -136,8 +146,6 @@ export function ActiveWorkout() {
         sliderRef.current.slickGoTo(1);
       }
     }, 100);
-    // Checks to see if storage >= 150mb
-    checkStorage();
   };
 
   const handleEndWorkout = () => {
@@ -215,6 +223,11 @@ export function ActiveWorkout() {
                     <div className="text-left">
                       <div className="display-font text-2xl bevel-text">{exercise?.name ?? "Unknown Exercise"}</div>
                       <div className="label-font text-muted-foreground mt-1">{routineExercise.sets} SETS × {routineExercise.targetReps} REPS</div>
+                      {routineExercise.suggestedWeightLbs ? (
+                        <div className="label-font text-[10px] tracking-[0.22em] text-muted-foreground/80 mt-1">
+                          AI START ≈ {routineExercise.suggestedWeightLbs} LBS
+                        </div>
+                      ) : null}
                     </div>
 
                     <div className="flex items-center gap-3 text-muted-foreground">
@@ -305,7 +318,7 @@ export function ActiveWorkout() {
             <div className="display-font text-4xl md:text-5xl bevel-text">{currentExercise?.name ?? "EXERCISE"}</div>
 
             <div className="label-font text-muted-foreground mt-7 sm:mt-8">REST TIME</div>
-            <button 
+            <button
               onClick={() => setPickerType("restTime")}
               className="display-font text-[min(30vw,150px)] sm:text-[min(40vw,180px)] leading-none bevel-text-large mt-2 sm:mt-4 transition-all hover:scale-105 active:scale-95"
             >
@@ -338,7 +351,7 @@ export function ActiveWorkout() {
               >
                 {isTimerRunning ? <Pause size={24} /> : <Play size={24} />}
               </button>
-              
+
               <button
                 onClick={() => {
                   setTimeRemaining(restTime);
@@ -423,56 +436,56 @@ export function ActiveWorkout() {
               {[...visibleSets].reverse().map((set, index) => {
                 const originalIndex = currentExerciseHistory?.sets.indexOf(set) ?? -1;
                 return (
-                <div key={set.date} className="px-1 sm:px-2">
-                  <div className="flex flex-col items-center justify-center py-8 sm:py-14">
-                    <div className="flex items-center justify-center gap-3 mb-5 sm:mb-8">
-                      <div className="label-font text-[11px] sm:text-xs text-muted-foreground">
-                        SET {visibleSets.length - index}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => {
-                            if (originalIndex !== -1 && currentExercise) {
-                              setEditingSetIndex(originalIndex);
-                              setReps(set.reps);
-                              setWeight(set.weight);
-                              sliderRef.current?.slickGoTo(1);
-                            }
-                          }}
-                          className="text-muted-foreground/50 hover:text-orange-500 transition-colors active:scale-95 p-1"
-                          aria-label="Edit set"
-                        >
-                          <Edit2 size={14} />
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (originalIndex !== -1 && currentExercise) {
-                              setSetToDelete(originalIndex);
-                            }
-                          }}
-                          className="text-muted-foreground/50 hover:text-destructive transition-colors active:scale-95 p-1"
-                          aria-label="Delete set"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </div>
-                    <div className="flex w-full max-w-sm sm:max-w-md items-end justify-center gap-4 sm:gap-6 mx-auto">
-                      <div className="flex flex-1 flex-col items-center text-center">
-                        <div className="display-font text-[min(18vw,92px)] sm:text-[min(22vw,112px)] leading-none bevel-text-large mb-2">
-                          {set.reps}
+                  <div key={set.date} className="px-1 sm:px-2">
+                    <div className="flex flex-col items-center justify-center py-8 sm:py-14">
+                      <div className="flex items-center justify-center gap-3 mb-5 sm:mb-8">
+                        <div className="label-font text-[11px] sm:text-xs text-muted-foreground">
+                          SET {visibleSets.length - index}
                         </div>
-                        <div className="label-font text-[11px] sm:text-xs text-muted-foreground">REPS</div>
-                      </div>
-                      <div className="flex flex-1 flex-col items-center text-center">
-                        <div className="display-font text-[min(18vw,92px)] sm:text-[min(22vw,112px)] leading-none bevel-text-large mb-2">
-                          {set.weight}
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => {
+                              if (originalIndex !== -1 && currentExercise) {
+                                setEditingSetIndex(originalIndex);
+                                setReps(set.reps);
+                                setWeight(set.weight);
+                                sliderRef.current?.slickGoTo(1);
+                              }
+                            }}
+                            className="text-muted-foreground/50 hover:text-orange-500 transition-colors active:scale-95 p-1"
+                            aria-label="Edit set"
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (originalIndex !== -1 && currentExercise) {
+                                setSetToDelete(originalIndex);
+                              }
+                            }}
+                            className="text-muted-foreground/50 hover:text-destructive transition-colors active:scale-95 p-1"
+                            aria-label="Delete set"
+                          >
+                            <Trash2 size={14} />
+                          </button>
                         </div>
-                        <div className="label-font text-[11px] sm:text-xs text-muted-foreground">LBS</div>
+                      </div>
+                      <div className="flex w-full max-w-sm sm:max-w-md items-end justify-center gap-4 sm:gap-6 mx-auto">
+                        <div className="flex flex-1 flex-col items-center text-center">
+                          <div className="display-font text-[min(18vw,92px)] sm:text-[min(22vw,112px)] leading-none bevel-text-large mb-2">
+                            {set.reps}
+                          </div>
+                          <div className="label-font text-[11px] sm:text-xs text-muted-foreground">REPS</div>
+                        </div>
+                        <div className="flex flex-1 flex-col items-center text-center">
+                          <div className="display-font text-[min(18vw,92px)] sm:text-[min(22vw,112px)] leading-none bevel-text-large mb-2">
+                            {set.weight}
+                          </div>
+                          <div className="label-font text-[11px] sm:text-xs text-muted-foreground">LBS</div>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
                 );
               })}
             </Slider>
@@ -490,7 +503,7 @@ export function ActiveWorkout() {
                     aria-current={isActive ? "true" : undefined}
                     className="py-4 px-2"
                   >
-                    <div 
+                    <div
                       className={`h-2 rounded-full transition-all duration-200 mx-auto ${isActive ? "w-6 bg-primary" : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/60"}`}
                     />
                   </button>
