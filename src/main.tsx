@@ -6,11 +6,15 @@ import React from "react";
 import { db } from "./database";
 import { defineCustomElements as jeepSqlite } from 'jeep-sqlite/loader';
 import { Capacitor } from '@capacitor/core';
+import { PowerSyncContext } from '@powersync/react';
 
 const renderApp = () => {
   createRoot(document.getElementById('root') as HTMLElement).render(
     <React.StrictMode>
-      <App />
+      {/* Provide the PowerSync database context to all child components */}
+      <PowerSyncContext.Provider value={db}>
+        <App />
+      </PowerSyncContext.Provider>
     </React.StrictMode>
   );
 };
