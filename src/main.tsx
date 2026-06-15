@@ -2,11 +2,11 @@
 import { createRoot } from "react-dom/client";
 import App from "./app/App.tsx";
 import "./styles/index.css";
+import React from "react";
+import { db } from "./database";
 import { defineCustomElements as jeepSqlite } from 'jeep-sqlite/loader';
 import { Capacitor } from '@capacitor/core';
-import React from "react";
 
-// Abstract the render method so we can call it conditionally
 const renderApp = () => {
   createRoot(document.getElementById('root') as HTMLElement).render(
     <React.StrictMode>
@@ -26,11 +26,27 @@ if (Capacitor.getPlatform() === 'web') {
 
   // 3. Pause React until the browser fully registers the custom element
   customElements.whenDefined('jeep-sqlite').then(() => {
-    renderApp();
+
+    db.init().then(() => {
+      console.log("PowerSync Database initialized successfully!");
+      renderApp();
+    }).catch((err) => {
+      console.error("Failed to initialize PowerSync Database:", err);
+    });
+
+
   }).catch((err) => {
     console.error('Failed to load jeep-sqlite custom element', err);
   });
+
 } else {
   // If native iOS/Android, skip the jeep-sqlite setup and render immediately
+  db.init().then(() => {
+    console.log("PowerSync Database initialized successfully!");
+    renderApp();
+  }).catch((err) => {
+    console.error("Failed to initialize PowerSync Database:", err);
+  });
   renderApp();
 }
+
