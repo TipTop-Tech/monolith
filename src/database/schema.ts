@@ -19,7 +19,7 @@ export const AppSchema = new Schema({
    * Tracks individual sets a user has accomplished for an exercise.
    */
   workoutHistory: new Table({
-    userId: column.text,
+    username: column.text,
     exerciseId: column.text,
     reps: column.integer,
     weight: column.real,

@@ -7,7 +7,7 @@ import { db } from "./database";
 import { defineCustomElements as jeepSqlite } from 'jeep-sqlite/loader';
 import { Capacitor } from '@capacitor/core';
 import { PowerSyncContext } from '@powersync/react';
-
+import { Connector } from './database/PowerSyncConnector';
 const renderApp = () => {
   createRoot(document.getElementById('root') as HTMLElement).render(
     <React.StrictMode>
@@ -33,6 +33,7 @@ if (Capacitor.getPlatform() === 'web') {
 
     db.init().then(() => {
       console.log("PowerSync Database initialized successfully!");
+      db.connect(new Connector());
       renderApp();
     }).catch((err) => {
       console.error("Failed to initialize PowerSync Database:", err);
@@ -47,6 +48,7 @@ if (Capacitor.getPlatform() === 'web') {
   // If native iOS/Android, skip the jeep-sqlite setup and render immediately
   db.init().then(() => {
     console.log("PowerSync Database initialized successfully!");
+    db.connect(new Connector());
     renderApp();
   }).catch((err) => {
     console.error("Failed to initialize PowerSync Database:", err);
