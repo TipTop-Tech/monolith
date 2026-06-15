@@ -1,84 +1,103 @@
+import { CapacitorSQLite, SQLiteConnection, SQLiteDBConnection } from '@capacitor-community/sqlite';
 import { WorkoutHistory } from '../app/context/WorkoutContext';
+import { Capacitor } from '@capacitor/core';
 
+const sqlite = new SQLiteConnection(CapacitorSQLite);
 const DB_NAME = 'WorkoutDB';
-const DB_VERSION = 1;
-const STORE_NAME = 'workoutHistory';
+
+// Cache the connection instance to prevent multiple connection attempts
+let dbInstance: SQLiteDBConnection | null = null;
+
 /**
- * Initializes the IndexedDB database.
- * @returns {Promise<IDBDatabase>} A promise that resolves with the database instance.
- * 
- * initDB(): Initializes and opens the IndexedDB instance. 
- * If it's a first-time setup (or upgrade), 
- * it creates the workoutHistory object store with { keyPath: 'exerciseId' }.
+ * Initializes and opens the SQLite instance. 
+ * Creates the workoutHistory table if it doesn't exist.
  */
-export const initDB = (): Promise<IDBDatabase> => {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
+export const initDB = async (): Promise<SQLiteDBConnection> => {
+  if (dbInstance) return dbInstance;
 
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve(request.result);
+  // Initialize the web store engine if running in the browser
+  if (Capacitor.getPlatform() === 'web') {
+    await sqlite.initWebStore();
+  }
 
-    request.onupgradeneeded = (event) => {
-      const db = (event.target as IDBOpenDBRequest).result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME, { keyPath: 'exerciseId' });
-      }
-    };
-  });
+  try {
+    // Check if the connection is already registered in the Capacitor ecosystem
+    const isConn = (await sqlite.isConnection(DB_NAME, false)).result;
+    if (isConn) {
+      dbInstance = await sqlite.retrieveConnection(DB_NAME, false);
+    } else {
+      dbInstance = await sqlite.createConnection(DB_NAME, false, 'no-encryption', 1, false);
+    }
+
+    await dbInstance.open();
+
+    // exerciseId acts as the unique identifier, while the raw object is stringified in 'data'
+    const schema = `
+      CREATE TABLE IF NOT EXISTS workoutHistory (
+        exerciseId TEXT PRIMARY KEY NOT NULL,
+        data TEXT NOT NULL
+      );
+    `;
+    await dbInstance.execute(schema);
+    return dbInstance;
+  } catch (error) {
+    console.error('Failed to initialize SQLite DB:', error);
+    throw error;
+  }
 };
-/*
- Gets history from a database
- @returns {Promise<WorkoutHistory[]>} A promise that resolves with the workout history.
 
- getHistoryFromDB(): Retrieves all records from the 
- workoutHistory object store in a read-only transaction.
-*/
+/**
+ * Retrieves all records from the workoutHistory table.
+ * Parses the JSON string back into standard JavaScript objects.
+ */
 export const getHistoryFromDB = async (): Promise<WorkoutHistory[]> => {
   const db = await initDB();
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(STORE_NAME, 'readonly');
-    const store = transaction.objectStore(STORE_NAME);
-    const request = store.getAll();
+  try {
+    const res = await db.query('SELECT data FROM workoutHistory');
 
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve(request.result);
-  });
+    if (res.values && res.values.length > 0) {
+      return res.values.map(row => JSON.parse(row.data));
+    }
+    return [];
+  } catch (error) {
+    console.error('Failed to fetch history:', error);
+    return [];
+  }
 };
+
 /**
- * Saves history to a database.
- * @param history 
- * @returns a Promise that resolves when the history is saved.
- * 
- * saveHistoryToDB(): Saves the full list of workout histories. 
- * To ensure the database stays perfectly in sync with the React application state, 
- * it clears the object store and writes the new/updated records back in a read-write transaction.
+ * Saves the full list of workout histories. 
+ * Clears the table and writes new records using a batched insert.
  */
 export const saveHistoryToDB = async (history: WorkoutHistory[]): Promise<void> => {
   const db = await initDB();
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(STORE_NAME, 'readwrite');
-    const store = transaction.objectStore(STORE_NAME);
+  try {
+    // Clear existing to keep exact sync (Replaces IndexedDB's store.clear())
+    await db.execute('DELETE FROM workoutHistory;');
 
-    // Clear existing to keep exact sync
-    const clearRequest = store.clear();
+    if (history.length === 0) return;
 
-    clearRequest.onsuccess = () => {
-      history.forEach((entry) => {
-        store.put(entry);
-      });
-    };
+    // Build a single bulk-insert statement for optimal performance
+    let insertSql = 'INSERT INTO workoutHistory (exerciseId, data) VALUES ';
+    const values: any[] = [];
 
-    transaction.oncomplete = () => resolve();
-    transaction.onerror = () => reject(transaction.error);
-  });
+    history.forEach((entry, index) => {
+      insertSql += '(?, ?)';
+      if (index < history.length - 1) insertSql += ', ';
+
+      // Assumes WorkoutHistory has an exerciseId property (based on the old keyPath)
+      values.push((entry as any).exerciseId, JSON.stringify(entry));
+    });
+
+    await db.run(insertSql, values);
+  } catch (error) {
+    console.error('Failed to save history:', error);
+    throw error;
+  }
 };
+
 /**
- * 
- * @returns A promise that resolves with the migrated workout history, or null if no migration was needed.
- * 
- * migrateFromLocalStorage(): Migrates legacy workout history 
- * data stored under the "workoutHistory" key in 
- * standard localStorage to IndexedDB, clearing the old key to free space.
+ * Migrates legacy workout history data stored in standard localStorage to SQLite.
  */
 export const migrateFromLocalStorage = async (): Promise<WorkoutHistory[] | null> => {
   const stored = localStorage.getItem('workoutHistory');
