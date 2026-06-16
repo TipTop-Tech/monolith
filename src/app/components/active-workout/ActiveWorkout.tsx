@@ -33,19 +33,21 @@ export function ActiveWorkout() {
     setCurrentRoutine,
     weightUnit,
     setWeightUnit,
+    reps, setReps,
+    weight, setWeight,
+    restTime, setRestTime,
+    timeRemaining, setTimeRemaining,
+    isTimerRunning, setIsTimerRunning,
+    pickerType, setPickerType,
+    workoutSessionStartedAt, setWorkoutSessionStartedAt,
+    currentSlide, setCurrentSlide,
+    currentView, setCurrentView,
+    selectedRoutineId, setSelectedRoutineId
   } = useWorkout();
 
   const db = usePowerSync();
 
-  const [reps, setReps] = useState(0);
-  const [weight, setWeight] = useState(0);
-  const [restTime, setRestTime] = useState(90);
-  const [timeRemaining, setTimeRemaining] = useState(0);
-  const [isTimerRunning, setIsTimerRunning] = useState(false);
-  const [pickerType, setPickerType] = useState<"reps" | "weight" | null>(null);
-  const [workoutSessionStartedAt, setWorkoutSessionStartedAt] = useState<number | null>(null);
-  const [currentSlide, setCurrentSlide] = useState(1);
-  const [currentView, setCurrentView] = useState(1);
+
   const [editingSetId, setEditingSetId] = useState<string | null>(null);
   const [setToDeleteId, setSetToDeleteId] = useState<string | null>(null);
   const [showEndExerciseConfirm, setShowEndExerciseConfirm] = useState(false);
@@ -87,7 +89,7 @@ export function ActiveWorkout() {
     return setDate === today && startedAfterWorkoutBegan;
   }) || [];
 
-  const [selectedRoutineId, setSelectedRoutineId] = useState<string | null>(null);
+
 
   const handleSelectRoutine = (routine: (typeof routines)[number]) => {
     // open picker locally when selecting a routine from this screen
@@ -132,6 +134,10 @@ export function ActiveWorkout() {
       setReps(0);
       setWeight(0);
     } else {
+      setReps(0);
+      setWeight(0);
+      setTimeRemaining(restTime);
+      setIsTimerRunning(true);
       await db.execute(
         'INSERT INTO workoutHistory (id, exerciseId, reps, weight, date) VALUES (uuid(), ?, ?, ?, ?)',
         [currentExercise.id, reps, weight, new Date().toISOString()]
