@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from "react-router";
-import { Dumbbell, ListTodo, User } from "lucide-react";
+import { Dumbbell, ListTodo, User, CircleUser } from "lucide-react";
 import { WorkoutProvider } from "../context/WorkoutContext";
 
 export function Layout() {
@@ -47,6 +47,14 @@ export function Layout() {
             >
               <User size={22} className="mb-1" />
               <span className="label-font text-[9px]">BODY</span>
+            </Link>
+            <Link
+              to="/account"
+              className={`flex flex-col items-center justify-center flex-1 h-full transition-all ${isActive("/account") ? "text-primary scale-110" : "text-muted-foreground hover:text-foreground"
+                }`}
+            >
+              <CircleUser size={22} className="mb-1" />
+              <span className="label-font text-[9px]">ACCOUNT</span>
             </Link>
           </div>
         </nav>
