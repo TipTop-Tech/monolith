@@ -12,6 +12,7 @@ import {
   AlertDialogCancel,
 } from "../ui/alert-dialog";
 import { useWorkout } from "../../context/WorkoutContext";
+import { useAuth } from "../../context/AuthContext";
 import { useNavigate, useLocation } from "react-router";
 import { Play, Pause, RotateCcw, Plus, Edit2, X, Trash2 } from "lucide-react";
 // react-slick has no bundled TypeScript declarations; ignore the missing types here
@@ -23,6 +24,7 @@ import { ScrollPicker } from "./ScrollPicker";
 
 export function ActiveWorkout() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const location = useLocation();
   const {
     currentRoutine,
@@ -139,8 +141,8 @@ export function ActiveWorkout() {
       setTimeRemaining(restTime);
       setIsTimerRunning(true);
       await db.execute(
-        'INSERT INTO workoutHistory (id, exerciseId, reps, weight, date) VALUES (uuid(), ?, ?, ?, ?)',
-        [currentExercise.id, reps, weight, new Date().toISOString()]
+        'INSERT INTO workoutHistory (id, user_id, exerciseId, reps, weight, date) VALUES (uuid(), ?, ?, ?, ?, ?)',
+        [user?.id, currentExercise.id, reps, weight, new Date().toISOString()]
       );
 
       setReps(0);
