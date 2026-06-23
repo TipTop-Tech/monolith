@@ -13,7 +13,6 @@ export const AppSchema = new Schema({
    */
   users: new Table({
     // username: column.text,
-    // email: column.text,
   }),
   /**
    * Tracks individual sets a user has accomplished for an exercise.

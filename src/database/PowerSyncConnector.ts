@@ -6,16 +6,7 @@ export class Connector implements PowerSyncBackendConnector {
     let { data: { session }, error } = await supabase.auth.getSession();
     
     if (error || !session) {
-      // Attempt anonymous sign-in if no session exists
-      const { data: signInData, error: signInError } = await supabase.auth.signInAnonymously();
-      if (signInError) {
-        throw new Error(`Failed to sign in anonymously: ${signInError.message}`);
-      }
-      session = signInData.session;
-    }
-    
-    if (!session) {
-      throw new Error('Failed to obtain a session');
+      return null;
     }
     
     return {

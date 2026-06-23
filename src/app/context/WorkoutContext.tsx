@@ -241,7 +241,7 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
   const [exercises] = useState<Exercise[]>(SAMPLE_EXERCISES);
   const [routines, setRoutines] = useState<Routine[]>(() => {
     const stored = localStorage.getItem("workoutRoutines");
-    return stored ? JSON.parse(stored) : SAMPLE_ROUTINES;
+    return stored ? JSON.parse(stored) : [];
   });
   // const [history, setHistory] = useState<WorkoutHistory[]>(() => {
   //   const stored = localStorage.getItem("workoutHistory");

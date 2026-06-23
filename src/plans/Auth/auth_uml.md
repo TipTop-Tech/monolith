@@ -4,7 +4,6 @@
 classDiagram
     class Users {
         +String id
-        +String email
         +String username
         +String password
     }
