@@ -14,12 +14,12 @@ export class AuthService {
    * Logs in a user using email and password.
    */
   static async login(email: string, password: string) {
+    await this.clearLocalData();
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
     if (error) throw error;
-    await this.clearLocalData();
     return data;
   }
 
@@ -28,6 +28,7 @@ export class AuthService {
    * Username will be stored in user metadata.
    */
   static async register(email: string, username: string, password: string) {
+    await this.clearLocalData();
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -38,7 +39,6 @@ export class AuthService {
       },
     });
     if (error) throw error;
-    await this.clearLocalData();
     return data;
   }
 
@@ -46,11 +46,11 @@ export class AuthService {
    * Initiates Google OAuth sign in.
    */
   static async oauthGoogle() {
+    await this.clearLocalData();
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
     });
     if (error) throw error;
-    await this.clearLocalData();
     return data;
   }
 
@@ -58,6 +58,7 @@ export class AuthService {
    * Initiates Apple OAuth sign in. Uses native plugin on iOS/Android, and standard web redirect on web.
    */
   static async oauthApple() {
+    await this.clearLocalData();
     if (Capacitor.isNativePlatform()) {
       try {
         const { response } = await SignInWithApple.authorize({
@@ -72,7 +73,6 @@ export class AuthService {
             token: response.identityToken,
           });
           if (error) throw error;
-          await this.clearLocalData();
           return data;
         } else {
           throw new Error('No identity token returned from Apple Sign In');
@@ -87,7 +87,6 @@ export class AuthService {
         provider: 'apple',
       });
       if (error) throw error;
-      await this.clearLocalData();
       return data;
     }
   }
