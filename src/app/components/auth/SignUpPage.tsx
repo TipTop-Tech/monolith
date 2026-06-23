@@ -22,8 +22,8 @@ export const SignUpPage = () => {
     try {
       await AuthService.register(email, username, password);
       // Supabase auto-logins after sign up if email confirmation is off, 
-      // otherwise we should show a message. For now, navigate to home.
-      navigate("/");
+      // otherwise we should show a message. Navigate to routines after first sign in.
+      navigate("/routines");
     } catch (err: any) {
       setError(err.message || "Failed to create an account");
     } finally {
