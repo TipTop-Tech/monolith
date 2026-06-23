@@ -1,3 +1,23 @@
+/**
+ * FUTURE OPENAI API INTEGRATION POINT
+ * -----------------------------------
+ * Do NOT paste an OpenAI API key directly into this React/Vite frontend file.
+ * Anything in src/ is bundled into browser code and can be viewed by users.
+ *
+ * Recommended setup:
+ *   React UI -> POST /api/generate-routine -> backend/server -> OpenAI API
+ *
+ * Put the real key in a backend environment variable only:
+ *   OPENAI_API_KEY=your_key_here
+ *
+ * Then the backend reads it with:
+ *   process.env.OPENAI_API_KEY
+ *
+ * This file currently keeps the local rule-based generator as the fallback/MVP.
+ * When a backend endpoint is added, call it from the Routines UI or from a
+ * wrapper function before falling back to generateRoutineWithAgent().
+ */
+
 import type { Exercise, Routine, RoutineExercise } from "../context/WorkoutContext";
 
 export type TrainingSex = "unspecified" | "male" | "female" | "other";
