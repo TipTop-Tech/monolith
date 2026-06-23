@@ -415,8 +415,10 @@ export function Routines() {
   }, [routines]);
 
   useEffect(() => {
-    if (routines.length === 0 && activeRoutineIndex !== 0) {
-      setActiveRoutineIndex(0);
+    if (routines.length === 0) {
+      if (activeRoutineIndex !== 0) {
+        setActiveRoutineIndex(0);
+      }
       return;
     }
 
