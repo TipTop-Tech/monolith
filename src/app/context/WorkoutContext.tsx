@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode, useRef } from "react";
 
 export interface Exercise {
   id: string;
@@ -265,22 +265,56 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
   const [currentView, setCurrentView] = useState(1);
   const [selectedRoutineId, setSelectedRoutineId] = useState<string | null>(null);
 
+  const timerWorkerRef = useRef<Worker | null>(null);
+  const lastTimeRemainingRef = useRef(timeRemaining);
+  const isWorkerRunningRef = useRef(false);
+
   useEffect(() => {
-    let interval: number | undefined;
-    if (isTimerRunning && timeRemaining > 0) {
-      interval = window.setInterval(() => {
-        setTimeRemaining((prev) => {
-          if (prev <= 1) {
-            setIsTimerRunning(false);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
+    timerWorkerRef.current = new Worker(new URL('../workers/timerWorker.ts', import.meta.url), { type: 'module' });
+
+    timerWorkerRef.current.onmessage = (e) => {
+      if (e.data.type === 'TICK') {
+        setTimeRemaining(e.data.payload.remainingTime);
+      } else if (e.data.type === 'COMPLETE') {
+        setIsTimerRunning(false);
+        setTimeRemaining(0);
+        
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.ready.then((reg) => {
+            reg.showNotification("Times up. Keep building your Monolith.", {
+              icon: '/dist/assets/monolith-logo.svg',
+              vibrate: [200, 100, 200]
+            });
+          });
+        }
+      }
     };
+
+    return () => {
+      if (timerWorkerRef.current) {
+        timerWorkerRef.current.terminate();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isTimerRunning && !isWorkerRunningRef.current) {
+      // Start the worker
+      const endTime = Date.now() + timeRemaining * 1000;
+      timerWorkerRef.current?.postMessage({ type: 'START', payload: { endTime } });
+      isWorkerRunningRef.current = true;
+    } else if (!isTimerRunning && isWorkerRunningRef.current) {
+      // Stop the worker
+      timerWorkerRef.current?.postMessage({ type: 'STOP' });
+      isWorkerRunningRef.current = false;
+    } else if (isTimerRunning && isWorkerRunningRef.current) {
+      // Timer is running, but timeRemaining jumped (e.g. user clicked +30s)
+      if (Math.abs(timeRemaining - lastTimeRemainingRef.current) > 2) {
+        const endTime = Date.now() + timeRemaining * 1000;
+        timerWorkerRef.current?.postMessage({ type: 'START', payload: { endTime } });
+      }
+    }
+    lastTimeRemainingRef.current = timeRemaining;
   }, [isTimerRunning, timeRemaining]);
   /**
    * This useEffect saves the user's workout routines to local storage

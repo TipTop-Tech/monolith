@@ -58,6 +58,51 @@ export function ActiveWorkout() {
 
   const sliderRef = useRef<Slider>(null);
   const isFirstRender = useRef(true);
+  const wakeLockRef = useRef<any>(null); // Type any because WakeLockSentinel might not be in standard DOM lib yet
+
+  // Wake Lock and Notification Permission Effect
+  useEffect(() => {
+    const requestWakeLock = async () => {
+      if ('wakeLock' in navigator && isTimerRunning) {
+        try {
+          wakeLockRef.current = await (navigator as any).wakeLock.request('screen');
+        } catch (err: any) {
+          console.warn(`${err.name}, ${err.message}`);
+        }
+      }
+    };
+
+    const releaseWakeLock = async () => {
+      if (wakeLockRef.current !== null) {
+        await wakeLockRef.current.release();
+        wakeLockRef.current = null;
+      }
+    };
+
+    if (isTimerRunning) {
+      requestWakeLock();
+      
+      // Request notification permission if not already granted
+      if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+        Notification.requestPermission();
+      }
+    } else {
+      releaseWakeLock();
+    }
+
+    const handleVisibilityChange = () => {
+      if (wakeLockRef.current !== null && document.visibilityState === 'visible' && isTimerRunning) {
+        requestWakeLock();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      releaseWakeLock();
+    };
+  }, [isTimerRunning]);
 
   useEffect(() => {
     if (isFirstRender.current) {
