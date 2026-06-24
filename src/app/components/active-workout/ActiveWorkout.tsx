@@ -303,21 +303,36 @@ export function ActiveWorkout() {
   if (currentView == 1) {
     return (
       <div className="h-full flex flex-col items-center justify-center p-8">
-        <div className="label-font text-muted-foreground mb-12">SELECT ROUTINE</div>
-        <div className="w-full max-w-md space-y-6">
-          {routines.map((routine) => (
+        {routines.length === 0 ? (
+          <div className="flex flex-col items-center text-center">
+            <div className="display-font text-4xl bevel-text mb-3">NO ROUTINES YET</div>
+            <div className="label-font text-muted-foreground mb-8">Create a routine to start a workout</div>
             <button
-              key={routine.id}
-              onClick={() => handleSelectRoutine(routine)}
-              className="w-full py-6 px-8 bg-accent bevel-element hover:bg-muted transition-all active:scale-98"
+              onClick={() => navigate("/routines")}
+              className="py-4 px-8 bg-primary text-primary-foreground bevel-element hover:opacity-90 transition-all active:scale-98"
             >
-              <div className="display-font text-3xl bevel-text mb-1">{routine.name}</div>
-              <div className="label-font text-muted-foreground">
-                {routine.exercises.length} EXERCISES
-              </div>
+              <span className="label-font">CREATE A ROUTINE</span>
             </button>
-          ))}
-        </div>
+          </div>
+        ) : (
+          <>
+            <div className="label-font text-muted-foreground mb-12">SELECT ROUTINE</div>
+            <div className="w-full max-w-md space-y-6">
+              {routines.map((routine) => (
+                <button
+                  key={routine.id}
+                  onClick={() => handleSelectRoutine(routine)}
+                  className="w-full py-6 px-8 bg-accent bevel-element hover:bg-muted transition-all active:scale-98"
+                >
+                  <div className="display-font text-3xl bevel-text mb-1">{routine.name}</div>
+                  <div className="label-font text-muted-foreground">
+                    {routine.exercises.length} EXERCISES
+                  </div>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
       </div>
     );
 
