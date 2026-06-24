@@ -23,6 +23,7 @@ const MUSCLE_TO_GROUP: { [key: string]: string } = {
   "forearm": "forearm",
   "head": "head",
   "neck": "neck",
+  "knees": "quadriceps",
 };
 
 export function BodyMap() {
@@ -41,16 +42,14 @@ export function BodyMap() {
 
   const handleMuscleClick = (muscle: { muscle: string }) => {
     const muscleName = muscle.muscle;
-
     const muscleGroup = MUSCLE_TO_GROUP[muscleName];
-    if (muscleGroup) {
-      if (isMobile) {
-        navigate(`/muscle/${muscleGroup}`, { state: { view } });
-        return;
-      }
+    if (!muscleGroup) return;
 
-      navigate(`/muscle/${muscleGroup}`, { state: { view } });
+    if (isMobile && selectedMuscle !== muscleName) {
+      setSelectedMuscle(muscleName);
+      return;
     }
+    navigate(`/muscle/${muscleGroup}`, { state: { view } });
   };
 
   const modelData = selectedMuscle
@@ -63,7 +62,9 @@ export function BodyMap() {
     : [];
 
   const instructionText = isMobile
-    ? "TAP ONCE TO HIGHLIGHT, TAP AGAIN TO VIEW EXERCISES"
+    ? selectedMuscle
+      ? "TAP AGAIN TO VIEW EXERCISES"
+      : "TAP A MUSCLE TO HIGHLIGHT"
     : "HOVER TO PREVIEW, TAP MUSCLE TO VIEW EXERCISES";
 
   return (
@@ -106,6 +107,7 @@ export function BodyMap() {
           <Model
             data={modelData}
             type={view === "front" ? "anterior" : "posterior"}
+            highlightedColors={["#ffffff"]}
             style={{ background: "transparent", backgroundColor: "transparent" }}
             svgStyle={{ background: "transparent", backgroundColor: "transparent" }}
             onClick={handleMuscleClick}
