@@ -42,8 +42,8 @@ export const AccountPage = () => {
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0">
-            <CardTitle className="truncate">{user?.user_metadata?.username || "User"}</CardTitle>
-            <CardDescription title={email} className="flex text-sm">
+            <CardTitle className="truncate user-text">{user?.user_metadata?.username || "User"}</CardTitle>
+            <CardDescription title={email} className="flex text-sm user-text">
               <span className="min-w-0 truncate">{emailLocal}</span>
               <span className="shrink-0 max-w-[65%] truncate">{emailDomain}</span>
             </CardDescription>
