@@ -1,6 +1,7 @@
 import { Outlet, Link, useLocation } from "react-router";
 import { Dumbbell, ListTodo, User, CircleUser } from "lucide-react";
 import { WorkoutProvider } from "../context/WorkoutContext";
+import { GlobalCanvas } from "./3d/GlobalCanvas";
 
 export function Layout() {
   const location = useLocation();
@@ -14,11 +15,12 @@ export function Layout() {
 
   return (
     <WorkoutProvider>
-      <div className="h-full flex flex-col min-h-0 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
-        <main className="flex-1 min-h-0 overflow-auto overscroll-none">
+      <GlobalCanvas />
+      <div className="h-full flex flex-col min-h-0 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] relative z-10 pointer-events-none">
+        <main className="flex-1 min-h-0 overflow-auto overscroll-none pointer-events-auto">
           <Outlet />
         </main>
-        <nav className="shrink-0 bg-background/95 backdrop-blur-xl pb-[env(safe-area-inset-bottom)]">
+        <nav className="shrink-0 bg-background/95 backdrop-blur-xl pb-[env(safe-area-inset-bottom)] pointer-events-auto">
           <div className="flex justify-around items-center h-20 px-4">
             <Link
               to="/"
