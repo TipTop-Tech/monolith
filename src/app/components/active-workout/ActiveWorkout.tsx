@@ -16,8 +16,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useNavigate, useLocation } from "react-router";
 import { Play, Pause, RotateCcw, Plus, Edit2, X, Trash2 } from "lucide-react";
 import { ScrollPicker } from "./ScrollPicker";
-import { WorkoutCarousel3D } from "./WorkoutCarousel3D";
-
+import { WorkoutCarousel } from "./WorkoutCarousel";
 
 export function ActiveWorkout() {
   const navigate = useNavigate();
@@ -405,9 +404,8 @@ export function ActiveWorkout() {
             </div>
           </div>
 
-          {/* Set View - 3D Environment */}
           <div className="flex-1 flex flex-col min-h-0 relative z-0">
-            <WorkoutCarousel3D
+            <WorkoutCarousel
               currentSlide={currentSlide}
               setCurrentSlide={setCurrentSlide}
               visibleSets={visibleSets}
