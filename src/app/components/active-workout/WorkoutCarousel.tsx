@@ -22,10 +22,14 @@ interface WorkoutCarouselProps {
   setShowEndExerciseConfirm: (show: boolean) => void;
   setSetToDeleteId: (id: string | null) => void;
   currentExercise: any;
+  weightUnit: string;
 }
 
 export function WorkoutCarousel(props: WorkoutCarouselProps) {
   const [api, setApi] = useState<CarouselApi>();
+  const [isRepsPressed, setIsRepsPressed] = useState(false);
+  const [isWeightPressed, setIsWeightPressed] = useState(false);
+  const [isLogSetPressed, setIsLogSetPressed] = useState(false);
   const slidesCount = Math.max(3, props.visibleSets.length + 2);
 
   useEffect(() => {
@@ -86,34 +90,62 @@ export function WorkoutCarousel(props: WorkoutCarouselProps) {
               )}
 
               <button
-                onClick={() => props.setPickerType("reps")}
-                className="w-3/4 py-3 sm:py-4 chrome-button mb-2"
+                onPointerDown={() => setIsRepsPressed(true)}
+                onPointerUp={() => setIsRepsPressed(false)}
+                onPointerLeave={() => setIsRepsPressed(false)}
+                onClick={() => {
+                  setTimeout(() => props.setPickerType("reps"), 50);
+                }}
+                data-active={isRepsPressed}
+                className="w-3/4 py-3 sm:py-4 black-glass-button mb-2"
               >
                 {props.reps > 0 ? (
-                  <div className="display-font text-3xl chrome-text">{props.reps}</div>
+                  <div className="flex items-baseline justify-center gap-2">
+                    <span className="display-font text-3xl black-glass-text">{props.reps}</span>
+                    <span className="label-font text-xs black-glass-text tracking-widest">REPS</span>
+                  </div>
                 ) : (
-                  <div className="label-font text-xs chrome-text tracking-widest">REPS</div>
+                  <div className="label-font text-xs black-glass-text tracking-widest">REPS</div>
                 )}
               </button>
 
               <button
-                onClick={() => props.setPickerType("weight")}
-                className="w-3/4 py-3 sm:py-4 bg-secondary bevel-element hover:bg-accent transition-all active:scale-98"
+                onPointerDown={() => setIsWeightPressed(true)}
+                onPointerUp={() => setIsWeightPressed(false)}
+                onPointerLeave={() => setIsWeightPressed(false)}
+                onClick={() => {
+                  setTimeout(() => props.setPickerType("weight"), 50);
+                }}
+                data-active={isWeightPressed}
+                className="w-3/4 py-3 sm:py-4 black-glass-button"
               >
                 {props.weight > 0 ? (
-                  <div className="display-font text-3xl bevel-text">{props.weight}</div>
+                  <div className="flex items-baseline justify-center gap-2">
+                    <span className="display-font text-3xl black-glass-text">{props.weight}</span>
+                    <span className="label-font text-xs black-glass-text tracking-widest">{props.weightUnit}</span>
+                  </div>
                 ) : (
-                  <div className="label-font text-xs text-muted-foreground">WEIGHT</div>
+                  <div className="label-font text-xs black-glass-text tracking-widest">WEIGHT</div>
                 )}
               </button>
 
               <button
-                onClick={() => props.handleLogSet()}
+                onPointerDown={() => setIsLogSetPressed(true)}
+                onPointerUp={() => setIsLogSetPressed(false)}
+                onPointerLeave={() => setIsLogSetPressed(false)}
+                onClick={() => {
+                  setTimeout(() => props.handleLogSet(), 50);
+                }}
                 disabled={props.reps === 0 || props.weight === 0}
-                className={`w-3/4 py-3 sm:py-4 text-primary-foreground bevel-element hover:opacity-90 transition-all active:scale-98 disabled:opacity-20 flex items-center justify-center gap-2 ${props.editingSetId !== null ? 'bg-orange-500' : 'bg-primary'}`}
+                data-active={isLogSetPressed}
+                className={`w-3/4 py-3 sm:py-4 black-glass-button relative ${props.editingSetId !== null ? 'text-orange-500' : 'text-primary-foreground'}`}
               >
-                {props.editingSetId !== null ? <Edit2 size={18} /> : <Plus size={18} />}
-                <span className="label-font">{props.editingSetId !== null ? 'SAVE EDIT' : 'LOG SET'}</span>
+                <div className="absolute left-6 top-1/2 -translate-y-1/2">
+                  {props.editingSetId !== null ? <Edit2 size={18} /> : <Plus size={18} />}
+                </div>
+                <div className="label-font text-xs black-glass-text tracking-widest">
+                  {props.editingSetId !== null ? 'SAVE EDIT' : 'LOG SET'}
+                </div>
               </button>
             </div>
           </CarouselItem>
@@ -165,7 +197,7 @@ export function WorkoutCarousel(props: WorkoutCarouselProps) {
                       <div className="display-font text-7xl leading-none bevel-text-large mb-2">
                         {set.weight}
                       </div>
-                      <div className="label-font text-xs text-muted-foreground">LBS</div>
+                      <div className="label-font text-xs text-muted-foreground">{props.weightUnit}</div>
                     </div>
                   </div>
                 </div>
