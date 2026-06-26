@@ -1,5 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { getHistoryFromDB, saveHistoryToDB, migrateFromLocalStorage } from "../../utils/storage";
+import { createContext, useContext, useState, useEffect, ReactNode, useRef } from "react";
 
 export interface Exercise {
   id: string;
@@ -42,10 +41,35 @@ interface WorkoutContextType {
   setCurrentExerciseIndex: (index: number) => void;
   addSet: (exerciseId: string, reps: number, weight: number) => void;
   removeSet: (exerciseId: string, setIndex: number) => void;
+  updateSet: (exerciseId: string, setIndex: number, reps: number, weight: number) => void;
   addRoutine: (routine: Routine) => void;
   removeRoutine: (routineId: string) => void;
   addExerciseToRoutine: (routineId: string, routineExercise: RoutineExercise) => void;
   removeRoutineExercise: (routineId: string, exerciseIndex: number) => void;
+
+  // Active Workout UI State
+  reps: number;
+  setReps: (val: number) => void;
+  weight: number;
+  setWeight: (val: number) => void;
+  restTime: number;
+  setRestTime: (val: number) => void;
+  timeRemaining: number;
+  setTimeRemaining: (val: number | ((prev: number) => number)) => void;
+  isTimerRunning: boolean;
+  setIsTimerRunning: (val: boolean) => void;
+  pickerType: "reps" | "weight" | "restTime" | null;
+  setPickerType: (val: "reps" | "weight" | "restTime" | null) => void;
+  weightUnit: string;
+  setWeightUnit: (val: string) => void;
+  workoutSessionStartedAt: number | null;
+  setWorkoutSessionStartedAt: (val: number | null) => void;
+  currentSlide: number;
+  setCurrentSlide: (val: number) => void;
+  currentView: number;
+  setCurrentView: (val: number) => void;
+  selectedRoutineId: string | null;
+  setSelectedRoutineId: (val: string | null) => void;
 }
 
 const WorkoutContext = createContext<WorkoutContextType | undefined>(undefined);
@@ -191,38 +215,107 @@ const SAMPLE_ROUTINES: Routine[] = [
   },
 ];
 
+const generateSampleHistory = (): WorkoutHistory[] => {
+  const history: WorkoutHistory[] = [];
+  const today = new Date();
+
+  SAMPLE_EXERCISES.forEach((exercise) => {
+    const sets: WorkoutSet[] = [];
+    for (let i = 0; i < 10; i++) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i * 3);
+      const baseWeight = 50 + Math.floor(Math.random() * 100);
+      sets.push({
+        reps: 8 + Math.floor(Math.random() * 4),
+        weight: baseWeight + i * 2.5,
+        date: date.toISOString(),
+      });
+    }
+    history.push({ exerciseId: exercise.id, sets: sets.reverse() });
+  });
+
+  return history;
+};
+
 export function WorkoutProvider({ children }: { children: ReactNode }) {
   const [exercises] = useState<Exercise[]>(SAMPLE_EXERCISES);
   const [routines, setRoutines] = useState<Routine[]>(() => {
     const stored = localStorage.getItem("workoutRoutines");
-    return stored ? JSON.parse(stored) : SAMPLE_ROUTINES;
+    return stored ? JSON.parse(stored) : [];
   });
+  // const [history, setHistory] = useState<WorkoutHistory[]>(() => {
+  //   const stored = localStorage.getItem("workoutHistory");
+  //   return stored ? JSON.parse(stored) : generateSampleHistory();
+  // });
+
   const [history, setHistory] = useState<WorkoutHistory[]>([]);
-  const [isHistoryLoaded, setIsHistoryLoaded] = useState(false);
   const [currentRoutine, setCurrentRoutine] = useState<Routine | null>(null);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
-  /*
-  Initliazes user's workout history on applicaiton startup
-  
-  - It runs only once on mount
-  - Attempts local storage migration
-    - Retrieves from indexedDB if local storage migration fails
-  - Updates states to reflect the user's workout history
-  */
+
+  // Active Workout UI State
+  const [reps, setReps] = useState(0);
+  const [weight, setWeight] = useState(0);
+  const [restTime, setRestTime] = useState(90);
+  const [timeRemaining, setTimeRemaining] = useState(0);
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [pickerType, setPickerType] = useState<"reps" | "weight" | "restTime" | null>(null);
+  const [weightUnit, setWeightUnit] = useState("LB");
+  const [workoutSessionStartedAt, setWorkoutSessionStartedAt] = useState<number | null>(null);
+  const [currentSlide, setCurrentSlide] = useState(1);
+  const [currentView, setCurrentView] = useState(1);
+  const [selectedRoutineId, setSelectedRoutineId] = useState<string | null>(null);
+
+  const timerWorkerRef = useRef<Worker | null>(null);
+  const lastTimeRemainingRef = useRef(timeRemaining);
+  const isWorkerRunningRef = useRef(false);
+
   useEffect(() => {
-    const initHistory = async () => {
-      let data = await migrateFromLocalStorage();
-      if (!data) {
-        data = await getHistoryFromDB();
+    timerWorkerRef.current = new Worker(new URL('../workers/timerWorker.ts', import.meta.url), { type: 'module' });
+
+    timerWorkerRef.current.onmessage = (e) => {
+      if (e.data.type === 'TICK') {
+        setTimeRemaining(e.data.payload.remainingTime);
+      } else if (e.data.type === 'COMPLETE') {
+        setIsTimerRunning(false);
+        setTimeRemaining(0);
+        
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.ready.then((reg) => {
+            reg.showNotification("Times up. Keep building your Monolith.", {
+              icon: '/dist/assets/monolith-logo.svg',
+              vibrate: [200, 100, 200]
+            });
+          });
+        }
       }
-      if (!data || data.length === 0) {
-        data = [];
-      }
-      setHistory(data);
-      setIsHistoryLoaded(true);
     };
-    initHistory();
+
+    return () => {
+      if (timerWorkerRef.current) {
+        timerWorkerRef.current.terminate();
+      }
+    };
   }, []);
+
+  useEffect(() => {
+    if (isTimerRunning && !isWorkerRunningRef.current) {
+      // Start the worker
+      const endTime = Date.now() + timeRemaining * 1000;
+      timerWorkerRef.current?.postMessage({ type: 'START', payload: { endTime } });
+      isWorkerRunningRef.current = true;
+    } else if (!isTimerRunning && isWorkerRunningRef.current) {
+      // Stop the worker
+      timerWorkerRef.current?.postMessage({ type: 'STOP' });
+      isWorkerRunningRef.current = false;
+    } else if (isTimerRunning && isWorkerRunningRef.current) {
+      // Timer is running, but timeRemaining jumped (e.g. user clicked +30s)
+      if (Math.abs(timeRemaining - lastTimeRemainingRef.current) > 2) {
+        const endTime = Date.now() + timeRemaining * 1000;
+        timerWorkerRef.current?.postMessage({ type: 'START', payload: { endTime } });
+      }
+    }
+    lastTimeRemainingRef.current = timeRemaining;
+  }, [isTimerRunning, timeRemaining]);
   /**
    * This useEffect saves the user's workout routines to local storage
    * 
@@ -232,12 +325,6 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     localStorage.setItem("workoutRoutines", JSON.stringify(routines));
   }, [routines]);
-
-  useEffect(() => {
-    if (isHistoryLoaded) {
-      saveHistoryToDB(history).catch(e => console.error("Failed to save history to IndexedDB", e));
-    }
-  }, [history, isHistoryLoaded]);
 
   const addSet = (exerciseId: string, reps: number, weight: number) => {
     setHistory((prev) => {
@@ -276,6 +363,17 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
           };
         })
         .filter((h) => h.sets.length > 0);
+    });
+  };
+
+  const updateSet = (exerciseId: string, setIndex: number, reps: number, weight: number) => {
+    setHistory((prev) => {
+      return prev.map((h) => {
+        if (h.exerciseId !== exerciseId) return h;
+        const newSets = [...h.sets];
+        newSets[setIndex] = { ...newSets[setIndex], reps, weight };
+        return { ...h, sets: newSets };
+      });
     });
   };
 
@@ -339,23 +437,31 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
       value={{
         exercises,
         routines,
-        history,
         currentRoutine,
         currentExerciseIndex,
         setCurrentRoutine,
         setCurrentExerciseIndex,
         addSet,
         removeSet,
+        updateSet,
         addRoutine,
         removeRoutine,
         addExerciseToRoutine,
         removeRoutineExercise,
+        reps, setReps,
+        weight, setWeight,
+        restTime, setRestTime,
+        timeRemaining, setTimeRemaining,
+        isTimerRunning, setIsTimerRunning,
+        pickerType, setPickerType,
+        weightUnit, setWeightUnit,
+        workoutSessionStartedAt, setWorkoutSessionStartedAt,
+        currentSlide, setCurrentSlide,
+        currentView, setCurrentView,
+        selectedRoutineId, setSelectedRoutineId,
       }}
     >
-      {/*
-        Only renders the children when the history is loaded
-      */}
-      {isHistoryLoaded ? children : null}
+      {children}
     </WorkoutContext.Provider>
   );
 }

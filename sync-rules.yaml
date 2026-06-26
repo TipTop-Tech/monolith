@@ -1,0 +1,10 @@
+bucket_definitions:
+  global:
+    data:
+      - SELECT * FROM users
+
+  user:
+    parameters:
+      - SELECT request.user_id() AS user_id
+    data:
+      - SELECT * FROM "workoutHistory" WHERE user_id = bucket.user_id

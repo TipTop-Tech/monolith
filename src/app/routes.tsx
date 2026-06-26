@@ -5,17 +5,30 @@ import { Routines } from "./components/routines/Routines";
 import { WorkoutHistory } from "./components/routines/WorkoutHistory";
 import { BodyMap } from "./components/body/BodyMap";
 import { MuscleExercises } from "./components/body/MuscleExercises";
+import { AuthGuard } from "./components/auth/AuthGuard";
+import { SignInPage } from "./components/auth/SignInPage";
+import { SignUpPage } from "./components/auth/SignUpPage";
+import { AccountPage } from "./components/auth/AccountPage";
 
 export const router = createBrowserRouter([
+  { path: "/signin", Component: SignInPage },
+  { path: "/signup", Component: SignUpPage },
   {
     path: "/",
-    Component: Layout,
+    Component: AuthGuard,
     children: [
-      { index: true, path: "/", Component: ActiveWorkout },
-      { path: "routines", Component: Routines },
-      { path: "workout/:exerciseId", Component: WorkoutHistory },
-      { path: "body", Component: BodyMap },
-      { path: "muscle/:muscleId", Component: MuscleExercises },
+      {
+        path: "/",
+        Component: Layout,
+        children: [
+          { index: true, path: "/", Component: ActiveWorkout },
+          { path: "routines", Component: Routines },
+          { path: "workout/:exerciseId", Component: WorkoutHistory },
+          { path: "body", Component: BodyMap },
+          { path: "muscle/:muscleId", Component: MuscleExercises },
+          { path: "account", Component: AccountPage },
+        ],
+      },
     ],
   },
 ]);
