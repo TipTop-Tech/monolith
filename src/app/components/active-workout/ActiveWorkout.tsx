@@ -49,6 +49,10 @@ export function ActiveWorkout() {
   const [editingSetId, setEditingSetId] = useState<string | null>(null);
   const [setToDeleteId, setSetToDeleteId] = useState<string | null>(null);
   const [showEndExerciseConfirm, setShowEndExerciseConfirm] = useState(false);
+  const [isMinus10Pressed, setIsMinus10Pressed] = useState(false);
+  const [isPlayPausePressed, setIsPlayPausePressed] = useState(false);
+  const [isResetPressed, setIsResetPressed] = useState(false);
+  const [isPlus30Pressed, setIsPlus30Pressed] = useState(false);
 
   const { showWarning, storageStatus, checkStorage, dismissWarning } = useStorageWarning();
 
@@ -386,35 +390,63 @@ export function ActiveWorkout() {
 
             <div className="flex gap-3 sm:gap-4 mt-2 items-center justify-center">
               <button
-                onClick={() => setTimeRemaining(prev => Math.max(0, prev - 10))}
-                className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center bg-secondary bevel-element hover:bg-accent transition-all active:scale-95 label-font text-xs text-muted-foreground"
-              >
-                -10S
-              </button>
-
-              <button
-                onClick={() => setIsTimerRunning(!isTimerRunning)}
-                className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center bg-primary text-primary-foreground bevel-element hover:bg-primary/90 transition-all active:scale-95 disabled:opacity-30"
-                disabled={timeRemaining === 0}
-              >
-                {isTimerRunning ? <Pause size={24} /> : <Play size={24} />}
-              </button>
-
-              <button
+                onPointerDown={() => setIsMinus10Pressed(true)}
+                onPointerUp={() => setIsMinus10Pressed(false)}
+                onPointerLeave={() => setIsMinus10Pressed(false)}
                 onClick={() => {
-                  setTimeRemaining(restTime);
-                  setIsTimerRunning(false);
+                  setTimeout(() => setTimeRemaining(prev => Math.max(0, prev - 10)), 50);
                 }}
-                className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center bg-accent bevel-element hover:bg-muted transition-all active:scale-95"
+                data-active={isMinus10Pressed}
+                className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center black-glass-button label-font text-xs"
               >
-                <RotateCcw size={20} />
+                <span className="black-glass-text">-10S</span>
               </button>
 
               <button
-                onClick={() => setTimeRemaining(prev => prev + 30)}
-                className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center bg-secondary bevel-element hover:bg-accent transition-all active:scale-95 label-font text-xs text-muted-foreground"
+                onPointerDown={() => setIsPlayPausePressed(true)}
+                onPointerUp={() => setIsPlayPausePressed(false)}
+                onPointerLeave={() => setIsPlayPausePressed(false)}
+                onClick={() => {
+                  setTimeout(() => setIsTimerRunning(!isTimerRunning), 50);
+                }}
+                className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center black-glass-button"
+                disabled={timeRemaining === 0}
+                data-active={isPlayPausePressed}
               >
-                +30S
+                <span className="black-glass-text flex items-center justify-center">
+                  {isTimerRunning ? <Pause size={24} /> : <Play size={24} />}
+                </span>
+              </button>
+
+              <button
+                onPointerDown={() => setIsResetPressed(true)}
+                onPointerUp={() => setIsResetPressed(false)}
+                onPointerLeave={() => setIsResetPressed(false)}
+                onClick={() => {
+                  setTimeout(() => {
+                    setTimeRemaining(restTime);
+                    setIsTimerRunning(false);
+                  }, 50);
+                }}
+                data-active={isResetPressed}
+                className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center black-glass-button"
+              >
+                <span className="black-glass-text flex items-center justify-center">
+                  <RotateCcw size={20} />
+                </span>
+              </button>
+
+              <button
+                onPointerDown={() => setIsPlus30Pressed(true)}
+                onPointerUp={() => setIsPlus30Pressed(false)}
+                onPointerLeave={() => setIsPlus30Pressed(false)}
+                onClick={() => {
+                  setTimeout(() => setTimeRemaining(prev => prev + 30), 50);
+                }}
+                data-active={isPlus30Pressed}
+                className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center black-glass-button label-font text-xs"
+              >
+                <span className="black-glass-text">+30S</span>
               </button>
             </div>
           </div>
@@ -435,6 +467,7 @@ export function ActiveWorkout() {
               setShowEndExerciseConfirm={setShowEndExerciseConfirm}
               setSetToDeleteId={setSetToDeleteId}
               currentExercise={currentExercise}
+              weightUnit={weightUnit}
             />
           </div>
         </div>

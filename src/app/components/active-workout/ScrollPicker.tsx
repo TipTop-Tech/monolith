@@ -37,13 +37,15 @@ export function ScrollPicker({
   const [scrollPosition, setScrollPosition] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const animationFrameRef = useRef<number>();
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const isInitialRender = useRef(true);
 
   const values = [];
   for (let i = min; i <= max; i += step) {
     values.push(i);
   }
 
-  const itemHeight = 100;
+  const itemHeight = 140;
 
   useEffect(() => {
     if (scrollRef.current && !isCustomMode) {
@@ -55,12 +57,28 @@ export function ScrollPicker({
   }, [isCustomMode]);
 
   useEffect(() => {
+    audioRef.current = new Audio('/assets/clink.mp3');
+    audioRef.current.volume = 0.5; // Set volume to 50% for a subtle effect
+
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (isInitialRender.current) {
+      isInitialRender.current = false;
+      return;
+    }
+
+    if (audioRef.current && !isCustomMode) {
+      const audioClone = audioRef.current.cloneNode() as HTMLAudioElement;
+      audioClone.volume = 0.5;
+      audioClone.play().catch(e => console.log("Audio play failed:", e));
+    }
+  }, [selectedValue, isCustomMode]);
 
   const handleScroll = () => {
     if (animationFrameRef.current) {
@@ -167,8 +185,8 @@ export function ScrollPicker({
                   onScroll={handleScroll}
                   className="h-full w-full overflow-y-scroll snap-y snap-mandatory hide-scrollbar"
                   style={{
-                    paddingTop: `${itemHeight * 1.5}px`,
-                    paddingBottom: `${itemHeight * 1.5}px`,
+                    paddingTop: `130px`,
+                    paddingBottom: `130px`,
                     scrollBehavior: "smooth",
                     WebkitOverflowScrolling: "touch",
                   }}
