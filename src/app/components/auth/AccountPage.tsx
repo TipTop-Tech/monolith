@@ -1,14 +1,34 @@
+import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 import { AuthService } from "../../../lib/AuthService";
+import { haptics } from "../../lib/haptics";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { Avatar, AvatarFallback } from "../ui/avatar";
+import { Switch } from "../ui/switch";
 import { LogOut, User } from "lucide-react";
 
 export const AccountPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  const [hapticsOn, setHapticsOn] = useState(() => {
+    try {
+      return localStorage.getItem("hapticsEnabled") !== "false";
+    } catch {
+      return true;
+    }
+  });
+
+  const toggleHaptics = (next: boolean) => {
+    try {
+      localStorage.setItem("hapticsEnabled", next ? "true" : "false");
+    } catch {
+    }
+    setHapticsOn(next);
+    if (next) haptics.tap();
+  };
 
   const handleSignOut = async () => {
     try {
@@ -55,6 +75,21 @@ export const AccountPage = () => {
               <LogOut className="mr-2 h-4 w-4" />
               Sign out
             </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Preferences</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <p className="font-medium leading-none">Haptics</p>
+              <p className="text-sm text-muted-foreground mt-1">Haptic feedback</p>
+            </div>
+            <Switch checked={hapticsOn} onCheckedChange={toggleHaptics} aria-label="Haptics" />
           </div>
         </CardContent>
       </Card>
