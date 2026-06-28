@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import { useQuery, usePowerSync } from '@powersync/react';
 import { useWorkout } from "../../context/WorkoutContext";
+import { haptics } from "../../lib/haptics";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { ArrowLeft } from "lucide-react";
 import { SwipeableRow } from "../ui/SwipeableRow";
@@ -41,6 +42,7 @@ export function WorkoutHistory() {
    */
   const confirmDelete = async () => {
     if (setToDelete !== null) {
+      haptics.warn();
       await db.execute('DELETE FROM workoutHistory WHERE id = ?', [setToDelete.id]);
     }
     setIsDeleteDialogOpen(false);

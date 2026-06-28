@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from '@powersync/react';
 import { useWorkout } from "../../context/WorkoutContext";
+import { haptics } from "../../lib/haptics";
 import { useNavigate } from "react-router";
 import { ChevronRight, Plus, Sparkles, Trash2, ChevronDown, ChevronUp, MoreVertical } from "lucide-react";
 import { Button } from "../ui/button";
@@ -301,6 +302,7 @@ export function Routines() {
 
   const confirmRemoveRoutine = () => {
     if (!routineToDelete) return;
+    haptics.warn();
     removeRoutine(routineToDelete.id);
     setRoutineToDelete(null);
   };
@@ -581,7 +583,7 @@ export function Routines() {
                                   targetReps={routineExercise.targetReps}
                                   lastSet={lastSet}
                                   onOpen={() => navigate(`/workout/${routineExercise.exerciseId}`)}
-                                  onRemove={() => removeRoutineExercise(routine.id, globalIndex)}
+                                  onRemove={() => { haptics.warn(); removeRoutineExercise(routine.id, globalIndex); }}
                                 />
                               );
                             })
