@@ -311,6 +311,7 @@ export function Routines() {
       name: trimmedName,
       exercises: [],
     });
+    haptics.success(); // routine created
 
     setIsAddRoutineOpen(false);
     setNewRoutineName("");
@@ -342,6 +343,7 @@ export function Routines() {
       sets,
       targetReps,
     });
+    haptics.tap(); // exercise added to routine
 
     setIsAddWorkoutOpen(false);
 
@@ -389,6 +391,7 @@ export function Routines() {
     if (aiResult?.status !== "ready") return;
 
     addRoutine(aiResult.routine);
+    haptics.success(); // AI routine created
     setIsAIRoutineOpen(false);
 
     requestAnimationFrame(() => {
