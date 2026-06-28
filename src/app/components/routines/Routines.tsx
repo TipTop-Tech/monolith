@@ -138,6 +138,7 @@ function RoutineExerciseRow({
   };
 
   const open = () => {
+    if (!isOpen) haptics.tap();
     swipeOffsetRef.current = OPEN_OFFSET;
     setSwipeOffset(OPEN_OFFSET);
     setIsOpen(true);
