@@ -390,7 +390,7 @@ export function ActiveWorkout() {
 
             <div className="flex gap-3 sm:gap-4 mt-2 items-center justify-center">
               <button
-                onClick={() => setTimeRemaining(prev => Math.max(0, prev - 10))}
+                onClick={() => { if (timeRemaining > 0) haptics.tap(); setTimeRemaining(prev => Math.max(0, prev - 10)); }}
                 className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center bg-secondary bevel-element hover:bg-accent transition-all active:scale-95 label-font text-xs text-muted-foreground"
               >
                 -10S
@@ -415,7 +415,7 @@ export function ActiveWorkout() {
               </button>
 
               <button
-                onClick={() => setTimeRemaining(prev => prev + 30)}
+                onClick={() => { haptics.tap(); setTimeRemaining(prev => prev + 30); }}
                 className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center bg-secondary bevel-element hover:bg-accent transition-all active:scale-95 label-font text-xs text-muted-foreground"
               >
                 +30S
