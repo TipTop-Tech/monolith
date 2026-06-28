@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useRef } from "react";
+import { haptics } from "../lib/haptics";
 
 export interface Exercise {
   id: string;
@@ -278,6 +279,7 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
       } else if (e.data.type === 'COMPLETE') {
         setIsTimerRunning(false);
         setTimeRemaining(0);
+        haptics.thud(); // strong cue: rest timer hit zero
         
         if ('serviceWorker' in navigator) {
           navigator.serviceWorker.ready.then((reg) => {

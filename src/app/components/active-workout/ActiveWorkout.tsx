@@ -17,6 +17,7 @@ import { useNavigate, useLocation } from "react-router";
 import { Play, Pause, RotateCcw, Plus, Edit2, X, Trash2 } from "lucide-react";
 import { ScrollPicker } from "./ScrollPicker";
 import { WorkoutCarousel } from "./WorkoutCarousel";
+import { haptics } from "../../lib/haptics";
 
 export function ActiveWorkout() {
   const navigate = useNavigate();
@@ -165,6 +166,7 @@ export function ActiveWorkout() {
 
   const handleLogSet = async () => {
     if (!currentExercise || reps === 0 || weight === 0) return;
+    haptics.success(); // set logged / edit saved
 
     if (editingSetId !== null) {
       await db.execute(

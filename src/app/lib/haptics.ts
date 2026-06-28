@@ -30,6 +30,8 @@ function fire(run: () => Promise<unknown>): void {
 export const haptics = {
   /** Light tap - incidental button presses. */
   tap: () => fire(() => Haptics.impact({ style: ImpactStyle.Light })),
+  /** Heavy thud - a strong single cue, such as when a timer hits zero */
+  thud: () => fire(() => Haptics.impact({ style: ImpactStyle.Heavy })),
   /** Warm up the selection generator before a run of select() ticks. REQUIRED on iOS */
   selectStart: () => fire(() => Haptics.selectionStart()),
   /** Selection tick - one per detent while scrubbing a picker/wheel. Call selectStart() first. */
