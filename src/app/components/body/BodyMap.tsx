@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Model from "react-body-highlighter";
 import { useIsMobile } from "../ui/use-mobile";
 import { haptics } from "../../lib/haptics";
@@ -40,18 +40,31 @@ export function BodyMap() {
       : "front";
   const [view, setView] = useState<"front" | "back">(initialView);
   const [selectedMuscle, setSelectedMuscle] = useState<string | null>(null);
+  const [emptyZone, setEmptyZone] = useState(false);
+  const muscleHitRef = useRef(false);
 
   const handleMuscleClick = (muscle: { muscle: string }) => {
+    muscleHitRef.current = true; 
     const muscleName = muscle.muscle;
     const muscleGroup = MUSCLE_TO_GROUP[muscleName];
     if (!muscleGroup) return;
     haptics.tap(); // confirm a successful muscle click
+    setEmptyZone(false);
 
     if (isMobile && selectedMuscle !== muscleName) {
       setSelectedMuscle(muscleName);
       return;
     }
     navigate(`/muscle/${muscleGroup}`, { state: { view } });
+  };
+
+  const handleMapClick = () => {
+    if (muscleHitRef.current) {
+      muscleHitRef.current = false;
+      return;
+    }
+    setSelectedMuscle(null);
+    setEmptyZone(true);
   };
 
   const modelData = selectedMuscle
@@ -63,19 +76,20 @@ export function BodyMap() {
       ]
     : [];
 
+  const formatBodyLabel = (value: string) => value.replace(/-/g, " ");
+
   const instructionText = isMobile
-    ? selectedMuscle
-      ? "TAP AGAIN TO VIEW EXERCISES"
-      : "TAP A MUSCLE TO HIGHLIGHT"
+    ? "TAP A MUSCLE TO HIGHLIGHT"
     : "HOVER TO PREVIEW, TAP MUSCLE TO VIEW EXERCISES";
 
   return (
-    <div className="flex min-h-full flex-col items-center justify-center overflow-auto px-3 py-2 sm:p-8">
-      <div className="flex justify-center gap-2 mb-4 sm:gap-6 sm:mb-8">
+    <div className="flex h-full flex-col items-center overflow-hidden px-3 py-2 sm:p-8">
+      <div className="flex shrink-0 justify-center gap-2 mb-4 sm:gap-6 sm:mb-8">
         <button
           onClick={() => {
             setView("front");
             setSelectedMuscle(null);
+            setEmptyZone(false);
           }}
           className={`px-5 py-2 text-sm transition-all label-font sm:px-8 sm:py-3 sm:text-base ${
             view === "front"
@@ -89,6 +103,7 @@ export function BodyMap() {
           onClick={() => {
             setView("back");
             setSelectedMuscle(null);
+            setEmptyZone(false);
           }}
           className={`px-5 py-2 text-sm transition-all label-font sm:px-8 sm:py-3 sm:text-base ${
             view === "back"
@@ -100,25 +115,38 @@ export function BodyMap() {
         </button>
       </div>
 
-      <div
-        className={`body-map-model mx-auto ${
-          isMobile ? "w-[min(84vw,20rem)]" : "w-full max-w-md"
-        }`}
-      >
-        <div className="relative">
+      <div className="flex min-h-0 w-full flex-1 items-center justify-center">
+        <div className="body-map-model relative h-full max-w-full" onClick={handleMapClick}>
           <Model
             data={modelData}
             type={view === "front" ? "anterior" : "posterior"}
             highlightedColors={["#ffffff"]}
-            style={{ background: "transparent", backgroundColor: "transparent" }}
-            svgStyle={{ background: "transparent", backgroundColor: "transparent" }}
+            style={{ background: "transparent", backgroundColor: "transparent", height: "100%" }}
+            svgStyle={{ background: "transparent", backgroundColor: "transparent", height: "100%", width: "auto", maxWidth: "100%" }}
             onClick={handleMuscleClick}
           />
         </div>
       </div>
 
-      <div className="text-center label-font text-[9px] text-muted-foreground mt-2 sm:mt-8 sm:text-sm">
-        {instructionText}
+      <div className="flex h-14 shrink-0 flex-col items-center justify-center text-center mt-2 sm:mt-6 sm:h-16">
+        {isMobile && selectedMuscle ? (
+          <>
+            <div className="display-font text-xl bevel-text sm:text-2xl">
+              {formatBodyLabel(selectedMuscle)}
+            </div>
+            <div className="label-font text-[9px] text-muted-foreground mt-1 sm:text-sm">
+              TAP AGAIN FOR {formatBodyLabel(MUSCLE_TO_GROUP[selectedMuscle])} EXERCISES
+            </div>
+          </>
+        ) : emptyZone ? (
+          <div className="label-font text-[9px] text-muted-foreground sm:text-sm">
+            NO MUSCLE HERE YET
+          </div>
+        ) : (
+          <div className="label-font text-[9px] text-muted-foreground sm:text-sm">
+            {instructionText}
+          </div>
+        )}
       </div>
     </div>
   );
