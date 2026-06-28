@@ -30,8 +30,12 @@ function fire(run: () => Promise<unknown>): void {
 export const haptics = {
   /** Light tap - incidental button presses. */
   tap: () => fire(() => Haptics.impact({ style: ImpactStyle.Light })),
-  /** Selection tick - one per detent while scrubbing a picker/wheel. */
+  /** Warm up the selection generator before a run of select() ticks. REQUIRED on iOS */
+  selectStart: () => fire(() => Haptics.selectionStart()),
+  /** Selection tick - one per detent while scrubbing a picker/wheel. Call selectStart() first. */
   select: () => fire(() => Haptics.selectionChanged()),
+  /** Release the selection generator when the run ends. */
+  selectEnd: () => fire(() => Haptics.selectionEnd()),
   /** Success - e.g. a set logged. */
   success: () => fire(() => Haptics.notification({ type: NotificationType.Success })),
   /** Warning - destructive actions (delete/remove). */

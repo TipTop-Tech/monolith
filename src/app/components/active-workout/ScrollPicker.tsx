@@ -43,6 +43,7 @@ export function ScrollPicker({
   // ^could consider that as something that feels cool?
   const lastHapticValueRef = useRef(value);
   const suppressHapticsRef = useRef(false);
+  const selectionStartedRef = useRef(false);
 
   const values = [];
   for (let i = min; i <= max; i += step) {
@@ -68,6 +69,7 @@ export function ScrollPicker({
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
+      haptics.selectEnd();
     };
   }, []);
 
@@ -90,6 +92,16 @@ export function ScrollPicker({
         setSelectedValue(newValue);
       }
     });
+  };
+
+  // on user's first grab/scroll, list suppression and warm up the iOS selection
+  // generator once so that haptics work
+  const beginInteraction = () => {
+    suppressHapticsRef.current = false;
+    if (!selectionStartedRef.current) {
+      selectionStartedRef.current = true;
+      haptics.selectStart();
+    }
   };
 
   const getItemStyle = (index: number) => {
@@ -179,8 +191,8 @@ export function ScrollPicker({
                 <div
                   ref={scrollRef}
                   onScroll={handleScroll}
-                  onPointerDown={() => { suppressHapticsRef.current = false; }}
-                  onWheel={() => { suppressHapticsRef.current = false; }}
+                  onPointerDown={beginInteraction}
+                  onWheel={beginInteraction}
                   className="h-full w-full overflow-y-scroll snap-y snap-mandatory hide-scrollbar"
                   style={{
                     paddingTop: `${itemHeight * 1.5}px`,
