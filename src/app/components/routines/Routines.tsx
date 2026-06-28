@@ -119,21 +119,34 @@ function RoutineExerciseRow({
   onOpen,
   onRemove,
 }: RoutineExerciseRowProps) {
+  const OPEN_OFFSET = -96; 
+
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const touchStartX = useRef<number | null>(null);
+  const baseOffsetRef = useRef(0);
   const swipeOffsetRef = useRef(0);
   const blockNextClickRef = useRef(false);
 
-  const resetSwipe = () => {
+  const close = () => {
     touchStartX.current = null;
     swipeOffsetRef.current = 0;
     setSwipeOffset(0);
+    setIsOpen(false);
+    setIsDragging(false);
+  };
+
+  const open = () => {
+    swipeOffsetRef.current = OPEN_OFFSET;
+    setSwipeOffset(OPEN_OFFSET);
+    setIsOpen(true);
     setIsDragging(false);
   };
 
   const handleTouchStart = (event: React.TouchEvent<HTMLButtonElement>) => {
     touchStartX.current = event.touches[0].clientX;
+    baseOffsetRef.current = swipeOffsetRef.current;
     blockNextClickRef.current = false;
     setIsDragging(true);
   };
@@ -142,22 +155,17 @@ function RoutineExerciseRow({
     if (touchStartX.current === null) return;
 
     const deltaX = event.touches[0].clientX - touchStartX.current;
-    const nextOffset = deltaX < 0 ? Math.max(deltaX, -160) : 0;
+    const nextOffset = Math.max(Math.min(baseOffsetRef.current + deltaX, 0), -160);
+    if (Math.abs(deltaX) > 6) blockNextClickRef.current = true; // drag, not tap
 
     swipeOffsetRef.current = nextOffset;
     setSwipeOffset(nextOffset);
   };
 
-  const handleTouchEnd = () => {
-    setIsDragging(false);
 
-    if (swipeOffsetRef.current < -90) {
-      blockNextClickRef.current = true;
-      onRemove();
-      return;
-    }
-
-    resetSwipe();
+  const settle = () => {
+    if (swipeOffsetRef.current < OPEN_OFFSET / 2) open();
+    else close();
   };
 
   const subtitle = lastSet
@@ -165,45 +173,60 @@ function RoutineExerciseRow({
     : `${sets} SETS × ${targetReps} REPS`;
 
   return (
+    <div className="relative overflow-hidden">
+      <button
+        type="button"
+        aria-label={`Remove ${exerciseName}`}
+        onClick={onRemove}
+        tabIndex={isOpen ? 0 : -1}
+        className="absolute inset-y-0 right-0 z-0 flex w-24 items-center justify-center gap-1.5 bg-secondary text-destructive"
+      >
+        <Trash2 size={18} />
+        <span className="label-font text-[10px] tracking-[0.3em]">REMOVE</span>
+      </button>
 
-    <button
-      type="button"
-      onClick={() => {
-        if (blockNextClickRef.current) {
-          blockNextClickRef.current = false;
-          return;
-        }
-
-        onOpen();
-      }}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      onTouchCancel={resetSwipe}
-      style={{
-        transform: `translateX(${swipeOffset}px)`,
-        transition: isDragging ? "none" : "transform 180ms ease",
-        touchAction: "pan-y",
-        WebkitTapHighlightColor: "transparent",
-      }}
-      className="relative z-10 w-full flex items-center justify-between py-4 px-6 bg-secondary bevel-element outline-none transition-all hover:bg-accent active:scale-[0.99] focus:outline-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
-    >
-      <div className="text-left">
-        <div className="display-font text-xl bevel-text">{exerciseName}</div>
-        <div className="label-font text-muted-foreground mt-1">{subtitle}</div>
-        {suggestedWeightLbs ? (
-          <div className="label-font text-[10px] tracking-[0.22em] text-muted-foreground/80 mt-1">
-            AI START ≈ {suggestedWeightLbs} LBS
-          </div>
-        ) : null}
-        {coachNotes ? (
-          <div className="mt-2 max-w-[17rem] text-left text-[11px] leading-4 text-muted-foreground/70">
-            {coachNotes}
-          </div>
-        ) : null}
-      </div>
-      <ChevronRight size={20} className="text-muted-foreground" />
-    </button>
+      <button
+        type="button"
+        onClick={() => {
+          if (blockNextClickRef.current) {
+            blockNextClickRef.current = false;
+            return;
+          }
+          if (isOpen) {
+            close();
+            return;
+          }
+          onOpen();
+        }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={settle}
+        onTouchCancel={settle}
+        style={{
+          transform: `translateX(${swipeOffset}px)`,
+          transition: isDragging ? "none" : "transform 180ms ease",
+          touchAction: "pan-y",
+          WebkitTapHighlightColor: "transparent",
+        }}
+        className="relative z-10 w-full flex items-center justify-between py-4 px-6 bg-secondary bevel-element outline-none transition-all hover:bg-accent active:scale-[0.99] focus:outline-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+      >
+        <div className="text-left">
+          <div className="display-font text-xl bevel-text">{exerciseName}</div>
+          <div className="label-font text-muted-foreground mt-1">{subtitle}</div>
+          {suggestedWeightLbs ? (
+            <div className="label-font text-[10px] tracking-[0.22em] text-muted-foreground/80 mt-1">
+              AI START ≈ {suggestedWeightLbs} LBS
+            </div>
+          ) : null}
+          {coachNotes ? (
+            <div className="mt-2 max-w-[17rem] text-left text-[11px] leading-4 text-muted-foreground/70">
+              {coachNotes}
+            </div>
+          ) : null}
+        </div>
+        <ChevronRight size={20} className="text-muted-foreground" />
+      </button>
+    </div>
   );
 }
 
