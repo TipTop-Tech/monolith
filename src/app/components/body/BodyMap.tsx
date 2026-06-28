@@ -2,6 +2,7 @@ import { useLocation, useNavigate } from "react-router";
 import { useState } from "react";
 import Model from "react-body-highlighter";
 import { useIsMobile } from "../ui/use-mobile";
+import { haptics } from "../../lib/haptics";
 
 const MUSCLE_TO_GROUP: { [key: string]: string } = {
   "chest": "chest",
@@ -44,6 +45,7 @@ export function BodyMap() {
     const muscleName = muscle.muscle;
     const muscleGroup = MUSCLE_TO_GROUP[muscleName];
     if (!muscleGroup) return;
+    haptics.tap(); // confirm a successful muscle click
 
     if (isMobile && selectedMuscle !== muscleName) {
       setSelectedMuscle(muscleName);
