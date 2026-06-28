@@ -198,6 +198,7 @@ export function ActiveWorkout() {
   };
 
   const handleEndWorkout = () => {
+    haptics.thud();
     setCurrentRoutine(null);
     setWorkoutSessionStartedAt(null);
     setReps(0);
@@ -210,6 +211,7 @@ export function ActiveWorkout() {
   };
 
   const handleEndExercise = () => {
+    haptics.thud();
     setWorkoutSessionStartedAt(null);
     setReps(0);
     setWeight(0);
@@ -527,6 +529,7 @@ export function ActiveWorkout() {
               <AlertDialogCancel onClick={() => setSetToDeleteId(null)} className="label-font bg-secondary text-foreground hover:bg-accent border-none bevel-element">CANCEL</AlertDialogCancel>
               <AlertDialogAction onClick={async () => {
                 if (setToDeleteId !== null) {
+                  haptics.warn();
                   await db.execute('DELETE FROM workoutHistory WHERE id = ?', [setToDeleteId]);
                   if (editingSetId === setToDeleteId) {
                     setEditingSetId(null);

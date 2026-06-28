@@ -31,6 +31,7 @@ export const AccountPage = () => {
   };
 
   const handleSignOut = async () => {
+    haptics.thud();
     try {
       await AuthService.logout();
       navigate("/signin");
