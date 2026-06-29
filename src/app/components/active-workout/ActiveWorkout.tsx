@@ -339,7 +339,7 @@ export function ActiveWorkout() {
   // Active Workout View (View 3)
   if (currentView == 3) {
     return (
-      <div className="h-full flex flex-col min-h-0">
+      <div className="h-full flex flex-col min-h-0 overflow-hidden">
         <div className="flex-1 min-h-0 flex flex-col">
           {/* Exercise Pills
         <div className="px-4 sm:px-6 pt-4 sm:pt-8 pb-3 sm:pb-6 overflow-x-auto">
@@ -366,10 +366,10 @@ export function ActiveWorkout() {
 
           {/* Rest Timer - Massive Typography */}
 
-          <div className="flex flex-col items-center justify-center px-4 sm:px-6 py-[60px] sm:py-5 shrink-0">
+          <div className="flex flex-col items-center justify-center px-4 sm:px-6 py-4 sm:py-5 shrink-0">
             <div className="display-font text-4xl md:text-5xl bevel-text">{currentExercise?.name ?? "EXERCISE"}</div>
 
-            <div className="label-font text-muted-foreground mt-7 sm:mt-8">REST TIME</div>
+            <div className="label-font text-muted-foreground mt-4 sm:mt-8">REST TIME</div>
             <button
               onClick={() => setPickerType("restTime")}
               className="display-font text-[min(30vw,150px)] sm:text-[min(40vw,180px)] leading-none bevel-text-large mt-2 sm:mt-4 transition-all hover:scale-105 active:scale-95"
