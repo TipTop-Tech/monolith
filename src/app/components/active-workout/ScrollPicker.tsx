@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { haptics } from "../../lib/haptics";
 
 interface ScrollPickerProps {
   value: number;
@@ -39,6 +40,12 @@ export function ScrollPicker({
   const animationFrameRef = useRef<number>();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const isInitialRender = useRef(true);
+  // one tick each time the value changes
+  // does not fire when the wheel auto scrolls to position on open
+  // ^could consider that as something that feels cool?
+  const lastHapticValueRef = useRef(value);
+  const suppressHapticsRef = useRef(false);
+  const selectionStartedRef = useRef(false);
 
   const values = [];
   for (let i = min; i <= max; i += step) {
@@ -51,6 +58,9 @@ export function ScrollPicker({
     if (scrollRef.current && !isCustomMode) {
       const index = values.indexOf(selectedValue);
       const scrollTop = index * itemHeight;
+      // for preventing haptics on auto scroll to position on open
+      suppressHapticsRef.current = true;
+      lastHapticValueRef.current = selectedValue;
       scrollRef.current.scrollTop = scrollTop;
       setScrollPosition(scrollTop);
     }
@@ -64,6 +74,7 @@ export function ScrollPicker({
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
+      haptics.selectEnd();
     };
   }, []);
 
@@ -91,9 +102,24 @@ export function ScrollPicker({
         setScrollPosition(scrollTop);
         const index = Math.round(scrollTop / itemHeight);
         const clampedIndex = Math.max(0, Math.min(index, values.length - 1));
-        setSelectedValue(values[clampedIndex]);
+        const newValue = values[clampedIndex];
+        if (newValue !== lastHapticValueRef.current) {
+          lastHapticValueRef.current = newValue;
+          if (!suppressHapticsRef.current) haptics.select();
+        }
+        setSelectedValue(newValue);
       }
     });
+  };
+
+  // on user's first grab/scroll, list suppression and warm up the iOS selection
+  // generator once so that haptics work
+  const beginInteraction = () => {
+    suppressHapticsRef.current = false;
+    if (!selectionStartedRef.current) {
+      selectionStartedRef.current = true;
+      haptics.selectStart();
+    }
   };
 
   const getItemStyle = (index: number) => {
@@ -183,6 +209,8 @@ export function ScrollPicker({
                 <div
                   ref={scrollRef}
                   onScroll={handleScroll}
+                  onPointerDown={beginInteraction}
+                  onWheel={beginInteraction}
                   className="h-full w-full overflow-y-scroll snap-y snap-mandatory hide-scrollbar"
                   style={{
                     paddingTop: `130px`,

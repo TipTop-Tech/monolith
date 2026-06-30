@@ -17,6 +17,7 @@ import { useNavigate, useLocation } from "react-router";
 import { Play, Pause, RotateCcw, Plus, Edit2, X, Trash2 } from "lucide-react";
 import { ScrollPicker } from "./ScrollPicker";
 import { WorkoutCarousel } from "./WorkoutCarousel";
+import { haptics } from "../../lib/haptics";
 
 export function ActiveWorkout() {
   const navigate = useNavigate();
@@ -169,6 +170,7 @@ export function ActiveWorkout() {
 
   const handleLogSet = async () => {
     if (!currentExercise || reps === 0 || weight === 0) return;
+    haptics.success(); // set logged / edit saved
 
     if (editingSetId !== null) {
       await db.execute(
@@ -200,6 +202,7 @@ export function ActiveWorkout() {
   };
 
   const handleEndWorkout = () => {
+    haptics.thud();
     setCurrentRoutine(null);
     setWorkoutSessionStartedAt(null);
     setReps(0);
@@ -212,6 +215,7 @@ export function ActiveWorkout() {
   };
 
   const handleEndExercise = () => {
+    haptics.thud();
     setWorkoutSessionStartedAt(null);
     setReps(0);
     setWeight(0);
@@ -339,7 +343,7 @@ export function ActiveWorkout() {
   // Active Workout View (View 3)
   if (currentView == 3) {
     return (
-      <div className="h-full flex flex-col min-h-0">
+      <div className="h-full flex flex-col min-h-0 overflow-hidden">
         <div className="flex-1 min-h-0 flex flex-col">
           {/* Exercise Pills
         <div className="px-4 sm:px-6 pt-4 sm:pt-8 pb-3 sm:pb-6 overflow-x-auto">
@@ -366,10 +370,10 @@ export function ActiveWorkout() {
 
           {/* Rest Timer - Massive Typography */}
 
-          <div className="flex flex-col items-center justify-center px-4 sm:px-6 py-[60px] sm:py-5 shrink-0">
+          <div className="flex flex-col items-center justify-center px-4 sm:px-6 py-4 sm:py-5 shrink-0">
             <div className="display-font text-4xl md:text-5xl bevel-text">{currentExercise?.name ?? "EXERCISE"}</div>
 
-            <div className="label-font text-muted-foreground mt-7 sm:mt-8">REST TIME</div>
+            <div className="label-font text-muted-foreground mt-4 sm:mt-8">REST TIME</div>
             <button
               onClick={() => setPickerType("restTime")}
               className="display-font text-[min(30vw,150px)] sm:text-[min(40vw,180px)] leading-none bevel-text-large mt-2 sm:mt-4 transition-all hover:scale-105 active:scale-95"
@@ -394,6 +398,7 @@ export function ActiveWorkout() {
                 onPointerUp={() => setIsMinus10Pressed(false)}
                 onPointerLeave={() => setIsMinus10Pressed(false)}
                 onClick={() => {
+                  if (timeRemaining > 0) haptics.tap(); 
                   setTimeout(() => setTimeRemaining(prev => Math.max(0, prev - 10)), 50);
                 }}
                 data-active={isMinus10Pressed}
@@ -441,6 +446,7 @@ export function ActiveWorkout() {
                 onPointerUp={() => setIsPlus30Pressed(false)}
                 onPointerLeave={() => setIsPlus30Pressed(false)}
                 onClick={() => {
+                  haptics.tap(); 
                   setTimeout(() => setTimeRemaining(prev => prev + 30), 50);
                 }}
                 data-active={isPlus30Pressed}
@@ -558,6 +564,7 @@ export function ActiveWorkout() {
               <AlertDialogCancel onClick={() => setSetToDeleteId(null)} className="label-font bg-secondary text-foreground hover:bg-accent border-none bevel-element">CANCEL</AlertDialogCancel>
               <AlertDialogAction onClick={async () => {
                 if (setToDeleteId !== null) {
+                  haptics.warn();
                   await db.execute('DELETE FROM workoutHistory WHERE id = ?', [setToDeleteId]);
                   if (editingSetId === setToDeleteId) {
                     setEditingSetId(null);
