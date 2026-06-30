@@ -25,3 +25,12 @@ body * {
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
+
+/* User-entered / case-sensitive content keeps its real casing */
+body .user-text,
+body .user-text *,
+body input,
+body textarea {
+  text-transform: none;
+  letter-spacing: normal;
+}

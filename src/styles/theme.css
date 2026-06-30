@@ -13,7 +13,7 @@
   --secondary: #1c1c1c;
   --secondary-foreground: #e8e8e8;
   --muted: #1a1a1a;
-  --muted-foreground: #6b6b6b;
+  --muted-foreground: #8a8a8a;
   --accent: #222222;
   --accent-foreground: #e8e8e8;
   --destructive: #dc2626;
@@ -298,5 +298,75 @@
   .custom-dots li.slick-active button {
     width: 20px;
     background: rgba(255, 255, 255, 0.6);
+  }
+
+  /* Black Glass Button Styles */
+  .black-glass-button {
+    background: rgba(10, 10, 10, 0.4);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow:
+      inset 0 1px 1px rgba(255, 255, 255, 0.2),
+      inset 0 -1px 2px rgba(0, 0, 0, 0.8),
+      inset 0 0 15px rgba(255, 255, 255, 0.15),
+      0 8px 16px rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    transform: translateY(0);
+    transition: transform 0.15s cubic-bezier(0.4, 0.0, 0.2, 1), box-shadow 0.15s cubic-bezier(0.4, 0.0, 0.2, 1), border-color 0.15s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .black-glass-button::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%);
+    pointer-events: none;
+    border-radius: inherit;
+  }
+
+  .black-glass-button:active,
+  .black-glass-button[data-active="true"] {
+    transform: translateY(4px) !important;
+    box-shadow:
+      inset 0 1px 3px rgba(255, 255, 255, 0.2),
+      inset 0 -1px 2px rgba(0, 0, 0, 0.8),
+      inset 0 0 25px rgba(255, 255, 255, 0.3),
+      0 4px 8px rgba(0, 0, 0, 0.6) !important;
+    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(20, 20, 20, 0.5);
+  }
+
+  .black-glass-button:disabled {
+    opacity: 0.3;
+    pointer-events: none;
+    box-shadow:
+      inset 0 1px 1px rgba(255, 255, 255, 0.1),
+      0 4px 8px rgba(0, 0, 0, 0.4);
+    border-color: rgba(255, 255, 255, 0.05);
+  }
+
+  .black-glass-text {
+    color: #ffffff;
+    text-shadow:
+      0 0 12px rgba(255, 255, 255, 0.5),
+      0 2px 4px rgba(0, 0, 0, 0.8);
+    font-weight: 800;
+  }
+}
+/* Respect the OS "Reduce Motion" setting (unsure if works for android) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { haptics } from "../../lib/haptics";
 
 interface ScrollPickerProps {
   value: number;
@@ -37,30 +38,58 @@ export function ScrollPicker({
   const [scrollPosition, setScrollPosition] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const animationFrameRef = useRef<number>();
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const isInitialRender = useRef(true);
+  // one tick each time the value changes
+  // does not fire when the wheel auto scrolls to position on open
+  // ^could consider that as something that feels cool?
+  const lastHapticValueRef = useRef(value);
+  const suppressHapticsRef = useRef(false);
+  const selectionStartedRef = useRef(false);
 
   const values = [];
   for (let i = min; i <= max; i += step) {
     values.push(i);
   }
 
-  const itemHeight = 100;
+  const itemHeight = 140;
 
   useEffect(() => {
     if (scrollRef.current && !isCustomMode) {
       const index = values.indexOf(selectedValue);
       const scrollTop = index * itemHeight;
+      // for preventing haptics on auto scroll to position on open
+      suppressHapticsRef.current = true;
+      lastHapticValueRef.current = selectedValue;
       scrollRef.current.scrollTop = scrollTop;
       setScrollPosition(scrollTop);
     }
   }, [isCustomMode]);
 
   useEffect(() => {
+    audioRef.current = new Audio('/assets/clink.mp3');
+    audioRef.current.volume = 0.5; // Set volume to 50% for a subtle effect
+
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
+      haptics.selectEnd();
     };
   }, []);
+
+  useEffect(() => {
+    if (isInitialRender.current) {
+      isInitialRender.current = false;
+      return;
+    }
+
+    if (audioRef.current && !isCustomMode) {
+      const audioClone = audioRef.current.cloneNode() as HTMLAudioElement;
+      audioClone.volume = 0.5;
+      audioClone.play().catch(e => console.log("Audio play failed:", e));
+    }
+  }, [selectedValue, isCustomMode]);
 
   const handleScroll = () => {
     if (animationFrameRef.current) {
@@ -73,9 +102,24 @@ export function ScrollPicker({
         setScrollPosition(scrollTop);
         const index = Math.round(scrollTop / itemHeight);
         const clampedIndex = Math.max(0, Math.min(index, values.length - 1));
-        setSelectedValue(values[clampedIndex]);
+        const newValue = values[clampedIndex];
+        if (newValue !== lastHapticValueRef.current) {
+          lastHapticValueRef.current = newValue;
+          if (!suppressHapticsRef.current) haptics.select();
+        }
+        setSelectedValue(newValue);
       }
     });
+  };
+
+  // on user's first grab/scroll, list suppression and warm up the iOS selection
+  // generator once so that haptics work
+  const beginInteraction = () => {
+    suppressHapticsRef.current = false;
+    if (!selectionStartedRef.current) {
+      selectionStartedRef.current = true;
+      haptics.selectStart();
+    }
   };
 
   const getItemStyle = (index: number) => {
@@ -165,10 +209,12 @@ export function ScrollPicker({
                 <div
                   ref={scrollRef}
                   onScroll={handleScroll}
+                  onPointerDown={beginInteraction}
+                  onWheel={beginInteraction}
                   className="h-full w-full overflow-y-scroll snap-y snap-mandatory hide-scrollbar"
                   style={{
-                    paddingTop: `${itemHeight * 1.5}px`,
-                    paddingBottom: `${itemHeight * 1.5}px`,
+                    paddingTop: `130px`,
+                    paddingBottom: `130px`,
                     scrollBehavior: "smooth",
                     WebkitOverflowScrolling: "touch",
                   }}
