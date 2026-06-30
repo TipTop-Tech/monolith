@@ -370,7 +370,7 @@ export function ActiveWorkout() {
 
           {/* Rest Timer - Massive Typography */}
 
-          <div className="flex flex-col items-center justify-center px-4 sm:px-6 py-4 sm:py-5 shrink-0">
+          <div className="flex flex-col items-center justify-center px-4 sm:px-6 py-4 sm:py-5 flex-1">
             <div className="display-font text-4xl md:text-5xl bevel-text">{currentExercise?.name ?? "EXERCISE"}</div>
 
             <div className="label-font text-muted-foreground mt-4 sm:mt-8">REST TIME</div>

@@ -55,7 +55,7 @@ export function WorkoutCarousel(props: WorkoutCarouselProps) {
           align: 'center',
           startIndex: props.currentSlide,
         }}
-        className="w-full max-w-sm flex-1"
+        className="w-full max-w-sm"
       >
         <CarouselContent className="items-center h-full">
           {/* Slide 0: End Exercise */}
@@ -208,7 +208,7 @@ export function WorkoutCarousel(props: WorkoutCarouselProps) {
       </Carousel>
 
       {/* Slide Indicators */}
-      <div className="flex items-center justify-center gap-0 pb-4 mt-auto">
+      <div className="flex items-center justify-center gap-0 pb-4">
         {Array.from({ length: slidesCount }).map((_, index) => {
           const isActive = index === props.currentSlide;
           // Only render dots for actual slides
