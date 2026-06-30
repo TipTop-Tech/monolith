@@ -418,8 +418,8 @@ export function ActiveWorkout() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogAction onClick={dismissWarning} className="label-font bg-primary text-primary-foreground bevel-element hover:opacity-90 transition-all active:scale-98">
-                CONTINUE
+              <AlertDialogAction onClick={dismissWarning} className="label-font black-glass-button">
+                <span className="black-glass-text">CONTINUE</span>
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -434,7 +434,9 @@ export function ActiveWorkout() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setSetToDeleteId(null)} className="label-font bg-secondary text-foreground hover:bg-accent border-none bevel-element">CANCEL</AlertDialogCancel>
+              <AlertDialogCancel onClick={() => setSetToDeleteId(null)} className="label-font black-glass-button border-none">
+                <span className="black-glass-text">CANCEL</span>
+              </AlertDialogCancel>
               <AlertDialogAction onClick={async () => {
                 if (setToDeleteId !== null) {
                   haptics.warn();
@@ -446,8 +448,8 @@ export function ActiveWorkout() {
                   }
                 }
                 setSetToDeleteId(null);
-              }} className="label-font bg-destructive text-destructive-foreground hover:bg-destructive/90 bevel-element">
-                DELETE
+              }} className="label-font black-glass-button-destructive">
+                <span className="black-glass-text">DELETE</span>
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -462,9 +464,11 @@ export function ActiveWorkout() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setShowEndExerciseConfirm(false)} className="label-font bg-secondary text-foreground hover:bg-accent border-none bevel-element">CANCEL</AlertDialogCancel>
-              <AlertDialogAction onClick={handleEndExercise} className="label-font bg-primary text-primary-foreground hover:bg-primary/90 bevel-element">
-                CONFIRM
+              <AlertDialogCancel onClick={() => setShowEndExerciseConfirm(false)} className="label-font black-glass-button border-none">
+                <span className="black-glass-text">CANCEL</span>
+              </AlertDialogCancel>
+              <AlertDialogAction onClick={handleEndExercise} className="label-font black-glass-button">
+                <span className="black-glass-text">CONFIRM</span>
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

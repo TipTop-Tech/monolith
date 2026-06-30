@@ -165,14 +165,15 @@ export function ScrollPicker({
           <div className="label-font text-muted-foreground mb-6">{title}</div>
 
           {unitOptions && onUnitChange && selectedUnit && (
-            <div className="flex bg-secondary p-1 rounded-lg mb-6">
+            <div className="flex gap-2 mb-6">
               {unitOptions.map(unit => (
                 <button
                   key={unit}
                   onClick={() => onUnitChange(unit)}
-                  className={`px-8 py-2.5 label-font text-xs rounded-md transition-all ${selectedUnit === unit ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                  data-active={selectedUnit === unit}
+                  className="px-8 py-2.5 label-font text-xs rounded-md transition-all black-glass-button"
                 >
-                  {unit}
+                  <span className="black-glass-text">{unit}</span>
                 </button>
               ))}
             </div>
@@ -181,9 +182,9 @@ export function ScrollPicker({
           {allowCustomInput && (
             <button 
               onClick={() => setIsCustomMode(!isCustomMode)}
-              className="mb-8 text-xs label-font tracking-[0.2em] text-primary hover:text-primary/80 transition-colors"
+              className="mb-8 px-4 py-2 text-xs label-font tracking-[0.2em] transition-colors black-glass-button rounded-md"
             >
-              {isCustomMode ? "USE SCROLL PICKER" : "TYPE CUSTOM VALUE"}
+              <span className="black-glass-text">{isCustomMode ? "USE SCROLL PICKER" : "TYPE CUSTOM VALUE"}</span>
             </button>
           )}
 
@@ -247,15 +248,15 @@ export function ScrollPicker({
           <div className="flex gap-4 mt-12 w-full max-w-xs">
             <button
               onClick={onClose}
-              className="flex-1 py-4 bg-muted text-foreground bevel-element hover:bg-accent transition-all active:scale-98 label-font"
+              className="flex-1 py-4 black-glass-button transition-all label-font rounded-md"
             >
-              CANCEL
+              <span className="black-glass-text">CANCEL</span>
             </button>
             <button
               onClick={handleConfirm}
-              className="flex-1 py-4 bg-primary text-primary-foreground bevel-element hover:opacity-90 transition-all active:scale-98 label-font"
+              className="flex-1 py-4 black-glass-button transition-all label-font rounded-md"
             >
-              CONFIRM
+              <span className="black-glass-text">CONFIRM</span>
             </button>
           </div>
         </div>

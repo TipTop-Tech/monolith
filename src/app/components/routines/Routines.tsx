@@ -182,10 +182,11 @@ function RoutineExerciseRow({
         aria-label={`Remove ${exerciseName}`}
         onClick={onRemove}
         tabIndex={isOpen ? 0 : -1}
-        className="absolute inset-y-0 right-0 z-0 flex w-24 items-center justify-center gap-1.5 bg-secondary text-destructive"
+        className="absolute inset-y-0 right-0 z-0 flex w-24 items-center justify-center gap-1.5 black-glass-button-destructive transition-opacity"
+        style={{ opacity: swipeOffset < 0 ? 1 : 0 }}
       >
-        <Trash2 size={18} />
-        <span className="label-font text-[10px] tracking-[0.3em]">REMOVE</span>
+        <Trash2 size={18} className="black-glass-text" />
+        <span className="label-font text-[10px] tracking-[0.3em] black-glass-text">REMOVE</span>
       </button>
 
       <button
@@ -211,18 +212,18 @@ function RoutineExerciseRow({
           touchAction: "pan-y",
           WebkitTapHighlightColor: "transparent",
         }}
-        className="relative z-10 w-full flex items-center justify-between py-4 px-6 bg-secondary bevel-element outline-none transition-all hover:bg-accent active:scale-[0.99] focus:outline-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+        className="relative z-10 w-full flex items-center justify-between py-4 px-6 black-glass-button outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
       >
         <div className="text-left">
-          <div className="display-font text-xl bevel-text">{exerciseName}</div>
-          <div className="label-font text-muted-foreground mt-1">{subtitle}</div>
+          <div className="display-font text-xl black-glass-text">{exerciseName}</div>
+          <div className="label-font mt-1 black-glass-text opacity-80">{subtitle}</div>
           {suggestedWeightLbs ? (
-            <div className="label-font text-[10px] tracking-[0.22em] text-muted-foreground/80 mt-1">
+            <div className="label-font text-[10px] tracking-[0.22em] mt-1 black-glass-text opacity-70">
               AI START ≈ {suggestedWeightLbs} LBS
             </div>
           ) : null}
           {coachNotes ? (
-            <div className="mt-2 max-w-[17rem] text-left text-[11px] leading-4 text-muted-foreground/70">
+            <div className="mt-2 max-w-[17rem] text-left text-[11px] leading-4 black-glass-text opacity-60">
               {coachNotes}
             </div>
           ) : null}
@@ -476,18 +477,18 @@ export function Routines() {
           setNewRoutineName("");
           setIsAddRoutineOpen(true);
         }}
-        className={`${compact ? "py-3 px-4" : "py-4 px-6"} w-full flex items-center justify-between bg-secondary/75 border border-white/15 backdrop-blur-md bevel-element hover:bg-accent/75 transition-all active:scale-[0.99]`}
+        className={`${compact ? "py-3 px-4" : "py-4 px-6"} w-full flex items-center justify-between black-glass-button`}
       >
-        <span className="label-font text-left">MANUAL</span>
-        <Plus size={compact ? 16 : 20} className="text-muted-foreground" />
+        <span className="label-font text-left black-glass-text">MANUAL</span>
+        <Plus size={compact ? 16 : 20} className="black-glass-text" />
       </button>
       <button
         type="button"
         onClick={openAIRoutine}
-        className={`${compact ? "py-3 px-4" : "py-4 px-6"} w-full flex items-center justify-between bg-secondary/75 border border-white/15 backdrop-blur-md bevel-element hover:bg-accent/75 transition-all active:scale-[0.99]`}
+        className={`${compact ? "py-3 px-4" : "py-4 px-6"} w-full flex items-center justify-between black-glass-button`}
       >
-        <span className="label-font text-left">AI ROUTINE</span>
-        <Sparkles size={compact ? 16 : 20} className="text-muted-foreground" />
+        <span className="label-font text-left black-glass-text">AI ROUTINE</span>
+        <Sparkles size={compact ? 16 : 20} className="black-glass-text" />
       </button>
     </div>
   );
@@ -505,9 +506,11 @@ export function Routines() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setRoutineToDelete(null)} className="label-font bg-secondary text-foreground hover:bg-accent border-none bevel-element">CANCEL</AlertDialogCancel>
-              <AlertDialogAction onClick={confirmRemoveRoutine} className="label-font bg-destructive text-destructive-foreground hover:bg-destructive/90 bevel-element">
-                DELETE
+              <AlertDialogCancel onClick={() => setRoutineToDelete(null)} className="label-font black-glass-button border-none">
+                <span className="black-glass-text">CANCEL</span>
+              </AlertDialogCancel>
+              <AlertDialogAction onClick={confirmRemoveRoutine} className="label-font black-glass-button-destructive">
+                <span className="black-glass-text">DELETE</span>
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -591,9 +594,9 @@ export function Routines() {
                             type="button"
                             onClick={() => handleRemoveRoutine(routine.id, routine.name)}
                             aria-label={`Remove ${routine.name}`}
-                            className="absolute right-6 top-8 h-10 w-10 flex items-center justify-center bg-secondary/75 bevel-element hover:bg-accent/75 transition-all active:scale-[0.98] md:right-8"
+                            className="absolute right-6 top-8 h-10 w-10 flex items-center justify-center black-glass-button-destructive md:right-8"
                           >
-                            <Trash2 size={18} className="text-destructive" />
+                            <Trash2 size={18} className="black-glass-text" />
                           </button>
                         )}
 
@@ -649,10 +652,10 @@ export function Routines() {
                             <button
                               type="button"
                               onClick={() => openAddWorkout(routine.id)}
-                              className="relative z-10 w-full flex items-center justify-between py-4 px-6 bg-secondary bevel-element hover:bg-accent transition-all active:scale-[0.99]"
+                              className="relative z-10 w-full flex items-center justify-between py-4 px-6 black-glass-button"
                             >
-                              <span className="label-font text-left">ADD WORKOUT</span>
-                              <Plus size={20} className="text-muted-foreground" />
+                              <span className="label-font text-left black-glass-text">ADD WORKOUT</span>
+                              <Plus size={20} className="black-glass-text" />
                             </button>
                           </div>
                         )}
@@ -701,11 +704,11 @@ export function Routines() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddRoutineOpen(false)}>
-              Cancel
+            <Button variant="outline" onClick={() => setIsAddRoutineOpen(false)} className="black-glass-button">
+              <span className="black-glass-text">Cancel</span>
             </Button>
-            <Button onClick={handleCreateRoutine} disabled={!newRoutineName.trim()}>
-              Create routine
+            <Button onClick={handleCreateRoutine} disabled={!newRoutineName.trim()} className="black-glass-button">
+              <span className="black-glass-text">Create routine</span>
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -768,11 +771,11 @@ export function Routines() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddWorkoutOpen(false)}>
-              Cancel
+            <Button variant="outline" onClick={() => setIsAddWorkoutOpen(false)} className="black-glass-button">
+              <span className="black-glass-text">Cancel</span>
             </Button>
-            <Button onClick={handleAddWorkout} disabled={!selectedExerciseId}>
-              Add to routine
+            <Button onClick={handleAddWorkout} disabled={!selectedExerciseId} className="black-glass-button">
+              <span className="black-glass-text">Add to routine</span>
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -866,8 +869,8 @@ export function Routines() {
                     <li key={question}>{question}</li>
                   ))}
                 </ul>
-                <Button variant="outline" onClick={() => handleGenerateAIRoutine(true)}>
-                  Generate anyway
+                <Button variant="outline" onClick={() => handleGenerateAIRoutine(true)} className="black-glass-button">
+                  <span className="black-glass-text">Generate anyway</span>
                 </Button>
               </div>
             ) : null}
@@ -907,14 +910,14 @@ export function Routines() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAIRoutineOpen(false)}>
-              Cancel
+            <Button variant="outline" onClick={() => setIsAIRoutineOpen(false)} className="black-glass-button">
+              <span className="black-glass-text">Cancel</span>
             </Button>
-            <Button variant="outline" onClick={() => handleGenerateAIRoutine(false)}>
-              Generate preview
+            <Button variant="outline" onClick={() => handleGenerateAIRoutine(false)} className="black-glass-button">
+              <span className="black-glass-text">Generate preview</span>
             </Button>
-            <Button onClick={handleAddGeneratedRoutine} disabled={aiResult?.status !== "ready"}>
-              Add routine
+            <Button onClick={handleAddGeneratedRoutine} disabled={aiResult?.status !== "ready"} className="black-glass-button">
+              <span className="black-glass-text">Add routine</span>
             </Button>
           </DialogFooter>
         </DialogContent>

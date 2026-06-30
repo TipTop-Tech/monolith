@@ -63,9 +63,9 @@ export function WorkoutCarousel(props: WorkoutCarouselProps) {
             <div className="w-[300px] flex items-center justify-center p-6">
               <button
                 onClick={() => props.setShowEndExerciseConfirm(true)}
-                className="w-full aspect-square px-6 bg-secondary bevel-element hover:bg-accent transition-all active:scale-98 flex items-center justify-center"
+                className="w-full aspect-square px-6 black-glass-button transition-all flex items-center justify-center"
               >
-                <div className="display-font text-xl sm:text-2xl tracking-[0.3em] text-muted-foreground text-center">END EXERCISE</div>
+                <div className="display-font text-xl sm:text-2xl tracking-[0.3em] black-glass-text opacity-80 text-center">END EXERCISE</div>
               </button>
             </div>
           </CarouselItem>
@@ -169,9 +169,9 @@ export function WorkoutCarousel(props: WorkoutCarouselProps) {
                             props.setCurrentSlide(1); // Auto scroll to active slide
                           }
                         }}
-                        className="text-muted-foreground/50 hover:text-orange-500 transition-colors active:scale-95 p-1"
+                        className="black-glass-button transition-all p-2 rounded-md"
                       >
-                        <Edit2 size={16} />
+                        <Edit2 size={16} className="black-glass-text opacity-70" />
                       </button>
                       <button
                         onClick={() => {
@@ -179,9 +179,9 @@ export function WorkoutCarousel(props: WorkoutCarouselProps) {
                             props.setSetToDeleteId(set.id);
                           }
                         }}
-                        className="text-muted-foreground/50 hover:text-destructive transition-colors active:scale-95 p-1"
+                        className="black-glass-button-destructive transition-all p-2 rounded-md"
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={16} className="black-glass-text" />
                       </button>
                     </div>
                   </div>

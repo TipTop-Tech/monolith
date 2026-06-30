@@ -56,10 +56,10 @@ export function WorkoutHistory() {
       <div className="h-full overflow-auto p-8">
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors mb-12"
+          className="flex items-center gap-3 mb-12 px-4 py-2 black-glass-button w-fit"
         >
-          <ArrowLeft size={20} />
-          <span className="label-font">BACK</span>
+          <ArrowLeft size={20} className="black-glass-text" />
+          <span className="label-font black-glass-text">BACK</span>
         </button>
 
         <div className="flex items-center justify-center p-6">
@@ -87,10 +87,10 @@ export function WorkoutHistory() {
     <div className="h-full overflow-auto p-8">
       <button
         onClick={() => navigate(-1)}
-        className="flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors mb-12"
+        className="flex items-center gap-3 mb-12 px-4 py-2 black-glass-button w-fit"
       >
-        <ArrowLeft size={20} />
-        <span className="label-font">BACK</span>
+        <ArrowLeft size={20} className="black-glass-text" />
+        <span className="label-font black-glass-text">BACK</span>
       </button>
 
       <div className="display-font text-5xl bevel-text-large mb-2">{exercise.name}</div>
@@ -162,16 +162,16 @@ export function WorkoutHistory() {
                 <SwipeableRow
                   key={set.id}
                   onRemove={() => handleDeleteRequest(set.id)}
-                  className="flex items-center justify-between py-4 px-6 bg-secondary bevel-element"
+                  className="flex items-center justify-between py-4 px-6 black-glass-button"
                 >
-                  <div className="label-font text-muted-foreground">
+                  <div className="label-font black-glass-text opacity-80">
                     {new Date(set.date).toLocaleDateString("en-US", {
                       month: "short",
                       day: "numeric",
                       year: "numeric",
                     })}
                   </div>
-                  <div className="display-font text-2xl bevel-text">
+                  <div className="display-font text-2xl black-glass-text">
                     {set.reps} × {set.weight}
                   </div>
                 </SwipeableRow>
@@ -197,11 +197,11 @@ export function WorkoutHistory() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
-              Cancel
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} className="black-glass-button">
+              <span className="black-glass-text">Cancel</span>
             </Button>
-            <Button variant="destructive" onClick={confirmDelete}>
-              Delete
+            <Button variant="destructive" onClick={confirmDelete} className="black-glass-button-destructive">
+              <span className="black-glass-text">Delete</span>
             </Button>
           </DialogFooter>
         </DialogContent>
