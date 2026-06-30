@@ -3,7 +3,7 @@ import { useQuery } from '@powersync/react';
 import { useWorkout } from "../../context/WorkoutContext";
 import { haptics } from "../../lib/haptics";
 import { useNavigate } from "react-router";
-import { ChevronRight, Plus, Sparkles, Trash2, ChevronDown, ChevronUp, MoreVertical } from "lucide-react";
+import { ChevronRight, Plus, Sparkles, Trash2, ChevronDown, ChevronUp, MoreVertical, History } from "lucide-react";
 import { Button } from "../ui/button";
 import { SwipeableRow } from "../ui/SwipeableRow";
 
@@ -105,7 +105,8 @@ type RoutineExerciseRowProps = {
     reps: number;
     weight: number;
   } | null;
-  onOpen: () => void;
+  onOpenHistory: () => void;
+  onOpenExercise: () => void;
   onRemove: () => void;
 };
 
@@ -116,7 +117,8 @@ function RoutineExerciseRow({
   suggestedWeightLbs,
   coachNotes,
   lastSet = null,
-  onOpen,
+  onOpenHistory,
+  onOpenExercise,
   onRemove,
 }: RoutineExerciseRowProps) {
   const OPEN_OFFSET = -96; 
@@ -197,7 +199,7 @@ function RoutineExerciseRow({
             close();
             return;
           }
-          onOpen();
+          onOpenExercise();
         }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -225,14 +227,24 @@ function RoutineExerciseRow({
             </div>
           ) : null}
         </div>
-        <ChevronRight size={20} className="text-muted-foreground" />
+        <div className="flex items-center gap-3">
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenHistory();
+            }}
+            className="w-10 h-10 flex items-center justify-center rounded-md bg-secondary-foreground/10 text-muted-foreground hover:bg-secondary-foreground/20 transition-colors"
+          >
+            <History size={18} />
+          </div>
+        </div>
       </button>
     </div>
   );
 }
 
 export function Routines() {
-  const { routines, exercises, addRoutine, removeRoutine, addExerciseToRoutine, removeRoutineExercise } = useWorkout();
+  const { routines, exercises, addRoutine, removeRoutine, addExerciseToRoutine, removeRoutineExercise, setCurrentRoutine, setCurrentExerciseIndex, setWorkoutSessionStartedAt, setReps, setWeight, setRestTime, setTimeRemaining, setIsTimerRunning, setPickerType } = useWorkout();
   
   const { data: allWorkoutHistoryRecords } = useQuery('SELECT * FROM workoutHistory ORDER BY date ASC');
   const navigate = useNavigate();
@@ -609,7 +621,19 @@ export function Routines() {
                                   sets={routineExercise.sets}
                                   targetReps={routineExercise.targetReps}
                                   lastSet={lastSet}
-                                  onOpen={() => navigate(`/workout/${routineExercise.exerciseId}`)}
+                                  onOpenHistory={() => navigate(`/workout/${routineExercise.exerciseId}`)}
+                                  onOpenExercise={() => {
+                                    setCurrentRoutine(routine);
+                                    setCurrentExerciseIndex(globalIndex);
+                                    setWorkoutSessionStartedAt(Date.now());
+                                    setReps(routineExercise.targetReps ?? 0);
+                                    setWeight(routineExercise.suggestedWeightLbs ?? 0);
+                                    setRestTime(90);
+                                    setTimeRemaining(0);
+                                    setIsTimerRunning(false);
+                                    setPickerType(null);
+                                    navigate('/');
+                                  }}
                                   onRemove={() => { haptics.warn(); removeRoutineExercise(routine.id, globalIndex); }}
                                 />
                               );

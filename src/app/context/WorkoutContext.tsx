@@ -67,10 +67,6 @@ interface WorkoutContextType {
   setWorkoutSessionStartedAt: (val: number | null) => void;
   currentSlide: number;
   setCurrentSlide: (val: number) => void;
-  currentView: number;
-  setCurrentView: (val: number) => void;
-  selectedRoutineId: string | null;
-  setSelectedRoutineId: (val: string | null) => void;
 }
 
 const WorkoutContext = createContext<WorkoutContextType | undefined>(undefined);
@@ -263,8 +259,6 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
   const [weightUnit, setWeightUnit] = useState("LB");
   const [workoutSessionStartedAt, setWorkoutSessionStartedAt] = useState<number | null>(null);
   const [currentSlide, setCurrentSlide] = useState(1);
-  const [currentView, setCurrentView] = useState(1);
-  const [selectedRoutineId, setSelectedRoutineId] = useState<string | null>(null);
 
   const timerWorkerRef = useRef<Worker | null>(null);
   const lastTimeRemainingRef = useRef(timeRemaining);
@@ -459,8 +453,6 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
         weightUnit, setWeightUnit,
         workoutSessionStartedAt, setWorkoutSessionStartedAt,
         currentSlide, setCurrentSlide,
-        currentView, setCurrentView,
-        selectedRoutineId, setSelectedRoutineId,
       }}
     >
       {children}

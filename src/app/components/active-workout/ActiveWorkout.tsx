@@ -39,9 +39,7 @@ export function ActiveWorkout() {
     isTimerRunning, setIsTimerRunning,
     pickerType, setPickerType,
     workoutSessionStartedAt, setWorkoutSessionStartedAt,
-    currentSlide, setCurrentSlide,
-    currentView, setCurrentView,
-    selectedRoutineId, setSelectedRoutineId
+    currentSlide, setCurrentSlide
   } = useWorkout();
 
   const db = usePowerSync();
@@ -137,36 +135,11 @@ export function ActiveWorkout() {
 
 
 
-  const handleSelectRoutine = (routine: (typeof routines)[number]) => {
-    // open picker locally when selecting a routine from this screen
-    setPickerType(null);
-    setSelectedRoutineId(routine.id);
-    setCurrentView(2);
-  };
-
-  const handleSelectExercise = (routine: (typeof routines)[number], exerciseIndex: number) => {
-    const routineExercise = routine.exercises[exerciseIndex];
-    setCurrentRoutine(routine);
-    setCurrentExerciseIndex(exerciseIndex);
-    setWorkoutSessionStartedAt(Date.now());
-    setReps(routineExercise?.targetReps ?? 0);
-    setWeight(routineExercise?.suggestedWeightLbs ?? 0);
-    setRestTime(90);
-    setTimeRemaining(0);
-    setIsTimerRunning(false);
-    setPickerType(null);
-    // setSelectedRoutineId(null);
-    setCurrentView(3);
-  };
   useEffect(() => {
-    const state = (location as any).state as { openRoutineId?: string } | undefined;
-    if (state?.openRoutineId) {
-      setSelectedRoutineId(state.openRoutineId);
-      setCurrentView(2);
-      // remove navigation state
-      navigate("/", { replace: true });
+    if (!currentRoutine) {
+      navigate("/routines", { replace: true });
     }
-  }, [location, navigate]);
+  }, [currentRoutine, navigate]);
 
   const handleLogSet = async () => {
     if (!currentExercise || reps === 0 || weight === 0) return;
@@ -216,15 +189,16 @@ export function ActiveWorkout() {
 
   const handleEndExercise = () => {
     haptics.thud();
+    setCurrentRoutine(null);
     setWorkoutSessionStartedAt(null);
     setReps(0);
     setWeight(0);
     setTimeRemaining(0);
     setIsTimerRunning(false);
     setPickerType(null);
-    setCurrentView(2);
     setEditingSetId(null);
     setShowEndExerciseConfirm(false);
+    navigate('/routines');
   };
 
 
@@ -236,113 +210,12 @@ export function ActiveWorkout() {
 
   const progress = timeRemaining > 0 ? (timeRemaining / restTime) * 100 : 0;
 
-  // Choose which exercise you want to choose from the routine (View 2)
-  if (currentView == 2) {
-
-    const pickerRoutine = routines.find((r) => r.id === selectedRoutineId) ?? null;
-    if (!pickerRoutine) return null;
-    else {
-      return (
-        <div className="h-full overflow-auto p-8 pb-28">
-          <button
-            onClick={() => {
-              setSelectedRoutineId(null);
-              setCurrentView(1);
-            }}
-            className="flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors mb-10"
-          >
-            <span className="label-font">BACK</span>
-          </button>
-
-          <div className="label-font text-muted-foreground mb-4">SELECT EXERCISE</div>
-          <div className="display-font text-5xl bevel-text-large mb-3">{pickerRoutine.name}</div>
-          <div className="label-font text-muted-foreground mb-12">CHOOSE THE EXERCISE YOU WANT TO START WITH</div>
-
-          {pickerRoutine.exercises.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-border/60 px-6 py-8 label-font text-xs tracking-[0.25em] text-muted-foreground">
-              NO EXERCISES IN THIS ROUTINE
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {pickerRoutine.exercises.map((routineExercise, index) => {
-                const exercise = exercises.find((e) => e.id === routineExercise.exerciseId);
-                return (
-                  <button
-                    key={`${pickerRoutine.id}-${routineExercise.exerciseId}-${index}`}
-                    type="button"
-                    onClick={() => {
-                      handleSelectExercise(pickerRoutine, index);
-                    }}
-                    className="w-full flex items-center justify-between gap-6 py-5 px-6 bg-secondary bevel-element hover:bg-accent transition-all active:scale-[0.99]"
-                  >
-                    <div className="text-left">
-                      <div className="display-font text-2xl bevel-text">{exercise?.name ?? "Unknown Exercise"}</div>
-                      <div className="label-font text-muted-foreground mt-1">{routineExercise.sets} SETS × {routineExercise.targetReps} REPS</div>
-                      {routineExercise.suggestedWeightLbs ? (
-                        <div className="label-font text-[10px] tracking-[0.22em] text-muted-foreground/80 mt-1">
-                          AI START ≈ {routineExercise.suggestedWeightLbs} LBS
-                        </div>
-                      ) : null}
-                    </div>
-
-                    <div className="flex items-center gap-3 text-muted-foreground">
-                      <span className="label-font text-[10px] tracking-[0.3em]">START</span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      );
-    }
-  }
-
-
-  // Choose Routine for Active Workout (View 1)
-  if (currentView == 1) {
-    return (
-      <div className="h-full flex flex-col items-center justify-center p-8">
-        {routines.length === 0 ? (
-          <div className="flex flex-col items-center text-center">
-            <div className="display-font text-4xl bevel-text mb-3">NO ROUTINES YET</div>
-            <div className="label-font text-muted-foreground mb-8">Create a routine to start a workout</div>
-            <button
-              onClick={() => navigate("/routines")}
-              className="py-4 px-8 bg-primary text-primary-foreground bevel-element hover:opacity-90 transition-all active:scale-98"
-            >
-              <span className="label-font">CREATE A ROUTINE</span>
-            </button>
-          </div>
-        ) : (
-          <>
-            <div className="label-font text-muted-foreground mb-12">SELECT ROUTINE</div>
-            <div className="w-full max-w-md space-y-6">
-              {routines.map((routine) => (
-                <button
-                  key={routine.id}
-                  onClick={() => handleSelectRoutine(routine)}
-                  className="w-full py-6 px-8 bg-accent bevel-element hover:bg-muted transition-all active:scale-98"
-                >
-                  <div className="display-font text-3xl bevel-text mb-1">{routine.name}</div>
-                  <div className="label-font text-muted-foreground">
-                    {routine.exercises.length} EXERCISES
-                  </div>
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
-    );
-
-  }
-
-    const slideCount = visibleSets.length + 2;
-
   // Active Workout View (View 3)
-  if (currentView == 3) {
-    return (
+  if (!currentRoutine) {
+    return null;
+  }
+
+  return (
       <div className="h-full flex flex-col min-h-0 overflow-hidden">
         <div className="flex-1 min-h-0 flex flex-col">
           {/* Exercise Pills
@@ -597,6 +470,5 @@ export function ActiveWorkout() {
           </AlertDialogContent>
         </AlertDialog>
       </div>
-    );
-  }
+  );
 }
