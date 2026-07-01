@@ -34,7 +34,7 @@ export function WorkoutCarousel(props: WorkoutCarouselProps) {
 
   useEffect(() => {
     if (!api) return;
-    
+
     api.on('select', () => {
       props.setCurrentSlide(api.selectedScrollSnap());
     });
@@ -217,7 +217,7 @@ export function WorkoutCarousel(props: WorkoutCarouselProps) {
           return (
             <div key={index} className="py-2 px-2 cursor-pointer" onClick={() => props.setCurrentSlide(index)}>
               <div
-                className={`h-2 rounded-full transition-all duration-200 mx-auto ${isActive ? "w-6 bg-primary" : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/60"
+                className={`h-2 rounded-full transition-all duration-200 mx-auto ${isActive ? "w-6 bg-primary shadow-[0_0_12px_rgba(255,255,255,0.3)]" : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/60"
                   }`}
               />
             </div>

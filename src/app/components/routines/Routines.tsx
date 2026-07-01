@@ -121,7 +121,7 @@ function RoutineExerciseRow({
   onOpenExercise,
   onRemove,
 }: RoutineExerciseRowProps) {
-  const OPEN_OFFSET = -96; 
+  const OPEN_OFFSET = -96;
 
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -246,7 +246,7 @@ function RoutineExerciseRow({
 
 export function Routines() {
   const { routines, exercises, addRoutine, removeRoutine, addExerciseToRoutine, removeRoutineExercise, setCurrentRoutine, setCurrentExerciseIndex, setWorkoutSessionStartedAt, setReps, setWeight, setRestTime, setTimeRemaining, setIsTimerRunning, setPickerType } = useWorkout();
-  
+
   const { data: allWorkoutHistoryRecords } = useQuery('SELECT * FROM workoutHistory ORDER BY date ASC');
   const navigate = useNavigate();
   const scrollRootRef = useRef<HTMLDivElement>(null);
@@ -584,7 +584,7 @@ export function Routines() {
                               onClick={() => navigate(`/routines/${routine.id}`)}
                               className="group flex items-center gap-3 text-left"
                             >
-                              <div className="display-font text-4xl md:text-5xl bevel-text">{routine.name}</div>
+                              <div className="display-font text-4xl md:text-5xl bevel-text drop-shadow-[0_0_12px_rgba(255,255,255,0.3)]">{routine.name}</div>
                               <ChevronRight size={20} className="text-muted-foreground transition-transform group-hover:translate-x-1" />
                             </button>
                           </div>

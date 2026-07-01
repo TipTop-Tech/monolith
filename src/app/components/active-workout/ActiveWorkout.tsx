@@ -55,7 +55,7 @@ export function ActiveWorkout() {
 
   const { showWarning, storageStatus, checkStorage, dismissWarning } = useStorageWarning();
 
-    const isFirstRender = useRef(true);
+  const isFirstRender = useRef(true);
   const wakeLockRef = useRef<any>(null); // Type any because WakeLockSentinel might not be in standard DOM lib yet
 
   // Wake Lock and Notification Permission Effect
@@ -79,7 +79,7 @@ export function ActiveWorkout() {
 
     if (isTimerRunning) {
       requestWakeLock();
-      
+
       // Request notification permission if not already granted
       if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
         Notification.requestPermission();
@@ -216,9 +216,9 @@ export function ActiveWorkout() {
   }
 
   return (
-      <div className="h-full flex flex-col min-h-0 overflow-hidden">
-        <div className="flex-1 min-h-0 flex flex-col">
-          {/* Exercise Pills
+    <div className="h-full flex flex-col min-h-0 overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col">
+        {/* Exercise Pills
         <div className="px-4 sm:px-6 pt-4 sm:pt-8 pb-3 sm:pb-6 overflow-x-auto">
           <div className="flex gap-2 sm:gap-4 pb-2">
             {currentRoutine.exercises.map((routineExercise, index) => {
@@ -241,164 +241,164 @@ export function ActiveWorkout() {
           </div>
         </div> */}
 
-          {/* Rest Timer - Massive Typography */}
+        {/* Rest Timer - Massive Typography */}
 
-          <div className="flex flex-col items-center justify-center px-4 sm:px-6 py-4 sm:py-5 flex-1">
-            <div className="display-font text-4xl md:text-5xl bevel-text">{currentExercise?.name ?? "EXERCISE"}</div>
+        <div className="flex flex-col items-center justify-center px-4 sm:px-6 py-4 sm:py-5 flex-1">
+          <div className="display-font text-4xl md:text-5xl bevel-text drop-shadow-[0_0_12px_rgba(255,255,255,0.3)]">{currentExercise?.name ?? "EXERCISE"}</div>
 
-            <div className="label-font text-muted-foreground mt-4 sm:mt-8">REST TIME</div>
-            <button
-              onClick={() => setPickerType("restTime")}
-              className="display-font text-[min(30vw,150px)] sm:text-[min(40vw,180px)] leading-none bevel-text-large mt-2 sm:mt-4 transition-all hover:scale-105 active:scale-95"
-            >
-              {timeRemaining > 0 ? formatTime(timeRemaining) : "--:--"}
-            </button>
+          <div className="label-font text-muted-foreground mt-4 sm:mt-8">REST TIME</div>
+          <button
+            onClick={() => setPickerType("restTime")}
+            className="display-font text-[min(30vw,150px)] sm:text-[min(40vw,180px)] leading-none bevel-text-large mt-2 sm:mt-4 transition-all hover:scale-105 active:scale-95 drop-shadow-[0_0_12px_rgba(255,255,255,0.3)]"
+          >
+            {timeRemaining > 0 ? formatTime(timeRemaining) : "--:--"}
+          </button>
 
-            {/* Progress Bar - Directional Lighting */}
-            <div className="w-full max-w-sm h-1 bg-secondary mb-4 sm:mb-8 overflow-hidden">
-              <div
-                className="h-full bg-primary transition-all duration-1000 ease-out"
-                style={{
-                  width: `${100 - progress}%`,
-                  boxShadow: "0 0 10px rgba(255, 255, 255, 0.3)",
-                }}
-              />
-            </div>
-
-            <div className="flex gap-3 sm:gap-4 mt-2 items-center justify-center">
-              <button
-                onPointerDown={() => setIsMinus10Pressed(true)}
-                onPointerUp={() => setIsMinus10Pressed(false)}
-                onPointerLeave={() => setIsMinus10Pressed(false)}
-                onClick={() => {
-                  if (timeRemaining > 0) haptics.tap(); 
-                  setTimeout(() => setTimeRemaining(prev => Math.max(0, prev - 10)), 50);
-                }}
-                data-active={isMinus10Pressed}
-                className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center black-glass-button label-font text-xs"
-              >
-                <span className="black-glass-text">-10S</span>
-              </button>
-
-              <button
-                onPointerDown={() => setIsPlayPausePressed(true)}
-                onPointerUp={() => setIsPlayPausePressed(false)}
-                onPointerLeave={() => setIsPlayPausePressed(false)}
-                onClick={() => {
-                  setTimeout(() => setIsTimerRunning(!isTimerRunning), 50);
-                }}
-                className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center black-glass-button"
-                disabled={timeRemaining === 0}
-                data-active={isPlayPausePressed}
-              >
-                <span className="black-glass-text flex items-center justify-center">
-                  {isTimerRunning ? <Pause size={24} /> : <Play size={24} />}
-                </span>
-              </button>
-
-              <button
-                onPointerDown={() => setIsResetPressed(true)}
-                onPointerUp={() => setIsResetPressed(false)}
-                onPointerLeave={() => setIsResetPressed(false)}
-                onClick={() => {
-                  setTimeout(() => {
-                    setTimeRemaining(restTime);
-                    setIsTimerRunning(false);
-                  }, 50);
-                }}
-                data-active={isResetPressed}
-                className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center black-glass-button"
-              >
-                <span className="black-glass-text flex items-center justify-center">
-                  <RotateCcw size={20} />
-                </span>
-              </button>
-
-              <button
-                onPointerDown={() => setIsPlus30Pressed(true)}
-                onPointerUp={() => setIsPlus30Pressed(false)}
-                onPointerLeave={() => setIsPlus30Pressed(false)}
-                onClick={() => {
-                  haptics.tap(); 
-                  setTimeout(() => setTimeRemaining(prev => prev + 30), 50);
-                }}
-                data-active={isPlus30Pressed}
-                className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center black-glass-button label-font text-xs"
-              >
-                <span className="black-glass-text">+30S</span>
-              </button>
-            </div>
+          {/* Progress Bar - Directional Lighting */}
+          <div className="w-full max-w-sm h-1 bg-secondary mb-4 sm:mb-8">
+            <div
+              className="h-full bg-primary transition-all duration-1000 ease-out"
+              style={{
+                width: `${100 - progress}%`,
+                boxShadow: "0 0 10px rgba(255, 255, 255, 0.3)",
+              }}
+            />
           </div>
 
-          <div className="flex-1 flex flex-col min-h-0 relative z-0">
-            <WorkoutCarousel
-              currentSlide={currentSlide}
-              setCurrentSlide={setCurrentSlide}
-              visibleSets={visibleSets}
-              editingSetId={editingSetId}
-              setEditingSetId={setEditingSetId}
-              reps={reps}
-              setReps={setReps}
-              weight={weight}
-              setWeight={setWeight}
-              setPickerType={setPickerType}
-              handleLogSet={handleLogSet}
-              setShowEndExerciseConfirm={setShowEndExerciseConfirm}
-              setSetToDeleteId={setSetToDeleteId}
-              currentExercise={currentExercise}
-              weightUnit={weightUnit}
-            />
+          <div className="flex gap-3 sm:gap-4 mt-2 items-center justify-center">
+            <button
+              onPointerDown={() => setIsMinus10Pressed(true)}
+              onPointerUp={() => setIsMinus10Pressed(false)}
+              onPointerLeave={() => setIsMinus10Pressed(false)}
+              onClick={() => {
+                if (timeRemaining > 0) haptics.tap();
+                setTimeout(() => setTimeRemaining(prev => Math.max(0, prev - 10)), 50);
+              }}
+              data-active={isMinus10Pressed}
+              className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center black-glass-button label-font text-xs"
+            >
+              <span className="black-glass-text">-10S</span>
+            </button>
+
+            <button
+              onPointerDown={() => setIsPlayPausePressed(true)}
+              onPointerUp={() => setIsPlayPausePressed(false)}
+              onPointerLeave={() => setIsPlayPausePressed(false)}
+              onClick={() => {
+                setTimeout(() => setIsTimerRunning(!isTimerRunning), 50);
+              }}
+              className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center black-glass-button"
+              disabled={timeRemaining === 0}
+              data-active={isPlayPausePressed}
+            >
+              <span className="black-glass-text flex items-center justify-center">
+                {isTimerRunning ? <Pause size={24} /> : <Play size={24} />}
+              </span>
+            </button>
+
+            <button
+              onPointerDown={() => setIsResetPressed(true)}
+              onPointerUp={() => setIsResetPressed(false)}
+              onPointerLeave={() => setIsResetPressed(false)}
+              onClick={() => {
+                setTimeout(() => {
+                  setTimeRemaining(restTime);
+                  setIsTimerRunning(false);
+                }, 50);
+              }}
+              data-active={isResetPressed}
+              className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center black-glass-button"
+            >
+              <span className="black-glass-text flex items-center justify-center">
+                <RotateCcw size={20} />
+              </span>
+            </button>
+
+            <button
+              onPointerDown={() => setIsPlus30Pressed(true)}
+              onPointerUp={() => setIsPlus30Pressed(false)}
+              onPointerLeave={() => setIsPlus30Pressed(false)}
+              onClick={() => {
+                haptics.tap();
+                setTimeout(() => setTimeRemaining(prev => prev + 30), 50);
+              }}
+              data-active={isPlus30Pressed}
+              className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center black-glass-button label-font text-xs"
+            >
+              <span className="black-glass-text">+30S</span>
+            </button>
           </div>
         </div>
 
-        {pickerType === "reps" && (
-          <ScrollPicker
-            value={reps || 10}
-            onChange={setReps}
-            min={1}
-            max={50}
-            step={1}
-            suffix=""
-            title="REPS"
-            onClose={() => setPickerType(null)}
+        <div className="flex-1 flex flex-col min-h-0 relative z-0">
+          <WorkoutCarousel
+            currentSlide={currentSlide}
+            setCurrentSlide={setCurrentSlide}
+            visibleSets={visibleSets}
+            editingSetId={editingSetId}
+            setEditingSetId={setEditingSetId}
+            reps={reps}
+            setReps={setReps}
+            weight={weight}
+            setWeight={setWeight}
+            setPickerType={setPickerType}
+            handleLogSet={handleLogSet}
+            setShowEndExerciseConfirm={setShowEndExerciseConfirm}
+            setSetToDeleteId={setSetToDeleteId}
+            currentExercise={currentExercise}
+            weightUnit={weightUnit}
           />
-        )}
+        </div>
+      </div>
 
-        {pickerType === "weight" && (
-          <ScrollPicker
-            value={weight || 45}
-            onChange={setWeight}
-            min={5}
-            max={500}
-            step={5}
-            suffix=""
-            title="WEIGHT"
-            onClose={() => setPickerType(null)}
-            allowCustomInput={true}
-            unitOptions={["LB", "KG"]}
-            selectedUnit={weightUnit}
-            onUnitChange={setWeightUnit}
-          />
-        )}
+      {pickerType === "reps" && (
+        <ScrollPicker
+          value={reps || 10}
+          onChange={setReps}
+          min={1}
+          max={50}
+          step={1}
+          suffix=""
+          title="REPS"
+          onClose={() => setPickerType(null)}
+        />
+      )}
 
-        {pickerType === "restTime" && (
-          <ScrollPicker
-            value={restTime}
-            onChange={(val) => {
-              setRestTime(val);
-              setTimeRemaining(val);
-              setIsTimerRunning(false);
-            }}
-            min={15}
-            max={300}
-            step={15}
-            title="SET REST TIME"
-            onClose={() => setPickerType(null)}
-            formatValue={formatTime}
-          />
-        )}
+      {pickerType === "weight" && (
+        <ScrollPicker
+          value={weight || 45}
+          onChange={setWeight}
+          min={5}
+          max={500}
+          step={5}
+          suffix=""
+          title="WEIGHT"
+          onClose={() => setPickerType(null)}
+          allowCustomInput={true}
+          unitOptions={["LB", "KG"]}
+          selectedUnit={weightUnit}
+          onUnitChange={setWeightUnit}
+        />
+      )}
 
-        {/* Storage Limit Warning 
+      {pickerType === "restTime" && (
+        <ScrollPicker
+          value={restTime}
+          onChange={(val) => {
+            setRestTime(val);
+            setTimeRemaining(val);
+            setIsTimerRunning(false);
+          }}
+          min={15}
+          max={300}
+          step={15}
+          title="SET REST TIME"
+          onClose={() => setPickerType(null)}
+          formatValue={formatTime}
+        />
+      )}
+
+      {/* Storage Limit Warning 
         
         This is a warning to the user that they are running out of storage space. 
         It is not a critical error, so it is not a critical warning. It is just a warning. 
@@ -408,71 +408,71 @@ export function ActiveWorkout() {
         close when storage > 150MB
         
       */}
-        <AlertDialog open={showWarning} onOpenChange={(open) => !open && dismissWarning()}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle className="display-font text-2xl bevel-text">Storage Limit Warning</AlertDialogTitle>
-              <AlertDialogDescription className="label-font">
-                Your workout history is currently using {storageStatus ? (storageStatus.currentSize / (1024 * 1024)).toFixed(1) : 0}MB of storage space.
-                The recommended limit is 150MB. Please consider clearing older entries, though you may continue logging for now.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogAction onClick={dismissWarning} className="label-font black-glass-button">
-                <span className="black-glass-text">CONTINUE</span>
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+      <AlertDialog open={showWarning} onOpenChange={(open) => !open && dismissWarning()}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="display-font text-2xl bevel-text">Storage Limit Warning</AlertDialogTitle>
+            <AlertDialogDescription className="label-font">
+              Your workout history is currently using {storageStatus ? (storageStatus.currentSize / (1024 * 1024)).toFixed(1) : 0}MB of storage space.
+              The recommended limit is 150MB. Please consider clearing older entries, though you may continue logging for now.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={dismissWarning} className="label-font black-glass-button">
+              <span className="black-glass-text">CONTINUE</span>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
-        <AlertDialog open={setToDeleteId !== null} onOpenChange={(open) => !open && setSetToDeleteId(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle className="display-font text-2xl bevel-text">Delete Set</AlertDialogTitle>
-              <AlertDialogDescription className="label-font text-muted-foreground">
-                Are you sure you want to delete this set? This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setSetToDeleteId(null)} className="label-font black-glass-button border-none">
-                <span className="black-glass-text">CANCEL</span>
-              </AlertDialogCancel>
-              <AlertDialogAction onClick={async () => {
-                if (setToDeleteId !== null) {
-                  haptics.warn();
-                  await db.execute('DELETE FROM workoutHistory WHERE id = ?', [setToDeleteId]);
-                  if (editingSetId === setToDeleteId) {
-                    setEditingSetId(null);
-                    setReps(0);
-                    setWeight(0);
-                  }
+      <AlertDialog open={setToDeleteId !== null} onOpenChange={(open) => !open && setSetToDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="display-font text-2xl bevel-text">Delete Set</AlertDialogTitle>
+            <AlertDialogDescription className="label-font text-muted-foreground">
+              Are you sure you want to delete this set? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setSetToDeleteId(null)} className="label-font black-glass-button border-none">
+              <span className="black-glass-text">CANCEL</span>
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={async () => {
+              if (setToDeleteId !== null) {
+                haptics.warn();
+                await db.execute('DELETE FROM workoutHistory WHERE id = ?', [setToDeleteId]);
+                if (editingSetId === setToDeleteId) {
+                  setEditingSetId(null);
+                  setReps(0);
+                  setWeight(0);
                 }
-                setSetToDeleteId(null);
-              }} className="label-font black-glass-button-destructive">
-                <span className="black-glass-text">DELETE</span>
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-        {/* End Exercise Confirmation Modal */}
-        <AlertDialog open={showEndExerciseConfirm} onOpenChange={setShowEndExerciseConfirm}>
-          <AlertDialogContent className="bg-background border-border bevel-element">
-            <AlertDialogHeader>
-              <AlertDialogTitle className="display-font text-2xl bevel-text">End Exercise</AlertDialogTitle>
-              <AlertDialogDescription className="label-font text-muted-foreground">
-                Are you sure you are done with this exercise?
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setShowEndExerciseConfirm(false)} className="label-font black-glass-button border-none">
-                <span className="black-glass-text">CANCEL</span>
-              </AlertDialogCancel>
-              <AlertDialogAction onClick={handleEndExercise} className="label-font black-glass-button">
-                <span className="black-glass-text">CONFIRM</span>
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
+              }
+              setSetToDeleteId(null);
+            }} className="label-font black-glass-button-destructive">
+              <span className="black-glass-text">DELETE</span>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      {/* End Exercise Confirmation Modal */}
+      <AlertDialog open={showEndExerciseConfirm} onOpenChange={setShowEndExerciseConfirm}>
+        <AlertDialogContent className="bg-background border-border bevel-element">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="display-font text-2xl bevel-text">End Exercise</AlertDialogTitle>
+            <AlertDialogDescription className="label-font text-muted-foreground">
+              Are you sure you are done with this exercise?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowEndExerciseConfirm(false)} className="label-font black-glass-button border-none">
+              <span className="black-glass-text">CANCEL</span>
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleEndExercise} className="label-font black-glass-button">
+              <span className="black-glass-text">CONFIRM</span>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   );
 }
