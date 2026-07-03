@@ -188,13 +188,13 @@ export function WorkoutCarousel(props: WorkoutCarouselProps) {
 
                   <div className="flex w-full items-end justify-center gap-6">
                     <div className="flex flex-1 flex-col items-center text-center">
-                      <div className="display-font text-7xl leading-none bevel-text-large mb-2">
+                      <div className="display-font text-7xl leading-none bevel-text-large mb-2 drop-shadow-[0_0_12px_rgba(255,255,255,0.3)]">
                         {set.reps}
                       </div>
                       <div className="label-font text-xs text-muted-foreground">REPS</div>
                     </div>
                     <div className="flex flex-1 flex-col items-center text-center">
-                      <div className="display-font text-7xl leading-none bevel-text-large mb-2">
+                      <div className="display-font text-7xl leading-none bevel-text-large mb-2 drop-shadow-[0_0_12px_rgba(255,255,255,0.3)]">
                         {set.weight}
                       </div>
                       <div className="label-font text-xs text-muted-foreground">{props.weightUnit}</div>
