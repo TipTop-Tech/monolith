@@ -31,7 +31,7 @@ export const playStartupSound = async () => {
       if (!isPreloaded) {
         await NativeAudio.preload({
           assetId: 'startup',
-          assetPath: 'assets/startup4.mp3',
+          assetPath: 'assets/startup4 .mp3',
           isComplex: false,
         });
       }
