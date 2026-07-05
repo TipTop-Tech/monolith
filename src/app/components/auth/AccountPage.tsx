@@ -7,10 +7,12 @@ import { Button } from "../ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import { Switch } from "../ui/switch";
-import { LogOut, User } from "lucide-react";
+import { LogOut, User, Crown, RefreshCcw } from "lucide-react";
+import { usePremium } from "../../context/PremiumContext";
 
 export const AccountPage = () => {
   const { user } = useAuth();
+  const { isPro, isLoading, presentPaywall, presentCustomerCenter, restorePurchases } = usePremium();
   const navigate = useNavigate();
 
   const [hapticsOn, setHapticsOn] = useState(() => {
@@ -76,6 +78,43 @@ export const AccountPage = () => {
               <LogOut className="mr-2 h-4 w-4" />
               Sign out
             </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <Crown className={`w-5 h-5 ${isPro ? "text-yellow-500" : "text-muted-foreground"}`} />
+            <CardTitle className="text-base">Subscription</CardTitle>
+          </div>
+          {isPro && (
+            <span className="bg-yellow-500/10 text-yellow-600 text-[10px] px-2 py-1 rounded-full font-bold">
+              PRO
+            </span>
+          )}
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col space-y-4">
+            {isPro ? (
+              <>
+                <p className="text-sm text-muted-foreground">You are currently subscribed to Premium.</p>
+                <Button variant="outline" className="w-full" onClick={presentCustomerCenter} disabled={isLoading}>
+                  Manage Subscription
+                </Button>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground">Upgrade to Premium to unlock all features.</p>
+                <Button className="w-full bg-yellow-500 hover:bg-yellow-600 text-white" onClick={presentPaywall} disabled={isLoading}>
+                  Upgrade to Pro
+                </Button>
+                <Button variant="ghost" className="w-full text-muted-foreground" onClick={restorePurchases} disabled={isLoading}>
+                  <RefreshCcw className="mr-2 h-4 w-4" />
+                  Restore Purchases
+                </Button>
+              </>
+            )}
           </div>
         </CardContent>
       </Card>

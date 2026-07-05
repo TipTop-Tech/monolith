@@ -9,6 +9,7 @@ import { AuthGuard } from "./components/auth/AuthGuard";
 import { SignInPage } from "./components/auth/SignInPage";
 import { SignUpPage } from "./components/auth/SignUpPage";
 import { AccountPage } from "./components/auth/AccountPage";
+import { PremiumGate } from "./components/ui/PremiumGate";
 
 export const router = createBrowserRouter([
   { path: "/signin", Component: SignInPage },
@@ -24,8 +25,8 @@ export const router = createBrowserRouter([
           { index: true, path: "/", Component: ActiveWorkout },
           { path: "routines", Component: Routines },
           { path: "workout/:exerciseId", Component: WorkoutHistory },
-          { path: "body", Component: BodyMap },
-          { path: "muscle/:muscleId", Component: MuscleExercises },
+          { path: "body", element: <PremiumGate showLockOverlay><BodyMap /></PremiumGate> },
+          { path: "muscle/:muscleId", element: <PremiumGate showLockOverlay><MuscleExercises /></PremiumGate> },
           { path: "account", Component: AccountPage },
         ],
       },
