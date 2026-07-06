@@ -74,6 +74,7 @@ export const EXERCISE_KNOWLEDGE: Record<string, ExerciseKnowledge> = {
   "bench press": { sourceGroup: "chest", formulaGroup: "chest", tags: ["compound", "push", "barbell"] },
   "incline bench press": { sourceGroup: "chest", formulaGroup: "chest", tags: ["compound", "push", "barbell"] },
   "dumbbell press": { sourceGroup: "chest", formulaGroup: "chest", tags: ["compound", "push", "dumbbell"] },
+  "smith chest press": { sourceGroup: "chest", formulaGroup: "chest", tags: ["compound", "push", "machine", "smith"] },
   "chest fly": { sourceGroup: "chest", formulaGroup: "chest", tags: ["isolation", "push"] },
   "tricep dips": { sourceGroup: "triceps", formulaGroup: "bodyweight", tags: ["compound", "push", "bodyweight"] },
   "squat": { sourceGroup: "legs", formulaGroup: "legs", tags: ["compound", "legs", "barbell"] },
