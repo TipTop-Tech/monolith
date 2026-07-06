@@ -1,5 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode, useRef } from "react";
-import { haptics } from "../lib/haptics";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 export interface Exercise {
   id: string;
@@ -41,36 +40,10 @@ interface WorkoutContextType {
   setCurrentRoutine: (routine: Routine | null) => void;
   setCurrentExerciseIndex: (index: number) => void;
   addSet: (exerciseId: string, reps: number, weight: number) => void;
-  removeSet: (exerciseId: string, setIndex: number) => void;
-  updateSet: (exerciseId: string, setIndex: number, reps: number, weight: number) => void;
   addRoutine: (routine: Routine) => void;
   removeRoutine: (routineId: string) => void;
   addExerciseToRoutine: (routineId: string, routineExercise: RoutineExercise) => void;
   removeRoutineExercise: (routineId: string, exerciseIndex: number) => void;
-
-  // Active Workout UI State
-  reps: number;
-  setReps: (val: number) => void;
-  weight: number;
-  setWeight: (val: number) => void;
-  restTime: number;
-  setRestTime: (val: number) => void;
-  timeRemaining: number;
-  setTimeRemaining: (val: number | ((prev: number) => number)) => void;
-  isTimerRunning: boolean;
-  setIsTimerRunning: (val: boolean) => void;
-  pickerType: "reps" | "weight" | "restTime" | null;
-  setPickerType: (val: "reps" | "weight" | "restTime" | null) => void;
-  weightUnit: string;
-  setWeightUnit: (val: string) => void;
-  workoutSessionStartedAt: number | null;
-  setWorkoutSessionStartedAt: (val: number | null) => void;
-  currentSlide: number;
-  setCurrentSlide: (val: number) => void;
-  currentView: number;
-  setCurrentView: (val: number) => void;
-  selectedRoutineId: string | null;
-  setSelectedRoutineId: (val: string | null) => void;
 }
 
 const WorkoutContext = createContext<WorkoutContextType | undefined>(undefined);
@@ -88,6 +61,7 @@ const SAMPLE_EXERCISES: Exercise[] = [
   { id: "10", name: "Chest Fly", muscleGroups: ["chest"] },
   { id: "11", name: "Incline Bench Press", muscleGroups: ["chest", "front-deltoids", "triceps"] },
   { id: "12", name: "Dumbbell Press", muscleGroups: ["chest", "triceps", "front-deltoids"] },
+  { id: "64", name: "Smith Chest Press", muscleGroups: ["chest", "triceps", "front-deltoids"] },
   { id: "13", name: "Lateral Raises", muscleGroups: ["back-deltoids", "upper-back"] },
   { id: "14", name: "Front Raises", muscleGroups: ["front-deltoids"] },
   { id: "15", name: "Rear Delt Fly", muscleGroups: ["back-deltoids", "mid-back"] },
@@ -139,15 +113,6 @@ const SAMPLE_EXERCISES: Exercise[] = [
   { id: "61", name: "Straight Arm Pulldown", muscleGroups: ["lats", "triceps"] },
   { id: "62", name: "Resistance Band Pull-Aparts", muscleGroups: ["upper-back", "back-deltoids", "mid-back"] },
   { id: "63", name: "Bird Dog", muscleGroups: ["lower-back", "abs"] },
-  { id: "64", name: "Wide Grip Row", muscleGroups: ["upper-back"] },
-  { id: "65", name: "Row Machine", muscleGroups: ["mid-back", "lower-back"] },
-  { id: "66", name: "Cable Hammer Curls", muscleGroups: ["biceps", "forearm"] },
-  { id: "67", name: "Smith Chest Press", muscleGroups: ["chest"] },
-  { id: "68", name: "Tricep Pushdown", muscleGroups: ["triceps"] },
-  { id: "69", name: "Smith Squat", muscleGroups: ["quadriceps"] },
-  { id: "70", name: "Decline Crunches", muscleGroups: ["abs"] },
-  { id: "71", name: "Decline Twists", muscleGroups: ["abs"] },
-  { id: "72", name: "Calf Extension Machine", muscleGroups: ["calves"] },
 ];
 
 const SAMPLE_ROUTINES: Routine[] = [
@@ -242,91 +207,22 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
   const [exercises] = useState<Exercise[]>(SAMPLE_EXERCISES);
   const [routines, setRoutines] = useState<Routine[]>(() => {
     const stored = localStorage.getItem("workoutRoutines");
-    return stored ? JSON.parse(stored) : [];
+    return stored ? JSON.parse(stored) : SAMPLE_ROUTINES;
   });
-  // const [history, setHistory] = useState<WorkoutHistory[]>(() => {
-  //   const stored = localStorage.getItem("workoutHistory");
-  //   return stored ? JSON.parse(stored) : generateSampleHistory();
-  // });
-
-  const [history, setHistory] = useState<WorkoutHistory[]>([]);
+  const [history, setHistory] = useState<WorkoutHistory[]>(() => {
+    const stored = localStorage.getItem("workoutHistory");
+    return stored ? JSON.parse(stored) : generateSampleHistory();
+  });
   const [currentRoutine, setCurrentRoutine] = useState<Routine | null>(null);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
 
-  // Active Workout UI State
-  const [reps, setReps] = useState(0);
-  const [weight, setWeight] = useState(0);
-  const [restTime, setRestTime] = useState(90);
-  const [timeRemaining, setTimeRemaining] = useState(0);
-  const [isTimerRunning, setIsTimerRunning] = useState(false);
-  const [pickerType, setPickerType] = useState<"reps" | "weight" | "restTime" | null>(null);
-  const [weightUnit, setWeightUnit] = useState("LB");
-  const [workoutSessionStartedAt, setWorkoutSessionStartedAt] = useState<number | null>(null);
-  const [currentSlide, setCurrentSlide] = useState(1);
-  const [currentView, setCurrentView] = useState(1);
-  const [selectedRoutineId, setSelectedRoutineId] = useState<string | null>(null);
-
-  const timerWorkerRef = useRef<Worker | null>(null);
-  const lastTimeRemainingRef = useRef(timeRemaining);
-  const isWorkerRunningRef = useRef(false);
-
-  useEffect(() => {
-    timerWorkerRef.current = new Worker(new URL('../workers/timerWorker.ts', import.meta.url), { type: 'module' });
-
-    timerWorkerRef.current.onmessage = (e) => {
-      if (e.data.type === 'TICK') {
-        setTimeRemaining(e.data.payload.remainingTime);
-      } else if (e.data.type === 'COMPLETE') {
-        setIsTimerRunning(false);
-        setTimeRemaining(0);
-        haptics.thud(); // strong cue: rest timer hit zero
-        
-        if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.ready.then((reg) => {
-            reg.showNotification("Times up. Keep building your Monolith.", {
-              icon: '/dist/assets/monolith-logo.svg',
-              vibrate: [200, 100, 200]
-            });
-          });
-        }
-      }
-    };
-
-    return () => {
-      if (timerWorkerRef.current) {
-        timerWorkerRef.current.terminate();
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    if (isTimerRunning && !isWorkerRunningRef.current) {
-      // Start the worker
-      const endTime = Date.now() + timeRemaining * 1000;
-      timerWorkerRef.current?.postMessage({ type: 'START', payload: { endTime } });
-      isWorkerRunningRef.current = true;
-    } else if (!isTimerRunning && isWorkerRunningRef.current) {
-      // Stop the worker
-      timerWorkerRef.current?.postMessage({ type: 'STOP' });
-      isWorkerRunningRef.current = false;
-    } else if (isTimerRunning && isWorkerRunningRef.current) {
-      // Timer is running, but timeRemaining jumped (e.g. user clicked +30s)
-      if (Math.abs(timeRemaining - lastTimeRemainingRef.current) > 2) {
-        const endTime = Date.now() + timeRemaining * 1000;
-        timerWorkerRef.current?.postMessage({ type: 'START', payload: { endTime } });
-      }
-    }
-    lastTimeRemainingRef.current = timeRemaining;
-  }, [isTimerRunning, timeRemaining]);
-  /**
-   * This useEffect saves the user's workout routines to local storage
-   * 
-   * - It runs whenever the 'routines' state changes
-   * - Saves the routines in a JSON format
-   */
   useEffect(() => {
     localStorage.setItem("workoutRoutines", JSON.stringify(routines));
   }, [routines]);
+
+  useEffect(() => {
+    localStorage.setItem("workoutHistory", JSON.stringify(history));
+  }, [history]);
 
   const addSet = (exerciseId: string, reps: number, weight: number) => {
     setHistory((prev) => {
@@ -348,36 +244,6 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
       }
     });
   };
-  /**
-   * This handles the removal of a set from the history.
-   * 
-   * @param exerciseId - The ID of the exercise to remove the set from
-   * @param setIndex - The index of the set to remove
-   */
-  const removeSet = (exerciseId: string, setIndex: number) => {
-    setHistory((prev) => {
-      return prev
-        .map((h) => {
-          if (h.exerciseId !== exerciseId) return h;
-          return {
-            ...h,
-            sets: h.sets.filter((_, index) => index !== setIndex),
-          };
-        })
-        .filter((h) => h.sets.length > 0);
-    });
-  };
-
-  const updateSet = (exerciseId: string, setIndex: number, reps: number, weight: number) => {
-    setHistory((prev) => {
-      return prev.map((h) => {
-        if (h.exerciseId !== exerciseId) return h;
-        const newSets = [...h.sets];
-        newSets[setIndex] = { ...newSets[setIndex], reps, weight };
-        return { ...h, sets: newSets };
-      });
-    });
-  };
 
   const addRoutine = (routine: Routine) => {
     setRoutines((prev) => [...prev, routine]);
@@ -397,9 +263,9 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
       const nextRoutines = prev.map((routine) =>
         routine.id === routineId
           ? {
-            ...routine,
-            exercises: [...routine.exercises, routineExercise],
-          }
+              ...routine,
+              exercises: [...routine.exercises, routineExercise],
+            }
           : routine
       );
 
@@ -439,28 +305,16 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
       value={{
         exercises,
         routines,
+        history,
         currentRoutine,
         currentExerciseIndex,
         setCurrentRoutine,
         setCurrentExerciseIndex,
         addSet,
-        removeSet,
-        updateSet,
         addRoutine,
         removeRoutine,
         addExerciseToRoutine,
         removeRoutineExercise,
-        reps, setReps,
-        weight, setWeight,
-        restTime, setRestTime,
-        timeRemaining, setTimeRemaining,
-        isTimerRunning, setIsTimerRunning,
-        pickerType, setPickerType,
-        weightUnit, setWeightUnit,
-        workoutSessionStartedAt, setWorkoutSessionStartedAt,
-        currentSlide, setCurrentSlide,
-        currentView, setCurrentView,
-        selectedRoutineId, setSelectedRoutineId,
       }}
     >
       {children}
