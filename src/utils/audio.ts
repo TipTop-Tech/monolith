@@ -23,7 +23,7 @@ export const preloadStartupSound = async () => {
 };
 
 let isClinkPreloaded = false;
-const CLINK_POOL_SIZE = 5;
+const CLINK_POOL_SIZE = 8;
 let currentClinkIndex = 0;
 
 export const preloadClinkSound = async () => {
@@ -33,7 +33,7 @@ export const preloadClinkSound = async () => {
       promises.push(
         NativeAudio.preload({
           assetId: `clink_${i}`,
-          assetPath: Capacitor.getPlatform() === 'web' ? '/assets/clink.mp3' : 'public/assets/clink.mp3',
+          assetPath: Capacitor.getPlatform() === 'web' ? '/assets/clink2.mp3' : 'public/assets/clink2.mp3',
           isComplex: true,
           volume: 0.5,
           isUrl: Capacitor.getPlatform() === 'web',
