@@ -1,6 +1,7 @@
 
 import { createRoot } from "react-dom/client";
 import App from "./app/App.tsx";
+import { PremiumProvider } from "./app/context/PremiumContext";
 import "./styles/index.css";
 import React from "react";
 import { db } from "./database";
@@ -13,7 +14,9 @@ const renderApp = () => {
     <React.StrictMode>
       {/* Provide the PowerSync database context to all child components */}
       <PowerSyncContext.Provider value={db}>
-        <App />
+        <PremiumProvider>
+          <App />
+        </PremiumProvider>
       </PowerSyncContext.Provider>
     </React.StrictMode>
   );

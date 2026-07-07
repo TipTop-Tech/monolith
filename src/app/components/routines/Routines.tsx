@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useWorkout } from "../../context/WorkoutContext";
 import { useNavigate } from "react-router";
-import { ChevronRight, Plus, Sparkles, Trash2 } from "lucide-react";
+import { ChevronRight, Plus, Sparkles, Trash2, History } from "lucide-react";
 import { Button } from "../ui/button";
 import {
   Dialog,
@@ -91,7 +91,8 @@ type RoutineExerciseRowProps = {
     reps: number;
     weight: number;
   } | null;
-  onOpen: () => void;
+  onOpenHistory: () => void;
+  onOpenExercise: () => void;
   onRemove: () => void;
 };
 
@@ -102,9 +103,12 @@ function RoutineExerciseRow({
   suggestedWeightLbs,
   coachNotes,
   lastSet = null,
-  onOpen,
+  onOpenHistory,
+  onOpenExercise,
   onRemove,
 }: RoutineExerciseRowProps) {
+  const OPEN_OFFSET = -96;
+
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const touchStartX = useRef<number | null>(null);
@@ -152,10 +156,18 @@ function RoutineExerciseRow({
 
   return (
     <div className="relative overflow-hidden">
-      <div className="absolute inset-0 flex items-center justify-end gap-2 bg-secondary/95 pr-6 text-muted-foreground">
-        <Trash2 size={18} className="text-destructive" />
-        <span className="label-font text-[10px] tracking-[0.3em]">REMOVE</span>
-      </div>
+      <button
+        type="button"
+        aria-label={`Remove ${exerciseName}`}
+        onClick={onRemove}
+        tabIndex={isOpen ? 0 : -1}
+        className="absolute inset-y-0 right-0 z-0 flex w-24 items-center justify-center gap-1.5 black-glass-button-destructive transition-opacity"
+        style={{ opacity: swipeOffset < 0 ? 1 : 0 }}
+      >
+        <Trash2 size={18} className="black-glass-text" />
+        <span className="label-font text-[10px] tracking-[0.3em] black-glass-text">REMOVE</span>
+      </button>
+
       <button
         type="button"
         onClick={() => {
@@ -163,8 +175,11 @@ function RoutineExerciseRow({
             blockNextClickRef.current = false;
             return;
           }
-
-          onOpen();
+          if (isOpen) {
+            close();
+            return;
+          }
+          onOpenExercise();
         }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -176,30 +191,42 @@ function RoutineExerciseRow({
           touchAction: "pan-y",
           WebkitTapHighlightColor: "transparent",
         }}
-        className="relative z-10 w-full flex items-center justify-between py-4 px-6 bg-secondary bevel-element outline-none transition-all hover:bg-accent active:scale-[0.99] focus:outline-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+        className="relative z-10 w-full flex items-center justify-between py-4 px-6 black-glass-button outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
       >
         <div className="text-left">
-          <div className="display-font text-xl bevel-text">{exerciseName}</div>
-          <div className="label-font text-muted-foreground mt-1">{subtitle}</div>
+          <div className="display-font text-xl black-glass-text">{exerciseName}</div>
+          <div className="label-font mt-1 black-glass-text opacity-80">{subtitle}</div>
           {suggestedWeightLbs ? (
-            <div className="label-font text-[10px] tracking-[0.22em] text-muted-foreground/80 mt-1">
+            <div className="label-font text-[10px] tracking-[0.22em] mt-1 black-glass-text opacity-70">
               AI START ≈ {suggestedWeightLbs} LBS
             </div>
           ) : null}
           {coachNotes ? (
-            <div className="mt-2 max-w-[17rem] text-left text-[11px] leading-4 text-muted-foreground/70">
+            <div className="mt-2 max-w-[17rem] text-left text-[11px] leading-4 black-glass-text opacity-60">
               {coachNotes}
             </div>
           ) : null}
         </div>
-        <ChevronRight size={20} className="text-muted-foreground" />
+        <div className="flex items-center gap-3">
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenHistory();
+            }}
+            className="w-10 h-10 flex items-center justify-center rounded-md bg-secondary-foreground/10 text-muted-foreground hover:bg-secondary-foreground/20 transition-colors"
+          >
+            <History size={18} />
+          </div>
+        </div>
       </button>
     </div>
   );
 }
 
 export function Routines() {
-  const { routines, exercises, addRoutine, removeRoutine, addExerciseToRoutine, removeRoutineExercise, history } = useWorkout();
+  const { routines, exercises, addRoutine, removeRoutine, addExerciseToRoutine, removeRoutineExercise, setCurrentRoutine, setCurrentExerciseIndex, setWorkoutSessionStartedAt, setReps, setWeight, setRestTime, setTimeRemaining, setIsTimerRunning, setPickerType } = useWorkout();
+
+  const { data: allWorkoutHistoryRecords } = useQuery('SELECT * FROM workoutHistory ORDER BY date ASC');
   const navigate = useNavigate();
   const scrollRootRef = useRef<HTMLDivElement>(null);
   const routineRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -421,18 +448,18 @@ export function Routines() {
           setNewRoutineName("");
           setIsAddRoutineOpen(true);
         }}
-        className={`${compact ? "py-3 px-4" : "py-4 px-6"} w-full flex items-center justify-between bg-secondary/75 border border-white/15 backdrop-blur-md bevel-element hover:bg-accent/75 transition-all active:scale-[0.99]`}
+        className={`${compact ? "py-3 px-4" : "py-4 px-6"} w-full flex items-center justify-between black-glass-button`}
       >
-        <span className="label-font text-left">MANUAL</span>
-        <Plus size={compact ? 16 : 20} className="text-muted-foreground" />
+        <span className="label-font text-left black-glass-text">MANUAL</span>
+        <Plus size={compact ? 16 : 20} className="black-glass-text" />
       </button>
       <button
         type="button"
         onClick={openAIRoutine}
-        className={`${compact ? "py-3 px-4" : "py-4 px-6"} w-full flex items-center justify-between bg-secondary/75 border border-white/15 backdrop-blur-md bevel-element hover:bg-accent/75 transition-all active:scale-[0.99]`}
+        className={`${compact ? "py-3 px-4" : "py-4 px-6"} w-full flex items-center justify-between black-glass-button`}
       >
-        <span className="label-font text-left">AI ROUTINE</span>
-        <Sparkles size={compact ? 16 : 20} className="text-muted-foreground" />
+        <span className="label-font text-left black-glass-text">AI ROUTINE</span>
+        <Sparkles size={compact ? 16 : 20} className="black-glass-text" />
       </button>
     </div>
   );
@@ -440,6 +467,26 @@ export function Routines() {
   return (
     <>
       <div className="relative h-full">
+        {/* Delete Routine Confirmation Modal */}
+        <AlertDialog open={routineToDelete !== null} onOpenChange={(open) => !open && setRoutineToDelete(null)}>
+          <AlertDialogContent className="bg-background border-border bevel-element">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="display-font text-2xl bevel-text text-destructive">Delete Routine</AlertDialogTitle>
+              <AlertDialogDescription className="label-font text-muted-foreground">
+                "{routineToDelete?.name}" will be deleted. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setRoutineToDelete(null)} className="label-font black-glass-button border-none">
+                <span className="black-glass-text">CANCEL</span>
+              </AlertDialogCancel>
+              <AlertDialogAction onClick={confirmRemoveRoutine} className="label-font black-glass-button-destructive">
+                <span className="black-glass-text">DELETE</span>
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         {routines.length === 0 ? (
           <div className="h-full flex items-center justify-center p-8 pb-24">
             <div className="text-center space-y-6 w-full max-w-sm">
@@ -455,46 +502,74 @@ export function Routines() {
           <>
             <div
               ref={scrollRootRef}
-              className="h-full overflow-y-auto scroll-smooth hide-scrollbar"
-              style={{ WebkitOverflowScrolling: "touch", overscrollBehaviorY: "contain" }}
+              className="h-full overflow-y-scroll scroll-smooth snap-y snap-mandatory hide-scrollbar"
+              style={{ WebkitOverflowScrolling: "touch" }}
             >
-              {routines.map((routine, routineIndex) => (
-                <section
-                  key={routine.id}
-                  ref={(node) => {
-                    routineRefs.current[routineIndex] = node;
-                  }}
-                  className="relative min-h-full px-6 py-8 md:px-8"
-                >
-                  <div className="flex h-full min-h-full flex-col">
-                    <div className="mb-6 flex items-end justify-between gap-4 pr-12">
-                      <div>
-                        <div className="label-font text-muted-foreground mb-3">
-                          ROUTINE {String(routineIndex + 1).padStart(2, "0")} / {String(routines.length).padStart(2, "0")}
-                        </div>
-                        <div className="display-font text-4xl md:text-5xl bevel-text">{routine.name}</div>
-                        <button
-                          type="button"
-                          onClick={() => navigate("/", { state: { openRoutineId: routine.id } })}
-                          className="mt-3 label-font text-[10px] tracking-[0.3em] text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          START ROUTINE
-                        </button>
-                      </div>
-                    </div>
+              {
+                /**
+                 * routines.flatMap iterates through all the routines
+                 * For each routine, it splits it into pages of 5 exercises
+                 * If a routine has no exercises, it creates a single page with no exercises
+                 */
+              }
+              {routines.flatMap((routine, routineIndex) => {
+                const pages = [];
+                for (let i = 0; i < routine.exercises.length; i += 5) {
+                  pages.push(routine.exercises.slice(i, i + 5));
+                }
+                if (pages.length === 0) pages.push([]);
+                /**
+                 * This maps the pages array into section componenets containing at most 
+                 * five exercises
+                 */
+                return pages.map((pageExercises, pageIndex) => {
+                  const globalIndexOffset = pageIndex * 5;
+                  const isLastRoutine = routineIndex === routines.length - 1;
+                  const isLastPage = pageIndex === pages.length - 1;
 
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveRoutine(routine.id, routine.name)}
-                      aria-label={`Remove ${routine.name}`}
-                      className="absolute right-6 top-8 h-10 w-10 flex items-center justify-center bg-secondary/75 bevel-element hover:bg-accent/75 transition-all active:scale-[0.98] md:right-8"
+                  return (
+                    <section
+                      key={`${routine.id}-page-${pageIndex}`}
+                      ref={(node) => {
+                        if (node) {
+                          sectionRefs.current[`${routine.id}-page-${pageIndex}`] = node;
+                          if (pageIndex === 0) {
+                            routineRefs.current[routineIndex] = node;
+                          }
+                        }
+                      }}
+                      data-routine-index={routineIndex}
+                      data-page-index={pageIndex}
+                      className="relative h-full min-h-full snap-start px-6 py-8 md:px-8"
                     >
-                      <Trash2 size={18} className="text-destructive" />
-                    </button>
-
-                    <div className="mb-4">
-                      <CreateRoutineButtons compact />
-                    </div>
+                      <div className="flex h-full min-h-full flex-col">
+                        <div className="mb-6 flex items-end gap-4">
+                          <div>
+                            <div className="flex items-center gap-4 mb-3">
+                              <div className="label-font text-muted-foreground">
+                                ROUTINE {String(routineIndex + 1).padStart(2, "0")} / {String(routines.length).padStart(2, "0")}
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => navigate(`/routines/${routine.id}`)}
+                              className="group flex items-center gap-3 text-left"
+                            >
+                              <div className="display-font text-4xl md:text-5xl bevel-text drop-shadow-[0_0_12px_rgba(255,255,255,0.3)]">{routine.name}</div>
+                              <ChevronRight size={20} className="text-muted-foreground transition-transform group-hover:translate-x-1" />
+                            </button>
+                          </div>
+                        </div>
+                        {pageIndex === 0 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveRoutine(routine.id, routine.name)}
+                            aria-label={`Remove ${routine.name}`}
+                            className="absolute right-6 top-8 h-10 w-10 flex items-center justify-center black-glass-button-destructive md:right-8"
+                          >
+                            <Trash2 size={18} className="black-glass-text" />
+                          </button>
+                        )}
 
                     <div className="space-y-3">
                       {routine.exercises.length === 0 ? (
@@ -521,7 +596,19 @@ export function Routines() {
                               suggestedWeightLbs={routineExercise.suggestedWeightLbs}
                               coachNotes={routineExercise.coachNotes}
                               lastSet={lastSet}
-                              onOpen={() => navigate(`/workout/${routineExercise.exerciseId}`)}
+                              onOpenHistory={() => navigate(`/workout/${routineExercise.exerciseId}`)}
+                                  onOpenExercise={() => {
+                                    setCurrentRoutine(routine);
+                                    setCurrentExerciseIndex(globalIndex);
+                                    setWorkoutSessionStartedAt(Date.now());
+                                    setReps(routineExercise.targetReps ?? 0);
+                                    setWeight(routineExercise.suggestedWeightLbs ?? 0);
+                                    setRestTime(90);
+                                    setTimeRemaining(0);
+                                    setIsTimerRunning(false);
+                                    setPickerType(null);
+                                    navigate('/');
+                                  }}
                               onRemove={() => removeRoutineExercise(routine.id, index)}
                             />
                           );
@@ -529,17 +616,31 @@ export function Routines() {
                       )}
                     </div>
 
-                    <div className={routineIndex === routines.length - 1 ? "mt-3 mb-36 space-y-3" : "mt-3 space-y-3"}>
-                      <button
-                        type="button"
-                        onClick={() => openAddWorkout(routine.id)}
-                        className="relative z-10 w-full flex items-center justify-between py-4 px-6 bg-secondary bevel-element hover:bg-accent transition-all active:scale-[0.99]"
-                      >
-                        <span className="label-font text-left">ADD EXERCISE</span>
-                        <Plus size={20} className="text-muted-foreground" />
-                      </button>
-                    </div>
-                  </div>
+
+
+
+                        {isLastPage && routine.exercises.length < 10 && (
+                          <div className={isLastRoutine && isLastPage ? "mt-3 mb-28 space-y-3" : "mt-3 space-y-3"}>
+                            <button
+                              type="button"
+                              onClick={() => openAddWorkout(routine.id)}
+                              className="relative z-10 w-full flex items-center justify-between py-4 px-6 black-glass-button"
+                            >
+                              <span className="label-font text-left black-glass-text">ADD WORKOUT</span>
+                              <Plus size={20} className="black-glass-text" />
+                            </button>
+                          </div>
+                        )}
+                        {/* Ensure scrolling space for bottom button */}
+                        {isLastPage && routine.exercises.length >= 10 && isLastRoutine && (
+                          <div className="mt-3 mb-28" />
+                        )}
+                        {!isLastPage && (
+                          <div className="flex justify-center mt-auto py-2">
+                            <MoreVertical size={24} className="text-muted-foreground animate-bounce" />
+                          </div>
+                        )}
+                      </div>
 
                 </section>
               ))}
@@ -566,11 +667,11 @@ export function Routines() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddRoutineOpen(false)}>
-              Cancel
+            <Button variant="outline" onClick={() => setIsAddRoutineOpen(false)} className="black-glass-button">
+              <span className="black-glass-text">Cancel</span>
             </Button>
-            <Button onClick={handleCreateRoutine} disabled={!newRoutineName.trim()}>
-              Create routine
+            <Button onClick={handleCreateRoutine} disabled={!newRoutineName.trim()} className="black-glass-button">
+              <span className="black-glass-text">Create routine</span>
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -633,11 +734,11 @@ export function Routines() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddWorkoutOpen(false)}>
-              Cancel
+            <Button variant="outline" onClick={() => setIsAddWorkoutOpen(false)} className="black-glass-button">
+              <span className="black-glass-text">Cancel</span>
             </Button>
-            <Button onClick={handleAddWorkout} disabled={!selectedExerciseId}>
-              Add to routine
+            <Button onClick={handleAddWorkout} disabled={!selectedExerciseId} className="black-glass-button">
+              <span className="black-glass-text">Add to routine</span>
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -750,8 +851,8 @@ export function Routines() {
                     <li key={question}>{question}</li>
                   ))}
                 </ul>
-                <Button variant="outline" onClick={() => void handleGenerateAIRoutine(true)} disabled={isGeneratingRoutine}>
-                  Generate anyway
+                <Button variant="outline" onClick={() => handleGenerateAIRoutine(true)} className="black-glass-button">
+                  <span className="black-glass-text">Generate anyway</span>
                 </Button>
               </div>
             ) : null}
@@ -791,14 +892,14 @@ export function Routines() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAIRoutineOpen(false)}>
-              Cancel
+            <Button variant="outline" onClick={() => setIsAIRoutineOpen(false)} className="black-glass-button">
+              <span className="black-glass-text">Cancel</span>
             </Button>
-            <Button variant="outline" onClick={() => void handleGenerateAIRoutine(false)} disabled={isGeneratingRoutine}>
-              {isGeneratingRoutine ? "Generating..." : "Generate preview"}
+            <Button variant="outline" onClick={() => void handleGenerateAIRoutine(false)} disabled={isGeneratingRoutine} className="black-glass-button">
+              {isGeneratingRoutine ? "Generating..." : "<span className="black-glass-text">Generate preview"}</span>
             </Button>
-            <Button onClick={handleAddGeneratedRoutine} disabled={aiResult?.status !== "ready" || isGeneratingRoutine}>
-              Add routine
+            <Button onClick={handleAddGeneratedRoutine} disabled={aiResult?.status !== "ready" || isGeneratingRoutine} className="black-glass-button">
+              <span className="black-glass-text">Add routine</span>
             </Button>
           </DialogFooter>
         </DialogContent>

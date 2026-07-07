@@ -91,13 +91,10 @@ export function BodyMap() {
             setSelectedMuscle(null);
             setEmptyZone(false);
           }}
-          className={`px-5 py-2 text-sm transition-all label-font sm:px-8 sm:py-3 sm:text-base ${
-            view === "front"
-              ? "bg-primary text-primary-foreground bevel-element scale-105"
-              : "bg-secondary text-muted-foreground hover:bg-accent"
-          }`}
+          data-active={view === "front"}
+          className="px-5 py-2 text-sm transition-all label-font sm:px-8 sm:py-3 sm:text-base black-glass-button"
         >
-          FRONT
+          <span className="black-glass-text">FRONT</span>
         </button>
         <button
           onClick={() => {
@@ -105,13 +102,10 @@ export function BodyMap() {
             setSelectedMuscle(null);
             setEmptyZone(false);
           }}
-          className={`px-5 py-2 text-sm transition-all label-font sm:px-8 sm:py-3 sm:text-base ${
-            view === "back"
-              ? "bg-primary text-primary-foreground bevel-element scale-105"
-              : "bg-secondary text-muted-foreground hover:bg-accent"
-          }`}
+          data-active={view === "back"}
+          className="px-5 py-2 text-sm transition-all label-font sm:px-8 sm:py-3 sm:text-base black-glass-button"
         >
-          BACK
+          <span className="black-glass-text">BACK</span>
         </button>
       </div>
 

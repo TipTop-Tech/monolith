@@ -34,7 +34,7 @@ export function WorkoutCarousel(props: WorkoutCarouselProps) {
 
   useEffect(() => {
     if (!api) return;
-    
+
     api.on('select', () => {
       props.setCurrentSlide(api.selectedScrollSnap());
     });
@@ -55,7 +55,7 @@ export function WorkoutCarousel(props: WorkoutCarouselProps) {
           align: 'center',
           startIndex: props.currentSlide,
         }}
-        className="w-full max-w-sm flex-1"
+        className="w-full max-w-sm"
       >
         <CarouselContent className="items-center h-full">
           {/* Slide 0: End Exercise */}
@@ -63,9 +63,9 @@ export function WorkoutCarousel(props: WorkoutCarouselProps) {
             <div className="w-[300px] flex items-center justify-center p-6">
               <button
                 onClick={() => props.setShowEndExerciseConfirm(true)}
-                className="w-full aspect-square px-6 bg-secondary bevel-element hover:bg-accent transition-all active:scale-98 flex items-center justify-center"
+                className="w-full aspect-square px-6 black-glass-button transition-all flex items-center justify-center"
               >
-                <div className="display-font text-xl sm:text-2xl tracking-[0.3em] text-muted-foreground text-center">END EXERCISE</div>
+                <div className="display-font text-xl sm:text-2xl tracking-[0.3em] black-glass-text opacity-80 text-center">END EXERCISE</div>
               </button>
             </div>
           </CarouselItem>
@@ -169,9 +169,9 @@ export function WorkoutCarousel(props: WorkoutCarouselProps) {
                             props.setCurrentSlide(1); // Auto scroll to active slide
                           }
                         }}
-                        className="text-muted-foreground/50 hover:text-orange-500 transition-colors active:scale-95 p-1"
+                        className="black-glass-button transition-all p-2 rounded-md"
                       >
-                        <Edit2 size={16} />
+                        <Edit2 size={16} className="black-glass-text opacity-70" />
                       </button>
                       <button
                         onClick={() => {
@@ -179,22 +179,22 @@ export function WorkoutCarousel(props: WorkoutCarouselProps) {
                             props.setSetToDeleteId(set.id);
                           }
                         }}
-                        className="text-muted-foreground/50 hover:text-destructive transition-colors active:scale-95 p-1"
+                        className="black-glass-button-destructive transition-all p-2 rounded-md"
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={16} className="black-glass-text" />
                       </button>
                     </div>
                   </div>
 
                   <div className="flex w-full items-end justify-center gap-6">
                     <div className="flex flex-1 flex-col items-center text-center">
-                      <div className="display-font text-7xl leading-none bevel-text-large mb-2">
+                      <div className="display-font text-7xl leading-none bevel-text-large mb-2 drop-shadow-[0_0_12px_rgba(255,255,255,0.3)]">
                         {set.reps}
                       </div>
                       <div className="label-font text-xs text-muted-foreground">REPS</div>
                     </div>
                     <div className="flex flex-1 flex-col items-center text-center">
-                      <div className="display-font text-7xl leading-none bevel-text-large mb-2">
+                      <div className="display-font text-7xl leading-none bevel-text-large mb-2 drop-shadow-[0_0_12px_rgba(255,255,255,0.3)]">
                         {set.weight}
                       </div>
                       <div className="label-font text-xs text-muted-foreground">{props.weightUnit}</div>
@@ -208,7 +208,7 @@ export function WorkoutCarousel(props: WorkoutCarouselProps) {
       </Carousel>
 
       {/* Slide Indicators */}
-      <div className="flex items-center justify-center gap-0 pb-4 mt-auto">
+      <div className="flex items-center justify-center gap-0 pb-4">
         {Array.from({ length: slidesCount }).map((_, index) => {
           const isActive = index === props.currentSlide;
           // Only render dots for actual slides
@@ -217,7 +217,7 @@ export function WorkoutCarousel(props: WorkoutCarouselProps) {
           return (
             <div key={index} className="py-2 px-2 cursor-pointer" onClick={() => props.setCurrentSlide(index)}>
               <div
-                className={`h-2 rounded-full transition-all duration-200 mx-auto ${isActive ? "w-6 bg-primary" : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/60"
+                className={`h-2 rounded-full transition-all duration-200 mx-auto ${isActive ? "w-6 bg-primary shadow-[0_0_12px_rgba(255,255,255,0.3)]" : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/60"
                   }`}
               />
             </div>

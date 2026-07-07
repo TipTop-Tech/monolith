@@ -69,9 +69,12 @@ export function SwipeableRow({ onRemove, onClick, children, className = "", tras
 
   return (
     <div className="relative overflow-hidden">
-      <div className="absolute inset-0 flex items-center justify-end gap-2 bg-secondary/95 pr-6 text-muted-foreground">
-        <Trash2 size={18} className="text-destructive" />
-        <span className="label-font text-[10px] tracking-[0.3em]">{trashText}</span>
+      <div 
+        className="absolute inset-0 flex items-center justify-end gap-2 pr-6 black-glass-button-destructive transition-opacity"
+        style={{ opacity: swipeOffset < 0 ? 1 : 0 }}
+      >
+        <Trash2 size={18} className="black-glass-text" />
+        <span className="label-font text-[10px] tracking-[0.3em] black-glass-text">{trashText}</span>
       </div>
       <button
         type="button"

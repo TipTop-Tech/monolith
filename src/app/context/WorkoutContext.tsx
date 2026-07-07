@@ -44,6 +44,26 @@ interface WorkoutContextType {
   removeRoutine: (routineId: string) => void;
   addExerciseToRoutine: (routineId: string, routineExercise: RoutineExercise) => void;
   removeRoutineExercise: (routineId: string, exerciseIndex: number) => void;
+
+  // Active Workout UI State
+  reps: number;
+  setReps: (val: number) => void;
+  weight: number;
+  setWeight: (val: number) => void;
+  restTime: number;
+  setRestTime: (val: number) => void;
+  timeRemaining: number;
+  setTimeRemaining: (val: number | ((prev: number) => number)) => void;
+  isTimerRunning: boolean;
+  setIsTimerRunning: (val: boolean) => void;
+  pickerType: "reps" | "weight" | "restTime" | null;
+  setPickerType: (val: "reps" | "weight" | "restTime" | null) => void;
+  weightUnit: string;
+  setWeightUnit: (val: string) => void;
+  workoutSessionStartedAt: number | null;
+  setWorkoutSessionStartedAt: (val: number | null) => void;
+  currentSlide: number;
+  setCurrentSlide: (val: number) => void;
 }
 
 const WorkoutContext = createContext<WorkoutContextType | undefined>(undefined);
@@ -216,6 +236,75 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
   const [currentRoutine, setCurrentRoutine] = useState<Routine | null>(null);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
 
+  // Active Workout UI State
+  const [reps, setReps] = useState(0);
+  const [weight, setWeight] = useState(0);
+  const [restTime, setRestTime] = useState(90);
+  const [timeRemaining, setTimeRemaining] = useState(0);
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [pickerType, setPickerType] = useState<"reps" | "weight" | "restTime" | null>(null);
+  const [weightUnit, setWeightUnit] = useState("LB");
+  const [workoutSessionStartedAt, setWorkoutSessionStartedAt] = useState<number | null>(null);
+  const [currentSlide, setCurrentSlide] = useState(1);
+
+  const timerWorkerRef = useRef<Worker | null>(null);
+  const lastTimeRemainingRef = useRef(timeRemaining);
+  const isWorkerRunningRef = useRef(false);
+
+  useEffect(() => {
+    timerWorkerRef.current = new Worker(new URL('../workers/timerWorker.ts', import.meta.url), { type: 'module' });
+
+    timerWorkerRef.current.onmessage = (e) => {
+      if (e.data.type === 'TICK') {
+        setTimeRemaining(e.data.payload.remainingTime);
+      } else if (e.data.type === 'COMPLETE') {
+        setIsTimerRunning(false);
+        setTimeRemaining(0);
+        haptics.thud(); // strong cue: rest timer hit zero
+        
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.ready.then((reg) => {
+            reg.showNotification("Times up. Keep building your Monolith.", {
+              icon: '/dist/assets/monolith-logo.svg',
+              vibrate: [200, 100, 200]
+            });
+          });
+        }
+      }
+    };
+
+    return () => {
+      if (timerWorkerRef.current) {
+        timerWorkerRef.current.terminate();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isTimerRunning && !isWorkerRunningRef.current) {
+      // Start the worker
+      const endTime = Date.now() + timeRemaining * 1000;
+      timerWorkerRef.current?.postMessage({ type: 'START', payload: { endTime } });
+      isWorkerRunningRef.current = true;
+    } else if (!isTimerRunning && isWorkerRunningRef.current) {
+      // Stop the worker
+      timerWorkerRef.current?.postMessage({ type: 'STOP' });
+      isWorkerRunningRef.current = false;
+    } else if (isTimerRunning && isWorkerRunningRef.current) {
+      // Timer is running, but timeRemaining jumped (e.g. user clicked +30s)
+      if (Math.abs(timeRemaining - lastTimeRemainingRef.current) > 2) {
+        const endTime = Date.now() + timeRemaining * 1000;
+        timerWorkerRef.current?.postMessage({ type: 'START', payload: { endTime } });
+      }
+    }
+    lastTimeRemainingRef.current = timeRemaining;
+  }, [isTimerRunning, timeRemaining]);
+  /**
+   * This useEffect saves the user's workout routines to local storage
+   * 
+   * - It runs whenever the 'routines' state changes
+   * - Saves the routines in a JSON format
+   */
   useEffect(() => {
     localStorage.setItem("workoutRoutines", JSON.stringify(routines));
   }, [routines]);
@@ -315,6 +404,15 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
         removeRoutine,
         addExerciseToRoutine,
         removeRoutineExercise,
+        reps, setReps,
+        weight, setWeight,
+        restTime, setRestTime,
+        timeRemaining, setTimeRemaining,
+        isTimerRunning, setIsTimerRunning,
+        pickerType, setPickerType,
+        weightUnit, setWeightUnit,
+        workoutSessionStartedAt, setWorkoutSessionStartedAt,
+        currentSlide, setCurrentSlide,
       }}
     >
       {children}

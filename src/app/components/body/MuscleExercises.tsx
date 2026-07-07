@@ -29,10 +29,10 @@ export function MuscleExercises() {
     <div className="h-full overflow-auto p-8">
       <button
         onClick={() => navigate("/body", { state: { view } })}
-        className="flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors mb-12"
+        className="flex items-center gap-3 mb-12 px-4 py-2 black-glass-button w-fit"
       >
-        <ArrowLeft size={20} />
-        <span className="label-font">BACK</span>
+        <ArrowLeft size={20} className="black-glass-text" />
+        <span className="label-font black-glass-text">BACK</span>
       </button>
 
       <div className="display-font text-5xl bevel-text-large mb-2">{muscleName}</div>
@@ -48,15 +48,15 @@ export function MuscleExercises() {
             <button
               key={exercise.id}
               onClick={() => navigate(`/workout/${exercise.id}`)}
-              className="w-full flex items-center justify-between py-5 px-6 bg-secondary bevel-element hover:bg-accent transition-all active:scale-[0.99]"
+              className="w-full flex items-center justify-between py-5 px-6 black-glass-button transition-all"
             >
               <div className="text-left">
-                <div className="display-font text-2xl bevel-text">{exercise.name}</div>
-                <div className="label-font text-muted-foreground mt-1">
+                <div className="display-font text-2xl black-glass-text">{exercise.name}</div>
+                <div className="label-font mt-1 black-glass-text opacity-80">
                   {exercise.muscleGroups.join(" · ")}
                 </div>
               </div>
-              <ChevronRight size={20} className="text-muted-foreground" />
+              <ChevronRight size={20} className="black-glass-text opacity-80" />
             </button>
           ))}
         </div>

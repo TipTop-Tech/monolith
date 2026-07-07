@@ -1,0 +1,73 @@
+import { Capacitor } from '@capacitor/core';
+import { NativeAudio } from '@capacitor-community/native-audio';
+
+let hasPlayedStartupSound = false;
+let isPreloaded = false;
+
+export const preloadStartupSound = async () => {
+  try {
+    if (Capacitor.getPlatform() !== 'web') {
+      await NativeAudio.configure({ focus: false });
+    }
+
+    await NativeAudio.preload({
+      assetId: 'startup',
+      assetPath: Capacitor.getPlatform() === 'web' ? '/assets/startup4.mp3' : 'assets/startup4.mp3',
+      isComplex: false,
+      isUrl: Capacitor.getPlatform() === 'web',
+    });
+    isPreloaded = true;
+  } catch (error) {
+    console.error('Failed to preload startup sound:', error);
+  }
+};
+
+let isClinkPreloaded = false;
+
+export const preloadClinkSound = async () => {
+  try {
+    await NativeAudio.preload({
+      assetId: 'clink',
+      assetPath: Capacitor.getPlatform() === 'web' ? '/assets/clink.mp3' : 'assets/clink.mp3',
+      isComplex: true,
+      volume: 0.5,
+      isUrl: Capacitor.getPlatform() === 'web',
+    });
+    isClinkPreloaded = true;
+  } catch (error) {
+    console.error('Failed to preload clink sound:', error);
+  }
+};
+
+export const playClinkSound = async () => {
+  try {
+    if (!isClinkPreloaded) {
+      await preloadClinkSound();
+    }
+    await NativeAudio.play({
+      assetId: 'clink',
+    });
+  } catch (error) {
+    console.error('Error playing clink sound:', error);
+  }
+};
+
+export const playStartupSound = async () => {
+  if (hasPlayedStartupSound) {
+    return;
+  }
+
+  try {
+    if (!isPreloaded) {
+      await preloadStartupSound();
+    }
+    await NativeAudio.play({
+      assetId: 'startup',
+    });
+    // Only set to true if playback succeeded without error
+    hasPlayedStartupSound = true;
+  } catch (error) {
+    console.error('Error playing startup sound:', error);
+    // Leave hasPlayedStartupSound as false so subsequent user interaction can retry
+  }
+};
