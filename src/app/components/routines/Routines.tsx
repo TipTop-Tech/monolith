@@ -121,126 +121,42 @@ function RoutineExerciseRow({
   onOpenExercise,
   onRemove,
 }: RoutineExerciseRowProps) {
-  const OPEN_OFFSET = -96;
-
-  const [swipeOffset, setSwipeOffset] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-  const touchStartX = useRef<number | null>(null);
-  const baseOffsetRef = useRef(0);
-  const swipeOffsetRef = useRef(0);
-  const blockNextClickRef = useRef(false);
-
-  const close = () => {
-    touchStartX.current = null;
-    swipeOffsetRef.current = 0;
-    setSwipeOffset(0);
-    setIsOpen(false);
-    setIsDragging(false);
-  };
-
-  const open = () => {
-    if (!isOpen) haptics.tap();
-    swipeOffsetRef.current = OPEN_OFFSET;
-    setSwipeOffset(OPEN_OFFSET);
-    setIsOpen(true);
-    setIsDragging(false);
-  };
-
-  const handleTouchStart = (event: React.TouchEvent<HTMLButtonElement>) => {
-    touchStartX.current = event.touches[0].clientX;
-    baseOffsetRef.current = swipeOffsetRef.current;
-    blockNextClickRef.current = false;
-    setIsDragging(true);
-  };
-
-  const handleTouchMove = (event: React.TouchEvent<HTMLButtonElement>) => {
-    if (touchStartX.current === null) return;
-
-    const deltaX = event.touches[0].clientX - touchStartX.current;
-    const nextOffset = Math.max(Math.min(baseOffsetRef.current + deltaX, 0), -160);
-    if (Math.abs(deltaX) > 6) blockNextClickRef.current = true; // drag, not tap
-
-    swipeOffsetRef.current = nextOffset;
-    setSwipeOffset(nextOffset);
-  };
-
-
-  const settle = () => {
-    if (swipeOffsetRef.current < OPEN_OFFSET / 2) open();
-    else close();
-  };
-
   const subtitle = lastSet
     ? `${lastSet.reps} REPS × ${lastSet.weight} LBS LAST SET`
     : `${sets} SETS × ${targetReps} REPS`;
 
   return (
-    <div className="relative overflow-hidden">
-      <button
-        type="button"
-        aria-label={`Remove ${exerciseName}`}
-        onClick={onRemove}
-        tabIndex={isOpen ? 0 : -1}
-        className="absolute inset-y-0 right-0 z-0 flex w-24 items-center justify-center gap-1.5 black-glass-button-destructive transition-opacity"
-        style={{ opacity: swipeOffset < 0 ? 1 : 0 }}
-      >
-        <Trash2 size={18} className="black-glass-text" />
-        <span className="label-font text-[10px] tracking-[0.3em] black-glass-text">REMOVE</span>
-      </button>
-
-      <button
-        type="button"
-        onClick={() => {
-          if (blockNextClickRef.current) {
-            blockNextClickRef.current = false;
-            return;
-          }
-          if (isOpen) {
-            close();
-            return;
-          }
-          onOpenExercise();
-        }}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={settle}
-        onTouchCancel={settle}
-        style={{
-          transform: `translateX(${swipeOffset}px)`,
-          transition: isDragging ? "none" : "transform 180ms ease",
-          touchAction: "pan-y",
-          WebkitTapHighlightColor: "transparent",
-        }}
-        className="relative z-10 w-full flex items-center justify-between py-4 px-6 black-glass-button outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
-      >
-        <div className="text-left">
-          <div className="display-font text-xl black-glass-text">{exerciseName}</div>
-          <div className="label-font mt-1 black-glass-text opacity-80">{subtitle}</div>
-          {suggestedWeightLbs ? (
-            <div className="label-font text-[10px] tracking-[0.22em] mt-1 black-glass-text opacity-70">
-              AI START ≈ {suggestedWeightLbs} LBS
-            </div>
-          ) : null}
-          {coachNotes ? (
-            <div className="mt-2 max-w-[17rem] text-left text-[11px] leading-4 black-glass-text opacity-60">
-              {coachNotes}
-            </div>
-          ) : null}
-        </div>
-        <div className="flex items-center gap-3">
-          <div
-            onClick={(e) => {
-              e.stopPropagation();
-              onOpenHistory();
-            }}
-            className="w-10 h-10 flex items-center justify-center rounded-md bg-secondary-foreground/10 text-muted-foreground hover:bg-secondary-foreground/20 transition-colors"
-          >
-            <History size={18} />
+    <SwipeableRow
+      onRemove={onRemove}
+      onClick={onOpenExercise}
+      className="flex items-center justify-between py-4 px-6 black-glass-button"
+    >
+      <div className="text-left">
+        <div className="display-font text-xl black-glass-text">{exerciseName}</div>
+        <div className="label-font mt-1 black-glass-text opacity-80">{subtitle}</div>
+        {suggestedWeightLbs ? (
+          <div className="label-font text-[10px] tracking-[0.22em] mt-1 black-glass-text opacity-70">
+            AI START ≈ {suggestedWeightLbs} LBS
           </div>
+        ) : null}
+        {coachNotes ? (
+          <div className="mt-2 max-w-[17rem] text-left text-[11px] leading-4 black-glass-text opacity-60">
+            {coachNotes}
+          </div>
+        ) : null}
+      </div>
+      <div className="flex items-center gap-3">
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenHistory();
+          }}
+          className="w-10 h-10 flex items-center justify-center rounded-md bg-secondary-foreground/10 text-muted-foreground hover:bg-secondary-foreground/20 transition-colors"
+        >
+          <History size={18} />
         </div>
-      </button>
-    </div>
+      </div>
+    </SwipeableRow>
   );
 }
 
