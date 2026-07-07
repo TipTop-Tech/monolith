@@ -341,45 +341,15 @@ export function ActiveWorkout() {
             setReps={setReps}
             weight={weight}
             setWeight={setWeight}
-            setPickerType={setPickerType}
             handleLogSet={handleLogSet}
             setShowEndExerciseConfirm={setShowEndExerciseConfirm}
             setSetToDeleteId={setSetToDeleteId}
             currentExercise={currentExercise}
             weightUnit={weightUnit}
+            setWeightUnit={setWeightUnit}
           />
         </div>
       </div>
-
-      {pickerType === "reps" && (
-        <ScrollPicker
-          value={reps || 10}
-          onChange={setReps}
-          min={1}
-          max={50}
-          step={1}
-          suffix=""
-          title="REPS"
-          onClose={() => setPickerType(null)}
-        />
-      )}
-
-      {pickerType === "weight" && (
-        <ScrollPicker
-          value={weight || 45}
-          onChange={setWeight}
-          min={5}
-          max={500}
-          step={5}
-          suffix=""
-          title="WEIGHT"
-          onClose={() => setPickerType(null)}
-          allowCustomInput={true}
-          unitOptions={["LB", "KG"]}
-          selectedUnit={weightUnit}
-          onUnitChange={setWeightUnit}
-        />
-      )}
 
       {pickerType === "restTime" && (
         <ScrollPicker

@@ -6,6 +6,7 @@ import {
   CarouselItem,
   type CarouselApi
 } from '../ui/carousel';
+import { InlineWheel } from './InlineWheel';
 
 interface WorkoutCarouselProps {
   currentSlide: number;
@@ -17,18 +18,17 @@ interface WorkoutCarouselProps {
   setReps: (reps: number) => void;
   weight: number;
   setWeight: (weight: number) => void;
-  setPickerType: (type: 'reps' | 'weight' | 'restTime' | null) => void;
   handleLogSet: () => void;
   setShowEndExerciseConfirm: (show: boolean) => void;
   setSetToDeleteId: (id: string | null) => void;
   currentExercise: any;
   weightUnit: string;
+  setWeightUnit: (unit: string) => void;
 }
 
 export function WorkoutCarousel(props: WorkoutCarouselProps) {
   const [api, setApi] = useState<CarouselApi>();
-  const [isRepsPressed, setIsRepsPressed] = useState(false);
-  const [isWeightPressed, setIsWeightPressed] = useState(false);
+  const [selectedField, setSelectedField] = useState<'reps' | 'weight'>('reps');
   const [isLogSetPressed, setIsLogSetPressed] = useState(false);
   const slidesCount = Math.max(3, props.visibleSets.length + 2);
 
@@ -72,7 +72,7 @@ export function WorkoutCarousel(props: WorkoutCarouselProps) {
 
           {/* Slide 1: Active Logging View */}
           <CarouselItem className="basis-full flex justify-center">
-            <div className="w-[350px] flex flex-col items-center justify-center py-6 sm:py-12 gap-4 sm:gap-6">
+            <div className="w-[350px] flex flex-col items-center justify-center py-6 sm:py-10 gap-4">
               {props.editingSetId !== null && (
                 <div className="label-font text-[10px] sm:text-xs text-primary mb-2 tracking-[0.2em] bevel-element px-3 py-1 bg-primary/10 rounded-full flex items-center gap-2">
                   <Edit2 size={12} /> EDITING SET
@@ -89,64 +89,87 @@ export function WorkoutCarousel(props: WorkoutCarouselProps) {
                 </div>
               )}
 
-              <button
-                onPointerDown={() => setIsRepsPressed(true)}
-                onPointerUp={() => setIsRepsPressed(false)}
-                onPointerLeave={() => setIsRepsPressed(false)}
-                onClick={() => {
-                  setTimeout(() => props.setPickerType("reps"), 50);
-                }}
-                data-active={isRepsPressed}
-                className="w-3/4 py-3 sm:py-4 black-glass-button mb-2"
-              >
-                {props.reps > 0 ? (
-                  <div className="flex items-baseline justify-center gap-2">
-                    <span className="display-font text-3xl black-glass-text">{props.reps}</span>
-                    <span className="label-font text-xs black-glass-text tracking-widest">REPS</span>
-                  </div>
-                ) : (
-                  <div className="label-font text-xs black-glass-text tracking-widest">REPS</div>
-                )}
-              </button>
+              <div className="w-full flex items-stretch gap-4 px-2">
+                <div className="flex-1 flex flex-col justify-center gap-3">
+                  <button
+                    onClick={() => setSelectedField("reps")}
+                    data-active={selectedField === "reps"}
+                    className="w-full py-3 black-glass-button"
+                  >
+                    {props.reps > 0 ? (
+                      <div className="flex items-baseline justify-center gap-2">
+                        <span className="display-font text-2xl black-glass-text">{props.reps}</span>
+                        <span className="label-font text-[10px] black-glass-text tracking-widest">REPS</span>
+                      </div>
+                    ) : (
+                      <div className="label-font text-xs black-glass-text tracking-widest">REPS</div>
+                    )}
+                  </button>
 
-              <button
-                onPointerDown={() => setIsWeightPressed(true)}
-                onPointerUp={() => setIsWeightPressed(false)}
-                onPointerLeave={() => setIsWeightPressed(false)}
-                onClick={() => {
-                  setTimeout(() => props.setPickerType("weight"), 50);
-                }}
-                data-active={isWeightPressed}
-                className="w-3/4 py-3 sm:py-4 black-glass-button"
-              >
-                {props.weight > 0 ? (
-                  <div className="flex items-baseline justify-center gap-2">
-                    <span className="display-font text-3xl black-glass-text">{props.weight}</span>
-                    <span className="label-font text-xs black-glass-text tracking-widest">{props.weightUnit}</span>
-                  </div>
-                ) : (
-                  <div className="label-font text-xs black-glass-text tracking-widest">WEIGHT</div>
-                )}
-              </button>
+                  <button
+                    onClick={() => setSelectedField("weight")}
+                    data-active={selectedField === "weight"}
+                    className="w-full py-3 black-glass-button"
+                  >
+                    {props.weight > 0 ? (
+                      <div className="flex items-baseline justify-center gap-2">
+                        <span className="display-font text-2xl black-glass-text">{props.weight}</span>
+                        <span className="label-font text-[10px] black-glass-text tracking-widest">{props.weightUnit}</span>
+                      </div>
+                    ) : (
+                      <div className="label-font text-xs black-glass-text tracking-widest">WEIGHT</div>
+                    )}
+                  </button>
 
-              <button
-                onPointerDown={() => setIsLogSetPressed(true)}
-                onPointerUp={() => setIsLogSetPressed(false)}
-                onPointerLeave={() => setIsLogSetPressed(false)}
-                onClick={() => {
-                  setTimeout(() => props.handleLogSet(), 50);
-                }}
-                disabled={props.reps === 0 || props.weight === 0}
-                data-active={isLogSetPressed}
-                className={`w-3/4 py-3 sm:py-4 black-glass-button relative ${props.editingSetId !== null ? 'text-orange-500' : 'text-primary-foreground'}`}
-              >
-                <div className="absolute left-6 top-1/2 -translate-y-1/2">
-                  {props.editingSetId !== null ? <Edit2 size={18} /> : <Plus size={18} />}
+                  <button
+                    onPointerDown={() => setIsLogSetPressed(true)}
+                    onPointerUp={() => setIsLogSetPressed(false)}
+                    onPointerLeave={() => setIsLogSetPressed(false)}
+                    onClick={() => {
+                      setTimeout(() => props.handleLogSet(), 50);
+                    }}
+                    disabled={props.reps === 0 || props.weight === 0}
+                    data-active={isLogSetPressed}
+                    className={`w-full py-3 black-glass-button relative ${props.editingSetId !== null ? 'text-orange-500' : 'text-primary-foreground'}`}
+                  >
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2">
+                      {props.editingSetId !== null ? <Edit2 size={16} /> : <Plus size={16} />}
+                    </div>
+                    <div className="label-font text-[10px] black-glass-text tracking-widest">
+                      {props.editingSetId !== null ? 'SAVE EDIT' : 'LOG SET'}
+                    </div>
+                  </button>
                 </div>
-                <div className="label-font text-xs black-glass-text tracking-widest">
-                  {props.editingSetId !== null ? 'SAVE EDIT' : 'LOG SET'}
+
+                <div className="flex-1 flex flex-col items-center justify-center gap-2">
+                  <InlineWheel
+                    key={selectedField}
+                    value={
+                      selectedField === "reps"
+                        ? (props.reps > 0 ? props.reps : 10)
+                        : (props.weight > 0 ? props.weight : 45)
+                    }
+                    onChange={selectedField === "reps" ? props.setReps : props.setWeight}
+                    min={selectedField === "reps" ? 1 : 5}
+                    max={selectedField === "reps" ? 50 : 500}
+                    step={selectedField === "reps" ? 1 : 5}
+                  />
+                  {selectedField === "weight" && (
+                    <div className="flex gap-1">
+                      {["LB", "KG"].map((unit) => (
+                        <button
+                          key={unit}
+                          onClick={() => props.setWeightUnit(unit)}
+                          data-active={props.weightUnit === unit}
+                          className="px-3 py-1 label-font text-[10px] rounded-md black-glass-button"
+                        >
+                          <span className="black-glass-text">{unit}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </button>
+              </div>
             </div>
           </CarouselItem>
 
