@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { Trash2 } from "lucide-react";
+import { useReducedMotion } from "../../hooks/useReducedMotion";
 
 interface SwipeableRowProps {
   onRemove: () => void;
@@ -10,6 +11,7 @@ interface SwipeableRowProps {
 }
 
 export function SwipeableRow({ onRemove, onClick, children, className = "", trashText = "REMOVE" }: SwipeableRowProps) {
+  const reduced = useReducedMotion();
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -129,7 +131,7 @@ export function SwipeableRow({ onRemove, onClick, children, className = "", tras
         className="flex items-stretch w-full"
         style={{
           transform: `translateX(${swipeOffset}px)`,
-          transition: isDragging ? "none" : "transform 300ms cubic-bezier(0.32, 0.72, 0, 1)",
+          transition: isDragging || reduced ? "none" : "transform 300ms cubic-bezier(0.32, 0.72, 0, 1)",
         }}
       >
         <button
