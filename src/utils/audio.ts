@@ -23,19 +23,27 @@ export const preloadStartupSound = async () => {
 };
 
 let isClinkPreloaded = false;
+const CLINK_POOL_SIZE = 5;
+let currentClinkIndex = 0;
 
 export const preloadClinkSound = async () => {
   try {
-    await NativeAudio.preload({
-      assetId: 'clink',
-      assetPath: Capacitor.getPlatform() === 'web' ? '/assets/clink.mp3' : 'public/assets/clink.mp3',
-      isComplex: true,
-      volume: 0.5,
-      isUrl: Capacitor.getPlatform() === 'web',
-    });
+    const promises = [];
+    for (let i = 0; i < CLINK_POOL_SIZE; i++) {
+      promises.push(
+        NativeAudio.preload({
+          assetId: `clink_${i}`,
+          assetPath: Capacitor.getPlatform() === 'web' ? '/assets/clink.mp3' : 'public/assets/clink.mp3',
+          isComplex: true,
+          volume: 0.5,
+          isUrl: Capacitor.getPlatform() === 'web',
+        })
+      );
+    }
+    await Promise.all(promises);
     isClinkPreloaded = true;
   } catch (error) {
-    console.error('Failed to preload clink sound:', error);
+    console.error('Failed to preload clink sound pool:', error);
   }
 };
 
@@ -45,8 +53,9 @@ export const playClinkSound = async () => {
       await preloadClinkSound();
     }
     await NativeAudio.play({
-      assetId: 'clink',
+      assetId: `clink_${currentClinkIndex}`,
     });
+    currentClinkIndex = (currentClinkIndex + 1) % CLINK_POOL_SIZE;
   } catch (error) {
     console.error('Error playing clink sound:', error);
   }
