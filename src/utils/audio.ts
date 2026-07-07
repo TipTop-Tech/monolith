@@ -12,7 +12,7 @@ export const preloadStartupSound = async () => {
 
     await NativeAudio.preload({
       assetId: 'startup',
-      assetPath: Capacitor.getPlatform() === 'web' ? '/assets/startup4.mp3' : 'assets/startup4.mp3',
+      assetPath: Capacitor.getPlatform() === 'web' ? '/assets/startup4.mp3' : 'public/assets/startup4.mp3',
       isComplex: false,
       isUrl: Capacitor.getPlatform() === 'web',
     });
@@ -28,7 +28,7 @@ export const preloadClinkSound = async () => {
   try {
     await NativeAudio.preload({
       assetId: 'clink',
-      assetPath: Capacitor.getPlatform() === 'web' ? '/assets/clink.mp3' : 'assets/clink.mp3',
+      assetPath: Capacitor.getPlatform() === 'web' ? '/assets/clink.mp3' : 'public/assets/clink.mp3',
       isComplex: true,
       volume: 0.5,
       isUrl: Capacitor.getPlatform() === 'web',
