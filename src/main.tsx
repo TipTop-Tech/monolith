@@ -66,6 +66,5 @@ if (Capacitor.getPlatform() === 'web') {
   }).catch((err) => {
     console.error("Failed to initialize PowerSync Database:", err);
   });
-  renderApp();
 }
 

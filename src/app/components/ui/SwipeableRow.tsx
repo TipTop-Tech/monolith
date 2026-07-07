@@ -16,12 +16,14 @@ export function SwipeableRow({ onRemove, onClick, children, className = "", tras
   const touchStartX = useRef<number | null>(null);
   const swipeOffsetRef = useRef(0);
   const blockNextClickRef = useRef(false);
+  const touchMovedRef = useRef(false);
 
   /**
    * This resets the swipe offset and touch start x.
    */
   const resetSwipe = () => {
     touchStartX.current = null;
+    touchMovedRef.current = false;
     swipeOffsetRef.current = 0;
     setSwipeOffset(0);
     setIsDragging(false);
@@ -33,6 +35,7 @@ export function SwipeableRow({ onRemove, onClick, children, className = "", tras
    */
   const handleTouchStart = (event: React.TouchEvent<HTMLButtonElement>) => {
     touchStartX.current = event.touches[0].clientX;
+    touchMovedRef.current = false;
     blockNextClickRef.current = false;
     setIsDragging(true);
   };
@@ -44,8 +47,12 @@ export function SwipeableRow({ onRemove, onClick, children, className = "", tras
   const handleTouchMove = (event: React.TouchEvent<HTMLButtonElement>) => {
     if (touchStartX.current === null) return;
 
-    const baseOffset = isOpen ? -100 : 0;
     const deltaX = event.touches[0].clientX - touchStartX.current;
+    if (Math.abs(deltaX) > 5) {
+      touchMovedRef.current = true;
+    }
+
+    const baseOffset = isOpen ? -100 : 0;
     const rawOffset = baseOffset + deltaX;
 
     // Apply friction if pulled beyond -100px
@@ -65,8 +72,24 @@ export function SwipeableRow({ onRemove, onClick, children, className = "", tras
   /**
    * This handles the touch end event. It handles snapping logic based on thresholds.
    */
-  const handleTouchEnd = () => {
+  const handleTouchEnd = (event: React.TouchEvent<HTMLButtonElement>) => {
     setIsDragging(false);
+
+    if (!touchMovedRef.current && touchStartX.current !== null) {
+      // It was a tap, handle click manually to avoid browser cancellation
+      if (isOpen) {
+        setIsOpen(false);
+        setSwipeOffset(0);
+        swipeOffsetRef.current = 0;
+        blockNextClickRef.current = true;
+      } else {
+        if (onClick) {
+          blockNextClickRef.current = true;
+          onClick();
+        }
+      }
+      return;
+    }
 
     // Over-swipe to delete automatically
     if (swipeOffsetRef.current < -180) {

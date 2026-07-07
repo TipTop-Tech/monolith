@@ -492,7 +492,7 @@ export function Routines() {
                           <div>
                             <div className="flex items-center gap-4 mb-3">
                               <div className="label-font text-muted-foreground">
-                                ROUTINE {String(routineIndex + 1).padStart(2, "0")} / {String(routines.length).padStart(2, "0")}
+                                ROUTINE TEst2222{String(routineIndex + 1).padStart(2, "0")} / {String(routines.length).padStart(2, "0")}
                               </div>
                             </div>
                             <button
