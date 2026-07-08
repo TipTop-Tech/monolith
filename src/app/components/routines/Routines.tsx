@@ -648,54 +648,11 @@ export function Routines() {
           <DialogHeader>
             <DialogTitle>Create routine with agent</DialogTitle>
             <DialogDescription>
-              Choose which agent should generate the workout, then describe the routine you want.
+              Describe the workout, then choose OpenAI Agent for nuanced prompts or Local Dictionary Agent for offline fallback.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="rounded-2xl border border-white/15 bg-secondary/60 p-4 space-y-3">
-              <div className="label-font text-xs text-muted-foreground">AGENT MODE</div>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAiAgentMode("openai");
-                    setAiResult(null);
-                  }}
-                  className={`rounded-xl border px-3 py-3 text-left transition-all ${
-                    aiAgentMode === "openai"
-                      ? "border-white/60 bg-white/15 text-foreground"
-                      : "border-white/10 bg-background/40 text-muted-foreground hover:bg-white/10"
-                  }`}
-                >
-                  <div className="label-font text-[11px] tracking-[0.24em]">OPENAI AGENT</div>
-                  <div className="mt-1 text-xs leading-4 text-muted-foreground">
-                    Best for nuanced prompts, sports, soreness, mixed splits, and specific requests.
-                  </div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAiAgentMode("local");
-                    setAiResult(null);
-                  }}
-                  className={`rounded-xl border px-3 py-3 text-left transition-all ${
-                    aiAgentMode === "local"
-                      ? "border-white/60 bg-white/15 text-foreground"
-                      : "border-white/10 bg-background/40 text-muted-foreground hover:bg-white/10"
-                  }`}
-                >
-                  <div className="label-font text-[11px] tracking-[0.24em]">LOCAL AGENT</div>
-                  <div className="mt-1 text-xs leading-4 text-muted-foreground">
-                    Uses the built-in workout dictionary only. No API key or backend call.
-                  </div>
-                </button>
-              </div>
-              <div className="rounded-lg border border-white/10 bg-background/40 px-3 py-2 text-xs text-muted-foreground">
-                Currently selected: <span className="text-foreground">{aiAgentMode === "openai" ? "OpenAI Agent" : "Local Dictionary Agent"}</span>
-              </div>
-            </div>
-
             <div className="space-y-2">
               <div className="label-font text-xs text-muted-foreground">PROMPT</div>
               <Textarea
@@ -707,6 +664,25 @@ export function Routines() {
                 placeholder="Make me a 1 hour upper body workout. I am a distance freestyle swimmer, sore from yesterday, and I do not want to lift too heavy."
                 className="min-h-28"
               />
+            </div>
+
+            <div className="space-y-2">
+              <div className="label-font text-xs text-muted-foreground">AGENT MODE</div>
+              <Select value={aiAgentMode} onValueChange={(value) => {
+                setAiAgentMode(value as "openai" | "local");
+                setAiResult(null);
+              }}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose agent" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="openai">OpenAI Agent</SelectItem>
+                  <SelectItem value="local">Local Dictionary Agent</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs leading-5 text-muted-foreground">
+                OpenAI handles nuanced prompts. Local uses the offline dictionary as a fast fallback.
+              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
