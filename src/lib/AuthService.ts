@@ -114,7 +114,7 @@ export class AuthService {
    */
   static async clearLocalData() {
     // Clear Local Storage
-    const preserve = ["theme", "hapticsEnabled", "soundEnabled", "reduceMotion", "weightUnit", "defaultRestTime"];
+    const preserve = ["theme", "hapticsEnabled", "soundEnabled", "reduceMotion", "weightUnit", "defaultRestTime", "liveActivitiesEnabled"];
     const saved: Record<string, string> = {};
     for (const k of preserve) {
       const v = localStorage.getItem(k);

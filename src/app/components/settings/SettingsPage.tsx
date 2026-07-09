@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { Capacitor } from "@capacitor/core";
 import { ArrowLeft, ChevronRight, Minus, Plus } from "lucide-react";
 import { haptics } from "../../lib/haptics";
 import { useWorkout } from "../../context/WorkoutContext";
@@ -173,7 +174,10 @@ export const SettingsPage = () => {
   const [hapticsOn, setHapticsOn] = useState(() => readBool("hapticsEnabled", true));
   const [soundOn, setSoundOn] = useState(() => readBool("soundEnabled", true));
   const [reduceMotion, setReduceMotion] = useState(() => readBool("reduceMotion", false));
+  const [liveActivity, setLiveActivity] = useState(() => readBool("liveActivitiesEnabled", true));
   const [rest, setRest] = useState(() => getDefaultRestTime());
+
+  const isIOS = Capacitor.getPlatform() === "ios";
 
   const currentSkin = SKINS.find((s) => s.id === pref);
   const skinLabel = pref === "auto" ? "Auto" : currentSkin?.name ?? "Auto";
@@ -272,6 +276,25 @@ export const SettingsPage = () => {
           />
         </CardContent>
       </Card>
+
+      {isIOS && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Live Activity</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ToggleRow
+              label="Live Activities"
+              description="Show your workout on the Lock Screen & Dynamic Island"
+              checked={liveActivity}
+              onChange={(next) => {
+                writeBool("liveActivitiesEnabled", next);
+                setLiveActivity(next);
+              }}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
