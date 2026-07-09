@@ -7,7 +7,7 @@
   <script>
     (function () {
       try {
-        var p = localStorage.getItem('theme') || 'dark';
+        var p = localStorage.getItem('theme') || 'auto';
         var r = p === 'auto' ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : p;
         document.documentElement.dataset.theme = r;
       } catch (e) { }

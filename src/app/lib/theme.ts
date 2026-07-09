@@ -2,7 +2,7 @@ export type ThemePref = "light" | "dark" | "auto";
 export type ResolvedTheme = "light" | "dark";
 
 const KEY = "theme";
-const DEFAULT_PREF: ThemePref = "dark";
+const DEFAULT_PREF: ThemePref = "auto";
 
 export function getThemePref(): ThemePref {
   try {

@@ -154,7 +154,7 @@ export function ScrollPicker({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div
-        className="absolute inset-0 bg-black/80 backdrop-blur-xl"
+        className="absolute inset-0 bg-background/80 backdrop-blur-xl"
         onClick={onClose}
       />
       <div className="relative w-full h-full flex flex-col items-center justify-center p-8">
