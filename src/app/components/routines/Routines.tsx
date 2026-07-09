@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery } from '@powersync/react';
 import { useWorkout } from "../../context/WorkoutContext";
 import { haptics } from "../../lib/haptics";
+import { getDefaultRestTime } from "../../lib/prefs";
 import { useNavigate } from "react-router";
 import { ChevronRight, Plus, Sparkles, Trash2, ChevronDown, ChevronUp, MoreVertical, History } from "lucide-react";
 import { Button } from "../ui/button";
@@ -547,7 +548,7 @@ export function Routines() {
                                     setWorkoutSessionStartedAt(Date.now());
                                     setReps(routineExercise.targetReps ?? 0);
                                     setWeight(routineExercise.suggestedWeightLbs ?? 0);
-                                    setRestTime(90);
+                                    setRestTime(getDefaultRestTime());
                                     setTimeRemaining(0);
                                     setIsTimerRunning(false);
                                     setPickerType(null);
