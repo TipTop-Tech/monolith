@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { Trash2 } from "lucide-react";
 import { useReducedMotion } from "../../hooks/useReducedMotion";
+import { haptics } from "../../lib/haptics";
 
 interface SwipeableRowProps {
   onRemove: () => void;
@@ -19,6 +20,7 @@ export function SwipeableRow({ onRemove, onClick, children, className = "", tras
   const swipeOffsetRef = useRef(0);
   const blockNextClickRef = useRef(false);
   const touchMovedRef = useRef(false);
+  const revealHapticRef = useRef(false);
 
   /**
    * This resets the swipe offset and touch start x.
@@ -26,6 +28,7 @@ export function SwipeableRow({ onRemove, onClick, children, className = "", tras
   const resetSwipe = () => {
     touchStartX.current = null;
     touchMovedRef.current = false;
+    revealHapticRef.current = false;
     swipeOffsetRef.current = 0;
     setSwipeOffset(0);
     setIsDragging(false);
@@ -39,6 +42,7 @@ export function SwipeableRow({ onRemove, onClick, children, className = "", tras
     touchStartX.current = event.touches[0].clientX;
     touchMovedRef.current = false;
     blockNextClickRef.current = false;
+    revealHapticRef.current = swipeOffsetRef.current <= -100;
     setIsDragging(true);
   };
 
@@ -66,6 +70,13 @@ export function SwipeableRow({ onRemove, onClick, children, className = "", tras
     
     // Prevent swiping right beyond 0
     nextOffset = Math.min(0, nextOffset);
+
+    if (nextOffset <= -100 && !revealHapticRef.current) {
+      revealHapticRef.current = true;
+      haptics.tap();
+    } else if (nextOffset > -100) {
+      revealHapticRef.current = false;
+    }
 
     swipeOffsetRef.current = nextOffset;
     setSwipeOffset(nextOffset);
