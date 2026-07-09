@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { haptics } from "../../lib/haptics";
+import { playClinkSound, preloadClinkSound } from "../../../utils/audio";
 
 interface InlineWheelProps {
   value: number;
@@ -24,7 +25,6 @@ export function InlineWheel({
   const [scrollPosition, setScrollPosition] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const animationFrameRef = useRef<number>();
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const lastHapticValueRef = useRef(value);
   const suppressHapticsRef = useRef(false);
   const selectionStartedRef = useRef(false);
@@ -43,8 +43,7 @@ export function InlineWheel({
   }, []);
 
   useEffect(() => {
-    audioRef.current = new Audio("/assets/clink.mp3");
-    audioRef.current.volume = 0.5;
+    preloadClinkSound();
     return () => {
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
       haptics.selectEnd();
@@ -64,11 +63,7 @@ export function InlineWheel({
         lastHapticValueRef.current = newValue;
         if (!suppressHapticsRef.current) {
           haptics.select();
-          const clink = audioRef.current?.cloneNode() as HTMLAudioElement | undefined;
-          if (clink) {
-            clink.volume = 0.5;
-            clink.play().catch(() => {});
-          }
+          playClinkSound();
         }
       }
       if (newValue !== selectedValue) {

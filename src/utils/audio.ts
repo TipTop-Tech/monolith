@@ -4,6 +4,14 @@ import { NativeAudio } from '@capacitor-community/native-audio';
 let hasPlayedStartupSound = false;
 let isPreloaded = false;
 
+export const isSoundEnabled = (): boolean => {
+  try {
+    return localStorage.getItem("soundEnabled") !== "false";
+  } catch {
+    return true;
+  }
+};
+
 export const preloadStartupSound = async () => {
   try {
     if (Capacitor.getPlatform() !== 'web') {
@@ -48,6 +56,7 @@ export const preloadClinkSound = async () => {
 };
 
 export const playClinkSound = async () => {
+  if (!isSoundEnabled()) return;
   try {
     if (!isClinkPreloaded) {
       await preloadClinkSound();
@@ -62,7 +71,7 @@ export const playClinkSound = async () => {
 };
 
 export const playStartupSound = async () => {
-  if (hasPlayedStartupSound) {
+  if (hasPlayedStartupSound || !isSoundEnabled()) {
     return;
   }
 

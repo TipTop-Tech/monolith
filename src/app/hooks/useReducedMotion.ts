@@ -2,20 +2,34 @@ import { useEffect, useState } from "react";
 
 const QUERY = "(prefers-reduced-motion: reduce)";
 
-// True when the user prefers reduced motion (OS setting).
-export function useReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(() =>
+function read(): boolean {
+  const os =
     typeof window !== "undefined" && window.matchMedia
       ? window.matchMedia(QUERY).matches
-      : false
-  );
+      : false;
+  try {
+    return os || localStorage.getItem("reduceMotion") === "true";
+  } catch {
+    return os;
+  }
+}
+
+// True when the user prefers reduced motion (OS setting OR the in-app override).
+export function useReducedMotion(): boolean {
+  const [reduced, setReduced] = useState(read);
 
   useEffect(() => {
-    if (typeof window === "undefined" || !window.matchMedia) return;
-    const mq = window.matchMedia(QUERY);
-    const onChange = () => setReduced(mq.matches);
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
+    const update = () => setReduced(read());
+    const mq =
+      typeof window !== "undefined" && window.matchMedia
+        ? window.matchMedia(QUERY)
+        : null;
+    mq?.addEventListener("change", update);
+    window.addEventListener("prefschange", update);
+    return () => {
+      mq?.removeEventListener("change", update);
+      window.removeEventListener("prefschange", update);
+    };
   }, []);
 
   return reduced;
