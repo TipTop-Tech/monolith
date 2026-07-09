@@ -118,6 +118,40 @@
   --glass-edge: rgba(255, 255, 255, 0.08);
 }
 
+[data-theme="ember"] {
+  --background: #14100e;
+  --foreground: #f0e6da;
+  --card: transparent;
+  --card-foreground: #f0e6da;
+  --popover: #1c1613;
+  --popover-foreground: #f0e6da;
+  --primary: #e8863c;
+  --primary-foreground: #1a1109;
+  --secondary: #241c17;
+  --secondary-foreground: #f0e6da;
+  --muted: #201813;
+  --muted-foreground: #b19a86;
+  --accent: #2a201a;
+  --accent-foreground: #f0e6da;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --input-background: #1c1613;
+  --switch-background: #3a2c22;
+  --ring: #e8863c;
+
+  --light-shadow: rgba(255, 220, 180, 0.08);
+  --dark-shadow: rgba(0, 0, 0, 0.6);
+
+  --app-bg-from: #14100e;
+  --app-bg-to: #0b0806;
+  --glass-bg: rgba(32, 22, 15, 0.42);
+  --glass-bg-active: rgba(46, 32, 21, 0.52);
+  --glass-bg-destructive: rgba(150, 10, 10, 0.4);
+  --glass-bg-destructive-active: rgba(180, 20, 20, 0.5);
+  --glass-text: #f0e6da;
+  --glass-edge: rgba(232, 134, 60, 0.16);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

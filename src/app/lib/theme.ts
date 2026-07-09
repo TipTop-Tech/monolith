@@ -1,5 +1,7 @@
-export type ThemePref = "light" | "dark" | "oled" | "auto";
-export type ResolvedTheme = "light" | "dark" | "oled";
+import { SKIN_IDS } from "./skins";
+
+export type ThemePref = string;
+export type ResolvedTheme = string;
 
 const KEY = "theme";
 const DEFAULT_PREF: ThemePref = "auto";
@@ -7,7 +9,7 @@ const DEFAULT_PREF: ThemePref = "auto";
 export function getThemePref(): ThemePref {
   try {
     const v = localStorage.getItem(KEY);
-    if (v === "light" || v === "dark" || v === "oled" || v === "auto") return v;
+    if (v && (v === "auto" || SKIN_IDS.includes(v))) return v;
   } catch {
     void 0;
   }
