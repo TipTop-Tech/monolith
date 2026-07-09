@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery } from '@powersync/react';
 import { useWorkout } from "../../context/WorkoutContext";
 import { haptics } from "../../lib/haptics";
+import { motion } from "motion/react";
+import { SPRING, INSTANT } from "../../lib/motion";
+import { useReducedMotion } from "../../hooks/useReducedMotion";
 import { useNavigate } from "react-router";
 import { ChevronRight, Plus, Sparkles, Trash2, ChevronDown, ChevronUp, MoreVertical, History } from "lucide-react";
 import { Button } from "../ui/button";
@@ -123,6 +126,7 @@ function RoutineExerciseRow({
 }: RoutineExerciseRowProps) {
   const OPEN_OFFSET = -96;
 
+  const reduced = useReducedMotion();
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -189,7 +193,7 @@ function RoutineExerciseRow({
         <span className="label-font text-[10px] tracking-[0.3em] black-glass-text">REMOVE</span>
       </button>
 
-      <button
+      <motion.button
         type="button"
         onClick={() => {
           if (blockNextClickRef.current) {
@@ -206,9 +210,9 @@ function RoutineExerciseRow({
         onTouchMove={handleTouchMove}
         onTouchEnd={settle}
         onTouchCancel={settle}
+        animate={{ x: swipeOffset }}
+        transition={isDragging || reduced ? INSTANT : SPRING}
         style={{
-          transform: `translateX(${swipeOffset}px)`,
-          transition: isDragging ? "none" : "transform 180ms ease",
           touchAction: "pan-y",
           WebkitTapHighlightColor: "transparent",
         }}
@@ -239,7 +243,7 @@ function RoutineExerciseRow({
             <History size={18} />
           </div>
         </div>
-      </button>
+      </motion.button>
     </div>
   );
 }
