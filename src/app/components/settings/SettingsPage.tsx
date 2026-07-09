@@ -1,9 +1,38 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { haptics } from "../../lib/haptics";
+import { useTheme } from "../../hooks/useTheme";
+import { ThemePref } from "../../lib/theme";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Switch } from "../ui/switch";
 import { ArrowLeft } from "lucide-react";
+
+const THEME_OPTIONS: { value: ThemePref; label: string }[] = [
+  { value: "light", label: "Light" },
+  { value: "dark", label: "Dark" },
+  { value: "auto", label: "Auto" },
+];
+
+function ThemeControl() {
+  const { pref, setPref } = useTheme();
+  return (
+    <div className="flex gap-1 rounded-lg bg-secondary p-1">
+      {THEME_OPTIONS.map((opt) => (
+        <button
+          key={opt.value}
+          onClick={() => {
+            setPref(opt.value);
+            haptics.tap();
+          }}
+          data-active={pref === opt.value}
+          className="flex-1 rounded-md py-2 text-sm font-medium text-muted-foreground data-[active=true]:bg-primary data-[active=true]:text-primary-foreground data-[active=true]:shadow-sm transition-colors"
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 function ToggleRow({
   label,
@@ -62,6 +91,15 @@ export const SettingsPage = () => {
       </button>
 
       <h1 className="text-3xl font-bold tracking-tight mb-4">Settings</h1>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Appearance</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ThemeControl />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
