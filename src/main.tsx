@@ -9,6 +9,7 @@ import { defineCustomElements as jeepSqlite } from 'jeep-sqlite/loader';
 import { Capacitor } from '@capacitor/core';
 import { PowerSyncContext } from '@powersync/react';
 import { Connector } from './database/PowerSyncConnector';
+import { applyPreferredTextZoom } from './utils/textZoom';
 const renderApp = () => {
   createRoot(document.getElementById('root') as HTMLElement).render(
     <React.StrictMode>
@@ -59,6 +60,7 @@ if (Capacitor.getPlatform() === 'web') {
 
 } else {
   // If native iOS/Android, skip the jeep-sqlite setup and render immediately
+  applyPreferredTextZoom();
   db.init().then(() => {
     console.log("PowerSync Database initialized successfully!");
     db.connect(new Connector());

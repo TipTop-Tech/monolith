@@ -151,7 +151,8 @@
   */
 
   html {
-    font-size: var(--font-size);
+    font-size: 100%;
+    -webkit-text-size-adjust: 100%;
   }
 
   h1 {
@@ -190,7 +191,9 @@
     line-height: 1.5;
   }
 
-  input {
+  input,
+  textarea,
+  select {
     font-size: var(--text-base);
     font-weight: var(--font-weight-normal);
     line-height: 1.5;
