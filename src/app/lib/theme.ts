@@ -1,5 +1,5 @@
-export type ThemePref = "light" | "dark" | "auto";
-export type ResolvedTheme = "light" | "dark";
+export type ThemePref = "light" | "dark" | "oled" | "auto";
+export type ResolvedTheme = "light" | "dark" | "oled";
 
 const KEY = "theme";
 const DEFAULT_PREF: ThemePref = "auto";
@@ -7,7 +7,7 @@ const DEFAULT_PREF: ThemePref = "auto";
 export function getThemePref(): ThemePref {
   try {
     const v = localStorage.getItem(KEY);
-    if (v === "light" || v === "dark" || v === "auto") return v;
+    if (v === "light" || v === "dark" || v === "oled" || v === "auto") return v;
   } catch {
     void 0;
   }

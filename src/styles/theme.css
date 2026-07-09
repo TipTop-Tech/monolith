@@ -102,6 +102,22 @@
     0 1px 2px rgba(60, 52, 42, 0.08);
 }
 
+[data-theme="oled"] {
+  --background: #000000;
+  --popover: #050505;
+  --secondary: #0c0c0c;
+  --muted: #0a0a0a;
+  --accent: #141414;
+  --input-background: #0a0a0a;
+  --switch-background: #1a1a1a;
+
+  --app-bg-from: #000000;
+  --app-bg-to: #000000;
+  --glass-bg: rgba(0, 0, 0, 0.5);
+  --glass-bg-active: rgba(14, 14, 14, 0.6);
+  --glass-edge: rgba(255, 255, 255, 0.08);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

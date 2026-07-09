@@ -10,6 +10,7 @@ import { ArrowLeft } from "lucide-react";
 const THEME_OPTIONS: { value: ThemePref; label: string }[] = [
   { value: "light", label: "Light" },
   { value: "dark", label: "Dark" },
+  { value: "oled", label: "OLED" },
   { value: "auto", label: "Auto" },
 ];
 
