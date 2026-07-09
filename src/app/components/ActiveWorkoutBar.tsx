@@ -1,7 +1,9 @@
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
-import { Dumbbell, ChevronRight } from "lucide-react";
+import { Dumbbell, ChevronRight, Check } from "lucide-react";
 import { useWorkout } from "../context/WorkoutContext";
 import { haptics } from "../lib/haptics";
+import { pulse } from "../../utils/feedback";
 
 function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -9,39 +11,46 @@ function formatTime(seconds: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-function RingCountdown({ fraction, label }: { fraction: number; label: string }) {
-  const size = 50;
-  const sw = 3;
-  const r = (size - sw) / 2;
-  const c = 2 * Math.PI * r;
-  const clamped = Math.max(0, Math.min(1, fraction));
+const SIZE = 50;
+const SW = 3;
+const R = (SIZE - SW) / 2;
+const CIRC = 2 * Math.PI * R;
+
+function Ring({ fraction, label, done }: { fraction: number; label: string; done?: boolean }) {
+  const clamped = done ? 1 : Math.max(0, Math.min(1, fraction));
   return (
-    <div className="relative shrink-0" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90">
+    <div className="relative shrink-0" style={{ width: SIZE, height: SIZE }}>
+      <svg width={SIZE} height={SIZE} className="-rotate-90">
+        {!done && (
+          <circle
+            cx={SIZE / 2}
+            cy={SIZE / 2}
+            r={R}
+            fill="none"
+            className="text-foreground/15"
+            stroke="currentColor"
+            strokeWidth={SW}
+          />
+        )}
         <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          fill="none"
-          className="text-foreground/15"
-          stroke="currentColor"
-          strokeWidth={sw}
-        />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
+          cx={SIZE / 2}
+          cy={SIZE / 2}
+          r={R}
           fill="none"
           className="text-primary"
           stroke="currentColor"
-          strokeWidth={sw}
+          strokeWidth={SW}
           strokeLinecap="round"
-          strokeDasharray={c}
-          strokeDashoffset={c * (1 - clamped)}
+          strokeDasharray={CIRC}
+          strokeDashoffset={CIRC * (1 - clamped)}
         />
       </svg>
-      <span className="absolute inset-0 flex items-center justify-center display-font text-base text-foreground tabular-nums">
-        {label}
+      <span className="absolute inset-0 flex items-center justify-center text-primary">
+        {done ? (
+          <Check size={20} strokeWidth={2.5} />
+        ) : (
+          <span className="display-font text-base text-foreground tabular-nums">{label}</span>
+        )}
       </span>
     </div>
   );
@@ -59,6 +68,24 @@ export function ActiveWorkoutBar() {
   const location = useLocation();
   const navigate = useNavigate();
 
+  const [justDone, setJustDone] = useState(false);
+  const prevTimeRef = useRef(timeRemaining);
+  const cardRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (prevTimeRef.current > 0 && timeRemaining === 0) {
+      setJustDone(true);
+      pulse(cardRef.current, "success");
+    } else if (timeRemaining > 0) {
+      setJustDone(false);
+    }
+    prevTimeRef.current = timeRemaining;
+  }, [timeRemaining]);
+
+  useEffect(() => {
+    if (location.pathname === "/") setJustDone(false);
+  }, [location.pathname]);
+
   if (!currentRoutine || location.pathname === "/") return null;
 
   const currentExercise = exercises.find(
@@ -66,10 +93,12 @@ export function ActiveWorkoutBar() {
   );
   const resting = isTimerRunning && timeRemaining > 0;
   const fraction = restTime > 0 ? timeRemaining / restTime : 0;
+  const status = resting ? "Resting" : justDone ? "Rest done" : "In progress";
 
   return (
     <div className="px-3 pb-2 pointer-events-none">
       <button
+        ref={cardRef}
         onClick={() => {
           haptics.tap();
           navigate("/");
@@ -83,12 +112,18 @@ export function ActiveWorkoutBar() {
           <p className="label-font text-foreground truncate">
             {currentExercise?.name ?? currentRoutine.name}
           </p>
-          <p className="label-font text-[9px] text-muted-foreground truncate mt-0.5">
-            {resting ? "Resting" : "In progress"}
+          <p
+            className={`label-font text-[9px] truncate mt-0.5 ${
+              justDone ? "text-primary" : "text-muted-foreground"
+            }`}
+          >
+            {status}
           </p>
         </div>
         {resting ? (
-          <RingCountdown fraction={fraction} label={formatTime(timeRemaining)} />
+          <Ring fraction={fraction} label={formatTime(timeRemaining)} />
+        ) : justDone ? (
+          <Ring fraction={1} label="" done />
         ) : (
           <ChevronRight size={22} className="text-muted-foreground shrink-0 mr-1" />
         )}
