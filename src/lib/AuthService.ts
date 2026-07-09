@@ -114,15 +114,8 @@ export class AuthService {
    */
   static async clearLocalData() {
     // Clear Local Storage
-    const preserve = ["theme", "hapticsEnabled", "soundEnabled", "reduceMotion", "weightUnit", "defaultRestTime", "liveActivitiesEnabled"];
-    const saved: Record<string, string> = {};
-    for (const k of preserve) {
-      const v = localStorage.getItem(k);
-      if (v !== null) saved[k] = v;
-    }
     localStorage.clear();
-    for (const k of Object.keys(saved)) localStorage.setItem(k, saved[k]);
-
+    
     // Clear PowerSync Database if possible
     try {
       if (db.connected) {

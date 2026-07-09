@@ -2,7 +2,6 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Purchases, CustomerInfo, LOG_LEVEL } from '@revenuecat/purchases-capacitor';
 import { RevenueCatUI } from '@revenuecat/purchases-capacitor-ui';
 import { Capacitor } from '@capacitor/core';
-import { toast } from 'sonner';
 
 // The entitlement identifier we configured in RevenueCat
 const ENTITLEMENT_ID = 'Premium';
@@ -31,7 +30,7 @@ export const PremiumProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (Capacitor.getPlatform() === 'web') {
           console.warn('RevenueCat is not supported on web. Mocking premium state for development.');
           // Mock data for web dev
-          setIsPro(false);
+          setIsPro(true);
           setIsLoading(false);
           return;
         }
@@ -47,14 +46,14 @@ export const PremiumProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }
 
         await Purchases.configure({ apiKey });
-
+        
         // Fetch initial customer info
         const info = await Purchases.getCustomerInfo();
         updateCustomerState(info.customerInfo);
 
         // Listen for changes
         Purchases.addCustomerInfoUpdateListener((info) => {
-          updateCustomerState(info);
+          updateCustomerState(info.customerInfo);
         });
 
       } catch (error) {
@@ -78,21 +77,10 @@ export const PremiumProvider: React.FC<{ children: React.ReactNode }> = ({ child
       alert('Paywall presentation mocked on web.');
       return;
     }
-
-    if (isPro) {
-      toast.info('You are already Premium!');
-      return;
-    }
-
+    
     try {
       setIsLoading(true);
-      const paywallResult = await RevenueCatUI.presentPaywall();
-      
-      if (paywallResult.result === 'PURCHASED' || paywallResult.result === 'RESTORED') {
-        const info = await Purchases.getCustomerInfo();
-        updateCustomerState(info.customerInfo);
-        toast.success('Premium Activated!');
-      }
+      await RevenueCatUI.presentPaywall();
     } catch (e) {
       console.error(e);
     } finally {

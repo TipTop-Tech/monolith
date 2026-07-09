@@ -4,84 +4,44 @@ import { NativeAudio } from '@capacitor-community/native-audio';
 let hasPlayedStartupSound = false;
 let isPreloaded = false;
 
-export const isSoundEnabled = (): boolean => {
-  try {
-    return localStorage.getItem("soundEnabled") !== "false";
-  } catch {
-    return true;
-  }
-};
-
 export const preloadStartupSound = async () => {
-  try {
-    if (Capacitor.getPlatform() !== 'web') {
-      await NativeAudio.configure({ focus: false });
+  if (Capacitor.getPlatform() !== 'web') {
+    try {
+      await NativeAudio.preload({
+        assetId: 'startup',
+        // In Capacitor, files in the public folder are placed at the root of the app's web assets.
+        // So public/assets/startup2.mp3 becomes assets/startup2.mp3
+        assetPath: 'assets/startup2.mp3',
+        isComplex: false,
+      });
+      isPreloaded = true;
+    } catch (error) {
+      console.error('Failed to preload startup sound:', error);
     }
-
-    await NativeAudio.preload({
-      assetId: 'startup',
-      assetPath: Capacitor.getPlatform() === 'web' ? '/assets/startup4.mp3' : 'public/assets/startup4.mp3',
-      isComplex: false,
-      isUrl: Capacitor.getPlatform() === 'web',
-    });
-    isPreloaded = true;
-  } catch (error) {
-    console.error('Failed to preload startup sound:', error);
-  }
-};
-
-let isClinkPreloaded = false;
-const CLINK_POOL_SIZE = 8;
-let currentClinkIndex = 0;
-
-export const preloadClinkSound = async () => {
-  try {
-    const promises = [];
-    for (let i = 0; i < CLINK_POOL_SIZE; i++) {
-      promises.push(
-        NativeAudio.preload({
-          assetId: `clink_${i}`,
-          assetPath: Capacitor.getPlatform() === 'web' ? '/assets/clink2.mp3' : 'public/assets/clink2.mp3',
-          isComplex: true,
-          volume: 0.5,
-          isUrl: Capacitor.getPlatform() === 'web',
-        })
-      );
-    }
-    await Promise.all(promises);
-    isClinkPreloaded = true;
-  } catch (error) {
-    console.error('Failed to preload clink sound pool:', error);
-  }
-};
-
-export const playClinkSound = async () => {
-  if (!isSoundEnabled()) return;
-  try {
-    if (!isClinkPreloaded) {
-      await preloadClinkSound();
-    }
-    await NativeAudio.play({
-      assetId: `clink_${currentClinkIndex}`,
-    });
-    currentClinkIndex = (currentClinkIndex + 1) % CLINK_POOL_SIZE;
-  } catch (error) {
-    console.error('Error playing clink sound:', error);
   }
 };
 
 export const playStartupSound = async () => {
-  if (hasPlayedStartupSound || !isSoundEnabled()) {
+  if (hasPlayedStartupSound) {
     return;
   }
 
   try {
-    if (!isPreloaded) {
-      await preloadStartupSound();
+    if (Capacitor.getPlatform() !== 'web') {
+      if (!isPreloaded) {
+        await NativeAudio.preload({
+          assetId: 'startup',
+          assetPath: 'assets/startup4 .mp3',
+          isComplex: false,
+        });
+      }
+      await NativeAudio.play({
+        assetId: 'startup',
+      });
+    } else {
+      const audio = new Audio('/assets/startup4.mp3');
+      await audio.play();
     }
-    await NativeAudio.play({
-      assetId: 'startup',
-    });
     // Only set to true if playback succeeded without error
     hasPlayedStartupSound = true;
   } catch (error) {
