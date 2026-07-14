@@ -245,7 +245,16 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
   //   return stored ? JSON.parse(stored) : generateSampleHistory();
   // });
 
-  const [history, setHistory] = useState<WorkoutHistory[]>([]);
+  const [history, setHistory] = useState<WorkoutHistory[]>(() => {
+    if (typeof window === "undefined") return [];
+
+    try {
+      const stored = window.localStorage.getItem("workoutHistory");
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
   const [currentRoutine, setCurrentRoutine] = useState<Routine | null>(null);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
 
@@ -321,6 +330,12 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     localStorage.setItem("workoutRoutines", JSON.stringify(routines));
   }, [routines]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("workoutHistory", JSON.stringify(history));
+    }
+  }, [history]);
 
   const addSet = (exerciseId: string, reps: number, weight: number) => {
     setHistory((prev) => {

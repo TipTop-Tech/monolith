@@ -1,8 +1,11 @@
 import { useLocation, useNavigate } from "react-router";
 import { useState, useRef } from "react";
+import { useQuery } from "@powersync/react";
 import Model from "react-body-highlighter";
+import type { Muscle } from "react-body-highlighter/dist/component/metadata";
 import { useIsMobile } from "../ui/use-mobile";
 import { haptics } from "../../lib/haptics";
+import { useWorkout } from "../../context/WorkoutContext";
 
 const MUSCLE_TO_GROUP: { [key: string]: string } = {
   "chest": "chest",
@@ -42,6 +45,18 @@ export function BodyMap() {
   const [selectedMuscle, setSelectedMuscle] = useState<string | null>(null);
   const [emptyZone, setEmptyZone] = useState(false);
   const muscleHitRef = useRef(false);
+  const { exercises } = useWorkout();
+  const { data: workoutHistoryRows } = useQuery(
+    "SELECT * FROM workoutHistory ORDER BY date ASC"
+  );
+  const asMuscle = (value: string): Muscle => value as Muscle;
+
+  const hasHistoryForMuscleGroup = (muscleName: string) => {
+    return (workoutHistoryRows ?? []).some((entry) => {
+      const exercise = exercises.find((item) => item.id === entry.exerciseId);
+      return exercise?.muscleGroups.includes(muscleName);
+    });
+  };
 
   const handleMuscleClick = (muscle: { muscle: string }) => {
     muscleHitRef.current = true; 
@@ -67,14 +82,15 @@ export function BodyMap() {
     setEmptyZone(true);
   };
 
-  const modelData = selectedMuscle
-    ? [
-        {
-          name: selectedMuscle,
-          muscles: [selectedMuscle],
-        },
-      ]
-    : [];
+  const highlightedMuscles = Object.keys(MUSCLE_TO_GROUP).filter((muscleName) =>
+    hasHistoryForMuscleGroup(muscleName)
+  );
+
+  const modelData = highlightedMuscles.map((muscleName) => ({
+    name: muscleName,
+    muscles: [asMuscle(muscleName)],
+    frequency: 1,
+  }));
 
   const formatBodyLabel = (value: string) => value.replace(/-/g, " ");
 
@@ -115,6 +131,7 @@ export function BodyMap() {
             data={modelData}
             type={view === "front" ? "anterior" : "posterior"}
             highlightedColors={["#ffffff"]}
+            // highlightedColors={["#ff0000"]}
             style={{ background: "transparent", backgroundColor: "transparent", height: "100%" }}
             svgStyle={{ background: "transparent", backgroundColor: "transparent", height: "100%", width: "auto", maxWidth: "100%" }}
             onClick={handleMuscleClick}
