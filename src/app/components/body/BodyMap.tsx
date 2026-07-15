@@ -49,7 +49,7 @@ export function BodyMap() {
   const { data: workoutHistoryRows } = useQuery(
     "SELECT * FROM workoutHistory ORDER BY date ASC"
   );
-  
+
   const hasHistoryForMuscleGroup = (muscleName: string) => {
     return (workoutHistoryRows ?? []).some((entry) => {
       const exercise = exercises.find((item) => item.id === entry.exerciseId);
@@ -60,7 +60,7 @@ export function BodyMap() {
   const getMuscleConsistencyScore = (muscleName: string) => {
     const rows = workoutHistoryRows ?? [];
     const now = Date.now();
-    const twoWeeksAgo = now - 7 * 24 * 60 * 60 * 1000;
+    const oneWeekAgo = now - 7 * 24 * 60 * 60 * 1000;
     const trainingDays = new Set<string>();
 
     rows.forEach((entry) => {
@@ -68,7 +68,7 @@ export function BodyMap() {
       if (!exercise?.muscleGroups.includes(muscleName)) return;
 
       const entryTime = new Date(entry.date).getTime();
-      if (entryTime < twoWeeksAgo) return;
+      if (entryTime < oneWeekAgo) return;
 
       const dayKey = new Date(entryTime).toISOString().slice(0, 10);
       trainingDays.add(dayKey);
