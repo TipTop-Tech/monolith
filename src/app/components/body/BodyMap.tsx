@@ -58,6 +58,37 @@ export function BodyMap() {
     });
   };
 
+  const getMuscleConsistencyScore = (muscleName: string) => {
+    const rows = workoutHistoryRows ?? [];
+
+    const now = Date.now();
+
+    let score = 0;
+
+    rows.forEach((entry) => {
+      const exercise = exercises.find((item) => item.id === entry.exerciseId);
+      if (!exercise?.muscleGroups.includes(muscleName)) return;
+
+      const date = new Date(entry.date).getTime();
+      const ageDays = (now - date) / (1000 * 60 * 60 * 24);
+
+      // newer workouts count more
+      const recencyWeight = Math.exp(-ageDays / 45);
+
+      score += recencyWeight;
+    });
+
+    return score;
+  };
+
+  const getFrequencyForMuscle = (muscleName: string) => {
+    const score = getMuscleConsistencyScore(muscleName);
+    if (score < 0.5) return 1;
+    if (score < 1) return 2;
+    if (score < 1.5) return 3;
+    return 4;
+  };
+
   const handleMuscleClick = (muscle: { muscle: string }) => {
     muscleHitRef.current = true; 
     const muscleName = muscle.muscle;
@@ -86,11 +117,18 @@ export function BodyMap() {
     hasHistoryForMuscleGroup(muscleName)
   );
 
-  const modelData = highlightedMuscles.map((muscleName) => ({
-    name: muscleName,
-    muscles: [asMuscle(muscleName)],
-    frequency: 1,
-  }));
+  const modelData = Object.keys(MUSCLE_TO_GROUP)
+    .map((muscleName) => {
+      const frequency = getFrequencyForMuscle(muscleName);
+      return frequency > 0
+        ? {
+            name: muscleName,
+            muscles: [muscleName as Muscle],
+            frequency,
+          }
+        : null;
+    })
+    .filter(Boolean);
 
   const formatBodyLabel = (value: string) => value.replace(/-/g, " ");
 
@@ -130,8 +168,12 @@ export function BodyMap() {
           <Model
             data={modelData}
             type={view === "front" ? "anterior" : "posterior"}
-            highlightedColors={["#ffffff"]}
-            // highlightedColors={["#ff0000"]}
+            highlightedColors={[
+              "#2a2a2a", // no or low history
+              "#505050", // low
+              "#989898", // medium
+              "#ffffff", // very high
+            ]}
             style={{ background: "transparent", backgroundColor: "transparent", height: "100%" }}
             svgStyle={{ background: "transparent", backgroundColor: "transparent", height: "100%", width: "auto", maxWidth: "100%" }}
             onClick={handleMuscleClick}
