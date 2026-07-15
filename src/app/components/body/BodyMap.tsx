@@ -49,8 +49,7 @@ export function BodyMap() {
   const { data: workoutHistoryRows } = useQuery(
     "SELECT * FROM workoutHistory ORDER BY date ASC"
   );
-  const asMuscle = (value: string): Muscle => value as Muscle;
-
+  
   const hasHistoryForMuscleGroup = (muscleName: string) => {
     return (workoutHistoryRows ?? []).some((entry) => {
       const exercise = exercises.find((item) => item.id === entry.exerciseId);
@@ -60,32 +59,29 @@ export function BodyMap() {
 
   const getMuscleConsistencyScore = (muscleName: string) => {
     const rows = workoutHistoryRows ?? [];
-
     const now = Date.now();
-
-    let score = 0;
+    const twoWeeksAgo = now - 7 * 24 * 60 * 60 * 1000;
+    const trainingDays = new Set<string>();
 
     rows.forEach((entry) => {
       const exercise = exercises.find((item) => item.id === entry.exerciseId);
       if (!exercise?.muscleGroups.includes(muscleName)) return;
 
-      const date = new Date(entry.date).getTime();
-      const ageDays = (now - date) / (1000 * 60 * 60 * 24);
+      const entryTime = new Date(entry.date).getTime();
+      if (entryTime < twoWeeksAgo) return;
 
-      // newer workouts count more
-      const recencyWeight = Math.exp(-ageDays / 45);
-
-      score += recencyWeight;
+      const dayKey = new Date(entryTime).toISOString().slice(0, 10);
+      trainingDays.add(dayKey);
     });
 
-    return score;
+    return trainingDays.size;
   };
 
   const getFrequencyForMuscle = (muscleName: string) => {
     const score = getMuscleConsistencyScore(muscleName);
-    if (score < 0.5) return 1;
-    if (score < 1) return 2;
-    if (score < 1.5) return 3;
+    if (score < 1) return 1;
+    if (score < 2) return 2;
+    if (score < 3) return 3;
     return 4;
   };
 
@@ -112,10 +108,6 @@ export function BodyMap() {
     setSelectedMuscle(null);
     setEmptyZone(true);
   };
-
-  const highlightedMuscles = Object.keys(MUSCLE_TO_GROUP).filter((muscleName) =>
-    hasHistoryForMuscleGroup(muscleName)
-  );
 
   const modelData = Object.keys(MUSCLE_TO_GROUP)
     .map((muscleName) => {
