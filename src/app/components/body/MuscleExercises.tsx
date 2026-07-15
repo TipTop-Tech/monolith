@@ -1,4 +1,5 @@
 import { useLocation, useParams, useNavigate } from "react-router";
+import { useQuery } from "@powersync/react";
 import { useWorkout } from "../../context/WorkoutContext";
 import { ArrowLeft, ChevronRight } from "lucide-react";
 
@@ -25,6 +26,28 @@ export function MuscleExercises() {
         .replace(/\b\w/g, (character) => character.toUpperCase())
     : "";
 
+  const { data: workoutHistoryRows } = useQuery(
+    "SELECT * FROM workoutHistory ORDER BY date ASC"
+  );
+
+  const workoutDaysLastWeek = (() => {
+    const now = Date.now();
+    const oneWeekAgo = now - 7 * 24 * 60 * 60 * 1000;
+    const days = new Set<string>();
+
+    (workoutHistoryRows ?? []).forEach((entry) => {
+      const exercise = exercises.find((item) => item.id === entry.exerciseId);
+      if (!exercise?.muscleGroups.includes(muscleId || "")) return;
+
+      const entryTime = new Date(entry.date).getTime();
+      if (entryTime < oneWeekAgo) return;
+
+      days.add(new Date(entryTime).toISOString().slice(0, 10));
+    });
+
+    return days.size;
+  })();
+
   return (
     <div className="h-full overflow-auto p-8">
       <button
@@ -36,7 +59,9 @@ export function MuscleExercises() {
       </button>
 
       <div className="display-font text-5xl bevel-text-large mb-2">{muscleName}</div>
-      <div className="label-font text-muted-foreground mb-16">EXERCISES</div>
+      <div className="label-font text-muted-foreground mb-8">
+        Exercised {workoutDaysLastWeek} day{workoutDaysLastWeek === 1 ? "" : "s"} in the last week
+      </div>
 
       {muscleExercises.length === 0 ? (
         <div className="text-center label-font text-muted-foreground mt-20">
