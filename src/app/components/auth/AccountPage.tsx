@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 import { AuthService } from "../../../lib/AuthService";
@@ -6,31 +5,13 @@ import { haptics } from "../../lib/haptics";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { Avatar, AvatarFallback } from "../ui/avatar";
-import { Switch } from "../ui/switch";
-import { LogOut, User, Crown, RefreshCcw } from "lucide-react";
+import { LogOut, User, Crown, RefreshCcw, Settings, ChevronRight } from "lucide-react";
 import { usePremium } from "../../context/PremiumContext";
 
 export const AccountPage = () => {
   const { user } = useAuth();
   const { isPro, isLoading, presentPaywall, presentCustomerCenter, restorePurchases } = usePremium();
   const navigate = useNavigate();
-
-  const [hapticsOn, setHapticsOn] = useState(() => {
-    try {
-      return localStorage.getItem("hapticsEnabled") !== "false";
-    } catch {
-      return true;
-    }
-  });
-
-  const toggleHaptics = (next: boolean) => {
-    try {
-      localStorage.setItem("hapticsEnabled", next ? "true" : "false");
-    } catch {
-    }
-    setHapticsOn(next);
-    if (next) haptics.tap();
-  };
 
   const handleSignOut = async () => {
     haptics.thud();
@@ -120,17 +101,17 @@ export const AccountPage = () => {
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Preferences</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between gap-4">
-            <div className="min-w-0">
-              <p className="font-medium leading-none">Haptics</p>
-              <p className="text-sm text-muted-foreground mt-1">Haptic feedback</p>
+        <CardContent className="p-0">
+          <button
+            onClick={() => navigate("/settings")}
+            className="flex w-full items-center justify-between gap-4 p-4"
+          >
+            <div className="flex items-center gap-3">
+              <Settings className="h-5 w-5 text-muted-foreground" />
+              <span className="font-medium">Settings</span>
             </div>
-            <Switch checked={hapticsOn} onCheckedChange={toggleHaptics} aria-label="Haptics" />
-          </div>
+            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+          </button>
         </CardContent>
       </Card>
     </div>

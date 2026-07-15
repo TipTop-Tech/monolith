@@ -1,8 +1,15 @@
 import { useEffect, useRef, useState } from "react";
+import { useQuery } from '@powersync/react';
 import { useWorkout } from "../../context/WorkoutContext";
+import { haptics } from "../../lib/haptics";
+import { motion } from "motion/react";
+import { SPRING, INSTANT } from "../../lib/motion";
+import { useReducedMotion } from "../../hooks/useReducedMotion";
 import { useNavigate } from "react-router";
-import { ChevronRight, Plus, Sparkles, Trash2 } from "lucide-react";
+import { ChevronRight, Plus, Sparkles, Trash2, ChevronDown, ChevronUp, MoreVertical, History } from "lucide-react";
 import { Button } from "../ui/button";
+import { SwipeableRow } from "../ui/SwipeableRow";
+
 import {
   Dialog,
   DialogContent,
@@ -22,9 +29,18 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Input } from "../ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../ui/alert-dialog";
 import { Textarea } from "../ui/textarea";
 import { generateRoutineWithAgent, type RoutineAgentResult, type TrainingExperience, type TrainingSex } from "../../lib/routineAgent";
-import { generateRoutineWithOpenAI } from "../../lib/openaiRoutineAgentClient";
 
 const BODY_PARTS = [
   { key: "chest", label: "Chest" },
@@ -81,6 +97,7 @@ function getPrimaryBodyPart(exerciseMuscleGroups: string[]) {
   return rankedGroups[0]?.muscleGroup ?? null;
 }
 
+
 type RoutineExerciseRowProps = {
   exerciseName: string;
   sets: number;
@@ -91,7 +108,8 @@ type RoutineExerciseRowProps = {
     reps: number;
     weight: number;
   } | null;
-  onOpen: () => void;
+  onOpenHistory: () => void;
+  onOpenExercise: () => void;
   onRemove: () => void;
 };
 
@@ -102,24 +120,40 @@ function RoutineExerciseRow({
   suggestedWeightLbs,
   coachNotes,
   lastSet = null,
-  onOpen,
+  onOpenHistory,
+  onOpenExercise,
   onRemove,
 }: RoutineExerciseRowProps) {
+  const OPEN_OFFSET = -96;
+
+  const reduced = useReducedMotion();
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const touchStartX = useRef<number | null>(null);
+  const baseOffsetRef = useRef(0);
   const swipeOffsetRef = useRef(0);
   const blockNextClickRef = useRef(false);
 
-  const resetSwipe = () => {
+  const close = () => {
     touchStartX.current = null;
     swipeOffsetRef.current = 0;
     setSwipeOffset(0);
+    setIsOpen(false);
+    setIsDragging(false);
+  };
+
+  const open = () => {
+    if (!isOpen) haptics.tap();
+    swipeOffsetRef.current = OPEN_OFFSET;
+    setSwipeOffset(OPEN_OFFSET);
+    setIsOpen(true);
     setIsDragging(false);
   };
 
   const handleTouchStart = (event: React.TouchEvent<HTMLButtonElement>) => {
     touchStartX.current = event.touches[0].clientX;
+    baseOffsetRef.current = swipeOffsetRef.current;
     blockNextClickRef.current = false;
     setIsDragging(true);
   };
@@ -128,22 +162,17 @@ function RoutineExerciseRow({
     if (touchStartX.current === null) return;
 
     const deltaX = event.touches[0].clientX - touchStartX.current;
-    const nextOffset = deltaX < 0 ? Math.max(deltaX, -160) : 0;
+    const nextOffset = Math.max(Math.min(baseOffsetRef.current + deltaX, 0), -160);
+    if (Math.abs(deltaX) > 6) blockNextClickRef.current = true; // drag, not tap
 
     swipeOffsetRef.current = nextOffset;
     setSwipeOffset(nextOffset);
   };
 
-  const handleTouchEnd = () => {
-    setIsDragging(false);
 
-    if (swipeOffsetRef.current < -90) {
-      blockNextClickRef.current = true;
-      onRemove();
-      return;
-    }
-
-    resetSwipe();
+  const settle = () => {
+    if (swipeOffsetRef.current < OPEN_OFFSET / 2) open();
+    else close();
   };
 
   const subtitle = lastSet
@@ -152,57 +181,82 @@ function RoutineExerciseRow({
 
   return (
     <div className="relative overflow-hidden">
-      <div className="absolute inset-0 flex items-center justify-end gap-2 bg-secondary/95 pr-6 text-muted-foreground">
-        <Trash2 size={18} className="text-destructive" />
-        <span className="label-font text-[10px] tracking-[0.3em]">REMOVE</span>
-      </div>
       <button
+        type="button"
+        aria-label={`Remove ${exerciseName}`}
+        onClick={onRemove}
+        tabIndex={isOpen ? 0 : -1}
+        className="absolute inset-y-0 right-0 z-0 flex w-24 items-center justify-center gap-1.5 black-glass-button-destructive transition-opacity"
+        style={{ opacity: swipeOffset < 0 ? 1 : 0 }}
+      >
+        <Trash2 size={18} className="black-glass-text" />
+        <span className="label-font text-[10px] tracking-[0.3em] black-glass-text">REMOVE</span>
+      </button>
+
+      <motion.button
         type="button"
         onClick={() => {
           if (blockNextClickRef.current) {
             blockNextClickRef.current = false;
             return;
           }
-
-          onOpen();
+          if (isOpen) {
+            close();
+            return;
+          }
+          onOpenExercise();
         }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        onTouchCancel={resetSwipe}
+        onTouchEnd={settle}
+        onTouchCancel={settle}
+        animate={{ x: swipeOffset }}
+        transition={isDragging || reduced ? INSTANT : SPRING}
         style={{
-          transform: `translateX(${swipeOffset}px)`,
-          transition: isDragging ? "none" : "transform 180ms ease",
           touchAction: "pan-y",
           WebkitTapHighlightColor: "transparent",
         }}
-        className="relative z-10 w-full flex items-center justify-between py-4 px-6 bg-secondary bevel-element outline-none transition-all hover:bg-accent active:scale-[0.99] focus:outline-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+        className="relative z-10 w-full flex items-center justify-between py-4 px-6 black-glass-button outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
       >
         <div className="text-left">
-          <div className="display-font text-xl bevel-text">{exerciseName}</div>
-          <div className="label-font text-muted-foreground mt-1">{subtitle}</div>
+          <div className="display-font text-xl black-glass-text">{exerciseName}</div>
+          <div className="label-font mt-1 black-glass-text opacity-80">{subtitle}</div>
           {suggestedWeightLbs ? (
-            <div className="label-font text-[10px] tracking-[0.22em] text-muted-foreground/80 mt-1">
+            <div className="label-font text-[10px] tracking-[0.22em] mt-1 black-glass-text opacity-70">
               AI START ≈ {suggestedWeightLbs} LBS
             </div>
           ) : null}
           {coachNotes ? (
-            <div className="mt-2 max-w-[17rem] text-left text-[11px] leading-4 text-muted-foreground/70">
+            <div className="mt-2 max-w-[17rem] text-left text-[11px] leading-4 black-glass-text opacity-60">
               {coachNotes}
             </div>
           ) : null}
         </div>
-        <ChevronRight size={20} className="text-muted-foreground" />
-      </button>
+        <div className="flex items-center gap-3">
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenHistory();
+            }}
+            className="w-10 h-10 flex items-center justify-center rounded-md bg-secondary-foreground/10 text-muted-foreground hover:bg-secondary-foreground/20 transition-colors"
+          >
+            <History size={18} />
+          </div>
+        </div>
+      </motion.button>
     </div>
   );
 }
 
 export function Routines() {
-  const { routines, exercises, addRoutine, removeRoutine, addExerciseToRoutine, removeRoutineExercise, history } = useWorkout();
+  const { routines, exercises, addRoutine, removeRoutine, addExerciseToRoutine, removeRoutineExercise, setCurrentRoutine, setCurrentExerciseIndex, setWorkoutSessionStartedAt, setReps, setWeight, setRestTime, setTimeRemaining, setIsTimerRunning, setPickerType } = useWorkout();
+
+  const { data: allWorkoutHistoryRecords } = useQuery('SELECT * FROM workoutHistory ORDER BY date ASC');
   const navigate = useNavigate();
   const scrollRootRef = useRef<HTMLDivElement>(null);
-  const routineRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const routineRefs = useRef<(HTMLElement | null)[]>([]);
+  const sectionRefs = useRef<Record<string, HTMLElement>>({});
+  // const routineRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [isAddRoutineOpen, setIsAddRoutineOpen] = useState(false);
   const [isAIRoutineOpen, setIsAIRoutineOpen] = useState(false);
   const [newRoutineName, setNewRoutineName] = useState("");
@@ -212,14 +266,13 @@ export function Routines() {
   const [manualSets, setManualSets] = useState("3");
   const [manualReps, setManualReps] = useState("10");
   const [activeRoutineIndex, setActiveRoutineIndex] = useState(0);
+  const [routineToDelete, setRoutineToDelete] = useState<{ id: string, name: string } | null>(null);
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiDuration, setAiDuration] = useState("60");
   const [aiBodyWeight, setAiBodyWeight] = useState("");
   const [aiSex, setAiSex] = useState<TrainingSex>("unspecified");
   const [aiExperience, setAiExperience] = useState<TrainingExperience>("beginner");
-  const [aiAgentMode, setAiAgentMode] = useState<"openai" | "local">("openai");
   const [aiResult, setAiResult] = useState<RoutineAgentResult | null>(null);
-  const [isGeneratingRoutine, setIsGeneratingRoutine] = useState(false);
 
   const selectedRoutine = routines.find((routine) => routine.id === selectedRoutineId) ?? null;
   const sortedExercises = [...exercises].sort((leftExercise, rightExercise) => {
@@ -275,6 +328,7 @@ export function Routines() {
       name: trimmedName,
       exercises: [],
     });
+    haptics.success(); // routine created
 
     setIsAddRoutineOpen(false);
     setNewRoutineName("");
@@ -285,12 +339,14 @@ export function Routines() {
   };
 
   const handleRemoveRoutine = (routineId: string, routineName: string) => {
-    const confirmed = window.confirm(`Delete routine \"${routineName}\"?`);
-    if (!confirmed) {
-      return;
-    }
+    setRoutineToDelete({ id: routineId, name: routineName });
+  };
 
-    removeRoutine(routineId);
+  const confirmRemoveRoutine = () => {
+    if (!routineToDelete) return;
+    haptics.warn();
+    removeRoutine(routineToDelete.id);
+    setRoutineToDelete(null);
   };
 
   const handleAddWorkout = () => {
@@ -304,13 +360,27 @@ export function Routines() {
       sets,
       targetReps,
     });
+    haptics.tap(); // exercise added to routine
 
     setIsAddWorkoutOpen(false);
+
+    const routine = routines.find(r => r.id === selectedRoutineId);
+    if (routine) {
+      const newLength = routine.exercises.length + 1;
+      const targetPageIndex = Math.floor((newLength - 1) / 5);
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          const node = sectionRefs.current[`${selectedRoutineId}-page-${targetPageIndex}`];
+          if (node) {
+            node.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+        }, 100);
+      });
+    }
   };
 
   const openAIRoutine = () => {
     setAiResult(null);
-    setAiAgentMode("openai");
     setAiPrompt("");
     setAiDuration("60");
     setAiBodyWeight("");
@@ -319,47 +389,26 @@ export function Routines() {
     setIsAIRoutineOpen(true);
   };
 
-  const handleGenerateAIRoutine = async (generateAnyway = false) => {
+  const handleGenerateAIRoutine = (generateAnyway = false) => {
     const duration = Number.parseInt(aiDuration, 10);
     const bodyWeight = Number.parseFloat(aiBodyWeight);
-    const agentInput = {
+    const result = generateRoutineWithAgent(exercises, {
       prompt: aiPrompt,
       durationMinutes: Number.isFinite(duration) ? duration : null,
       bodyWeightLbs: Number.isFinite(bodyWeight) && bodyWeight > 0 ? bodyWeight : null,
       sex: aiSex,
       experience: aiExperience,
       generateAnyway,
-    };
+    });
 
-    setIsGeneratingRoutine(true);
-
-    try {
-      const result =
-        aiAgentMode === "openai"
-          ? await generateRoutineWithOpenAI(exercises, agentInput)
-          : generateRoutineWithAgent(exercises, agentInput);
-
-      setAiResult(result);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown error";
-      setAiResult({
-        status: "needs_clarification",
-        message: "The OpenAI agent could not generate a routine yet. Switch to Local Agent or check the backend setup.",
-        questions: [
-          "Make sure OPENAI_API_KEY is set on the backend/server, not in the React frontend.",
-          "For local testing, run npm run dev:ai so the frontend and OpenAI backend both start.",
-          `Backend error: ${message}`,
-        ],
-      });
-    } finally {
-      setIsGeneratingRoutine(false);
-    }
+    setAiResult(result);
   };
 
   const handleAddGeneratedRoutine = () => {
     if (aiResult?.status !== "ready") return;
 
     addRoutine(aiResult.routine);
+    haptics.success(); // AI routine created
     setIsAIRoutineOpen(false);
 
     requestAnimationFrame(() => {
@@ -382,10 +431,16 @@ export function Routines() {
           return;
         }
 
-        const index = routineRefs.current.findIndex((node) => node === visibleEntry.target);
-        if (index >= 0) {
-          setActiveRoutineIndex(index);
+        /**
+         * This code block updates the active routine index based on the 
+         * currently visible section.
+         */
+        const routineIndexAttr = visibleEntry.target.getAttribute("data-routine-index");
+        if (routineIndexAttr !== null) {
+          setActiveRoutineIndex(Number(routineIndexAttr));
         }
+
+
       },
       {
         root: scrollRootRef.current,
@@ -393,18 +448,23 @@ export function Routines() {
       }
     );
 
-    routineRefs.current.forEach((node) => {
+    /**
+     * When a page is scrolled into view, it is added to the observer.
+     */
+    Object.values(sectionRefs.current).forEach((node) => {
       if (node) {
         observer.observe(node);
       }
     });
 
     return () => observer.disconnect();
-  }, [routines.length]);
+  }, [routines]);
 
   useEffect(() => {
-    if (routines.length === 0 && activeRoutineIndex !== 0) {
-      setActiveRoutineIndex(0);
+    if (routines.length === 0) {
+      if (activeRoutineIndex !== 0) {
+        setActiveRoutineIndex(0);
+      }
       return;
     }
 
@@ -414,25 +474,25 @@ export function Routines() {
   }, [activeRoutineIndex, routines.length]);
 
   const CreateRoutineButtons = ({ compact = false }: { compact?: boolean }) => (
-    <div className={compact ? "grid grid-cols-2 gap-3" : "grid grid-cols-1 gap-3"}>
+    <div className={(compact ? "grid grid-cols-2 gap-3" : "grid grid-cols-1 gap-3") + " pointer-events-auto"}>
       <button
         type="button"
         onClick={() => {
           setNewRoutineName("");
           setIsAddRoutineOpen(true);
         }}
-        className={`${compact ? "py-3 px-4" : "py-4 px-6"} w-full flex items-center justify-between bg-secondary/75 border border-white/15 backdrop-blur-md bevel-element hover:bg-accent/75 transition-all active:scale-[0.99]`}
+        className={`${compact ? "py-3 px-4" : "py-4 px-6"} w-full flex items-center justify-between black-glass-button`}
       >
-        <span className="label-font text-left">MANUAL</span>
-        <Plus size={compact ? 16 : 20} className="text-muted-foreground" />
+        <span className="label-font text-left black-glass-text">MANUAL</span>
+        <Plus size={compact ? 16 : 20} className="black-glass-text" />
       </button>
       <button
         type="button"
         onClick={openAIRoutine}
-        className={`${compact ? "py-3 px-4" : "py-4 px-6"} w-full flex items-center justify-between bg-secondary/75 border border-white/15 backdrop-blur-md bevel-element hover:bg-accent/75 transition-all active:scale-[0.99]`}
+        className={`${compact ? "py-3 px-4" : "py-4 px-6"} w-full flex items-center justify-between black-glass-button`}
       >
-        <span className="label-font text-left">AI ROUTINE</span>
-        <Sparkles size={compact ? 16 : 20} className="text-muted-foreground" />
+        <span className="label-font text-left black-glass-text">AI ROUTINE</span>
+        <Sparkles size={compact ? 16 : 20} className="black-glass-text" />
       </button>
     </div>
   );
@@ -440,6 +500,26 @@ export function Routines() {
   return (
     <>
       <div className="relative h-full">
+        {/* Delete Routine Confirmation Modal */}
+        <AlertDialog open={routineToDelete !== null} onOpenChange={(open) => !open && setRoutineToDelete(null)}>
+          <AlertDialogContent className="bg-background border-border bevel-element">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="display-font text-2xl bevel-text text-destructive">Delete Routine</AlertDialogTitle>
+              <AlertDialogDescription className="label-font text-muted-foreground">
+                "{routineToDelete?.name}" will be deleted. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setRoutineToDelete(null)} className="label-font black-glass-button border-none">
+                <span className="black-glass-text">CANCEL</span>
+              </AlertDialogCancel>
+              <AlertDialogAction onClick={confirmRemoveRoutine} className="label-font black-glass-button-destructive">
+                <span className="black-glass-text">DELETE</span>
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         {routines.length === 0 ? (
           <div className="h-full flex items-center justify-center p-8 pb-24">
             <div className="text-center space-y-6 w-full max-w-sm">
@@ -455,94 +535,156 @@ export function Routines() {
           <>
             <div
               ref={scrollRootRef}
-              className="h-full overflow-y-auto scroll-smooth hide-scrollbar"
-              style={{ WebkitOverflowScrolling: "touch", overscrollBehaviorY: "contain" }}
+              className="h-full overflow-y-scroll scroll-smooth snap-y snap-mandatory hide-scrollbar"
+              style={{ WebkitOverflowScrolling: "touch" }}
             >
-              {routines.map((routine, routineIndex) => (
-                <section
-                  key={routine.id}
-                  ref={(node) => {
-                    routineRefs.current[routineIndex] = node;
-                  }}
-                  className="relative min-h-full px-6 py-8 md:px-8"
-                >
-                  <div className="flex h-full min-h-full flex-col">
-                    <div className="mb-6 flex items-end justify-between gap-4 pr-12">
-                      <div>
-                        <div className="label-font text-muted-foreground mb-3">
-                          ROUTINE {String(routineIndex + 1).padStart(2, "0")} / {String(routines.length).padStart(2, "0")}
-                        </div>
-                        <div className="display-font text-4xl md:text-5xl bevel-text">{routine.name}</div>
-                        <button
-                          type="button"
-                          onClick={() => navigate("/", { state: { openRoutineId: routine.id } })}
-                          className="mt-3 label-font text-[10px] tracking-[0.3em] text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          START ROUTINE
-                        </button>
-                      </div>
-                    </div>
+              {
+                /**
+                 * routines.flatMap iterates through all the routines
+                 * For each routine, it splits it into pages of 5 exercises
+                 * If a routine has no exercises, it creates a single page with no exercises
+                 */
+              }
+              {routines.flatMap((routine, routineIndex) => {
+                const pages = [];
+                for (let i = 0; i < routine.exercises.length; i += 5) {
+                  pages.push(routine.exercises.slice(i, i + 5));
+                }
+                if (pages.length === 0) pages.push([]);
+                /**
+                 * This maps the pages array into section componenets containing at most 
+                 * five exercises
+                 */
+                return pages.map((pageExercises, pageIndex) => {
+                  const globalIndexOffset = pageIndex * 5;
+                  const isLastRoutine = routineIndex === routines.length - 1;
+                  const isLastPage = pageIndex === pages.length - 1;
 
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveRoutine(routine.id, routine.name)}
-                      aria-label={`Remove ${routine.name}`}
-                      className="absolute right-6 top-8 h-10 w-10 flex items-center justify-center bg-secondary/75 bevel-element hover:bg-accent/75 transition-all active:scale-[0.98] md:right-8"
+                  return (
+                    <section
+                      key={`${routine.id}-page-${pageIndex}`}
+                      ref={(node) => {
+                        if (node) {
+                          sectionRefs.current[`${routine.id}-page-${pageIndex}`] = node;
+                          if (pageIndex === 0) {
+                            routineRefs.current[routineIndex] = node;
+                          }
+                        }
+                      }}
+                      data-routine-index={routineIndex}
+                      data-page-index={pageIndex}
+                      className="relative h-full min-h-full snap-start px-6 py-8 md:px-8"
                     >
-                      <Trash2 size={18} className="text-destructive" />
-                    </button>
-
-                    <div className="mb-4">
-                      <CreateRoutineButtons compact />
-                    </div>
-
-                    <div className="space-y-3">
-                      {routine.exercises.length === 0 ? (
-                        <div className="rounded-2xl border border-dashed border-border/60 px-6 py-5 label-font text-xs tracking-[0.25em] text-muted-foreground">
-                          NO WORKOUTS IN THIS ROUTINE
+                      <div className="flex h-full min-h-full flex-col">
+                        <div className="mb-6 flex items-end gap-4">
+                          <div>
+                            <div className="flex items-center gap-4 mb-3">
+                              <div className="label-font text-muted-foreground">
+                                ROUTINE {String(routineIndex + 1).padStart(2, "0")} / {String(routines.length).padStart(2, "0")}
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => navigate(`/routines/${routine.id}`)}
+                              className="group flex items-center gap-3 text-left"
+                            >
+                              <div className="display-font text-4xl md:text-5xl bevel-text drop-shadow-[0_0_12px_rgba(255,255,255,0.3)]">{routine.name}</div>
+                              <ChevronRight size={20} className="text-muted-foreground transition-transform group-hover:translate-x-1" />
+                            </button>
+                          </div>
                         </div>
-                      ) : (
-                        routine.exercises.map((routineExercise, index) => {
-                          const exercise = exercises.find((e) => e.id === routineExercise.exerciseId);
-                          const exerciseHistory = history.find(
-                            (h) => h.exerciseId === routineExercise.exerciseId
-                          );
-                          const lastSet =
-                            exerciseHistory && exerciseHistory.sets.length > 0
-                              ? exerciseHistory.sets[exerciseHistory.sets.length - 1]
-                              : null;
+                        {pageIndex === 0 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveRoutine(routine.id, routine.name)}
+                            aria-label={`Remove ${routine.name}`}
+                            className="absolute right-6 top-8 h-10 w-10 flex items-center justify-center black-glass-button-destructive md:right-8"
+                          >
+                            <Trash2 size={18} className="black-glass-text" />
+                          </button>
+                        )}
 
-                          return (
-                            <RoutineExerciseRow
-                              key={`${routine.id}-${routineExercise.exerciseId}-${index}`}
-                              exerciseName={exercise?.name ?? "Unknown Exercise"}
-                              sets={routineExercise.sets}
-                              targetReps={routineExercise.targetReps}
-                              suggestedWeightLbs={routineExercise.suggestedWeightLbs}
-                              coachNotes={routineExercise.coachNotes}
-                              lastSet={lastSet}
-                              onOpen={() => navigate(`/workout/${routineExercise.exerciseId}`)}
-                              onRemove={() => removeRoutineExercise(routine.id, index)}
-                            />
-                          );
-                        })
+                        <div className="space-y-3">
+                          {pageExercises.length === 0 ? (
+                            <div className="rounded-2xl border border-dashed border-border/60 px-6 py-5 label-font text-xs tracking-[0.25em] text-muted-foreground">
+                              NO WORKOUTS IN THIS ROUTINE
+                            </div>
+                          ) : (
+                            pageExercises.map((routineExercise, localIndex) => {
+                              const globalIndex = globalIndexOffset + localIndex;
+                              const exercise = exercises.find((e) => e.id === routineExercise.exerciseId);
+                              const exerciseHistoryRecords = allWorkoutHistoryRecords?.filter(
+                                (h) => h.exerciseId === routineExercise.exerciseId
+                              ) || [];
+                              const lastSet =
+                                exerciseHistoryRecords.length > 0
+                                  ? exerciseHistoryRecords[exerciseHistoryRecords.length - 1]
+                                  : null;
+
+                              return (
+                                <RoutineExerciseRow
+                                  key={`${routine.id}-${routineExercise.exerciseId}-${globalIndex}`}
+                                  exerciseName={exercise?.name ?? "Unknown Exercise"}
+                                  sets={routineExercise.sets}
+                                  targetReps={routineExercise.targetReps}
+                                  lastSet={lastSet}
+                                  onOpenHistory={() => navigate(`/workout/${routineExercise.exerciseId}`)}
+                                  onOpenExercise={() => {
+                                    setCurrentRoutine(routine);
+                                    setCurrentExerciseIndex(globalIndex);
+                                    setWorkoutSessionStartedAt(Date.now());
+                                    setReps(routineExercise.targetReps ?? 0);
+                                    setWeight(routineExercise.suggestedWeightLbs ?? 0);
+                                    setRestTime(90);
+                                    setTimeRemaining(0);
+                                    setIsTimerRunning(false);
+                                    setPickerType(null);
+                                    navigate('/');
+                                  }}
+                                  onRemove={() => { haptics.warn(); removeRoutineExercise(routine.id, globalIndex); }}
+                                />
+                              );
+                            })
+                          )}
+                        </div>
+
+
+
+
+                        {isLastPage && routine.exercises.length < 10 && (
+                          <div className={isLastRoutine && isLastPage ? "mt-3 mb-28 space-y-3" : "mt-3 space-y-3"}>
+                            <button
+                              type="button"
+                              onClick={() => openAddWorkout(routine.id)}
+                              className="relative z-10 w-full flex items-center justify-between py-4 px-6 black-glass-button"
+                            >
+                              <span className="label-font text-left black-glass-text">ADD WORKOUT</span>
+                              <Plus size={20} className="black-glass-text" />
+                            </button>
+                          </div>
+                        )}
+                        {/* Ensure scrolling space for bottom button */}
+                        {isLastPage && routine.exercises.length >= 10 && isLastRoutine && (
+                          <div className="mt-3 mb-28" />
+                        )}
+                        {!isLastPage && (
+                          <div className="flex justify-center mt-auto py-2">
+                            <MoreVertical size={24} className="text-muted-foreground animate-bounce" />
+                          </div>
+                        )}
+                      </div>
+
+                      {isLastRoutine && isLastPage && (
+                        <div className="pointer-events-none absolute inset-x-6 bottom-3 z-20 md:inset-x-8">
+                          <CreateRoutineButtons compact />
+                        </div>
+
                       )}
-                    </div>
 
-                    <div className={routineIndex === routines.length - 1 ? "mt-3 mb-36 space-y-3" : "mt-3 space-y-3"}>
-                      <button
-                        type="button"
-                        onClick={() => openAddWorkout(routine.id)}
-                        className="relative z-10 w-full flex items-center justify-between py-4 px-6 bg-secondary bevel-element hover:bg-accent transition-all active:scale-[0.99]"
-                      >
-                        <span className="label-font text-left">ADD EXERCISE</span>
-                        <Plus size={20} className="text-muted-foreground" />
-                      </button>
-                    </div>
-                  </div>
-
-                </section>
-              ))}
+                    </section>
+                  );
+                });
+              })}
             </div>
           </>
         )}
@@ -566,11 +708,11 @@ export function Routines() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddRoutineOpen(false)}>
-              Cancel
+            <Button variant="outline" onClick={() => setIsAddRoutineOpen(false)} className="black-glass-button">
+              <span className="black-glass-text">Cancel</span>
             </Button>
-            <Button onClick={handleCreateRoutine} disabled={!newRoutineName.trim()}>
-              Create routine
+            <Button onClick={handleCreateRoutine} disabled={!newRoutineName.trim()} className="black-glass-button">
+              <span className="black-glass-text">Create routine</span>
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -633,11 +775,11 @@ export function Routines() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddWorkoutOpen(false)}>
-              Cancel
+            <Button variant="outline" onClick={() => setIsAddWorkoutOpen(false)} className="black-glass-button">
+              <span className="black-glass-text">Cancel</span>
             </Button>
-            <Button onClick={handleAddWorkout} disabled={!selectedExerciseId}>
-              Add to routine
+            <Button onClick={handleAddWorkout} disabled={!selectedExerciseId} className="black-glass-button">
+              <span className="black-glass-text">Add to routine</span>
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -648,7 +790,7 @@ export function Routines() {
           <DialogHeader>
             <DialogTitle>Create routine with agent</DialogTitle>
             <DialogDescription>
-              Describe the workout, then choose OpenAI Agent for nuanced prompts or Local Dictionary Agent for offline fallback.
+              Describe the workout. If the prompt is vague, the agent will ask for detail or let you generate anyway.
             </DialogDescription>
           </DialogHeader>
 
@@ -664,25 +806,6 @@ export function Routines() {
                 placeholder="Make me a 1 hour upper body workout. I am a distance freestyle swimmer, sore from yesterday, and I do not want to lift too heavy."
                 className="min-h-28"
               />
-            </div>
-
-            <div className="space-y-2">
-              <div className="label-font text-xs text-muted-foreground">AGENT MODE</div>
-              <Select value={aiAgentMode} onValueChange={(value) => {
-                setAiAgentMode(value as "openai" | "local");
-                setAiResult(null);
-              }}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose agent" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="openai">OpenAI Agent</SelectItem>
-                  <SelectItem value="local">Local Dictionary Agent</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs leading-5 text-muted-foreground">
-                OpenAI handles nuanced prompts. Local uses the offline dictionary as a fast fallback.
-              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -743,15 +866,15 @@ export function Routines() {
 
             {aiResult?.status === "needs_clarification" ? (
               <div className="rounded-2xl border border-border bg-secondary/45 p-4 space-y-3">
-                <div className="label-font text-xs text-muted-foreground">AGENT RESPONSE</div>
+                <div className="label-font text-xs text-muted-foreground">AGENT NEEDS MORE DETAIL</div>
                 <p className="text-sm text-muted-foreground">{aiResult.message}</p>
                 <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
                   {aiResult.questions.map((question) => (
                     <li key={question}>{question}</li>
                   ))}
                 </ul>
-                <Button variant="outline" onClick={() => void handleGenerateAIRoutine(true)} disabled={isGeneratingRoutine}>
-                  Generate anyway
+                <Button variant="outline" onClick={() => handleGenerateAIRoutine(true)} className="black-glass-button">
+                  <span className="black-glass-text">Generate anyway</span>
                 </Button>
               </div>
             ) : null}
@@ -791,14 +914,14 @@ export function Routines() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAIRoutineOpen(false)}>
-              Cancel
+            <Button variant="outline" onClick={() => setIsAIRoutineOpen(false)} className="black-glass-button">
+              <span className="black-glass-text">Cancel</span>
             </Button>
-            <Button variant="outline" onClick={() => void handleGenerateAIRoutine(false)} disabled={isGeneratingRoutine}>
-              {isGeneratingRoutine ? "Generating..." : "Generate preview"}
+            <Button variant="outline" onClick={() => handleGenerateAIRoutine(false)} className="black-glass-button">
+              <span className="black-glass-text">Generate preview</span>
             </Button>
-            <Button onClick={handleAddGeneratedRoutine} disabled={aiResult?.status !== "ready" || isGeneratingRoutine}>
-              Add routine
+            <Button onClick={handleAddGeneratedRoutine} disabled={aiResult?.status !== "ready"} className="black-glass-button">
+              <span className="black-glass-text">Add routine</span>
             </Button>
           </DialogFooter>
         </DialogContent>
