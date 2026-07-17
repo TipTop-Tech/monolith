@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { haptics } from "../../lib/haptics";
+import { playClinkSound, preloadClinkSound } from "../../../utils/audio";
 
 interface ScrollPickerProps {
   value: number;
@@ -38,7 +39,6 @@ export function ScrollPicker({
   const [scrollPosition, setScrollPosition] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const animationFrameRef = useRef<number>();
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const isInitialRender = useRef(true);
   // one tick each time the value changes
   // does not fire when the wheel auto scrolls to position on open
@@ -67,8 +67,7 @@ export function ScrollPicker({
   }, [isCustomMode]);
 
   useEffect(() => {
-    audioRef.current = new Audio('/assets/clink.mp3');
-    audioRef.current.volume = 0.5; // Set volume to 50% for a subtle effect
+    preloadClinkSound();
 
     return () => {
       if (animationFrameRef.current) {
@@ -84,10 +83,8 @@ export function ScrollPicker({
       return;
     }
 
-    if (audioRef.current && !isCustomMode) {
-      const audioClone = audioRef.current.cloneNode() as HTMLAudioElement;
-      audioClone.volume = 0.5;
-      audioClone.play().catch(e => console.log("Audio play failed:", e));
+    if (!isCustomMode) {
+      playClinkSound();
     }
   }, [selectedValue, isCustomMode]);
 
@@ -157,7 +154,7 @@ export function ScrollPicker({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div
-        className="absolute inset-0 bg-black/80 backdrop-blur-xl"
+        className="absolute inset-0 bg-background/80 backdrop-blur-xl"
         onClick={onClose}
       />
       <div className="relative w-full h-full flex flex-col items-center justify-center p-8">

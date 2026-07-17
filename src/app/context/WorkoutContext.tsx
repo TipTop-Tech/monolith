@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useRef } from "react";
 import { haptics } from "../lib/haptics";
+import { getWeightUnit, setWeightUnitPref, getDefaultRestTime } from "../lib/prefs";
 
 export interface Exercise {
   id: string;
@@ -261,11 +262,15 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
   // Active Workout UI State
   const [reps, setReps] = useState(0);
   const [weight, setWeight] = useState(0);
-  const [restTime, setRestTime] = useState(90);
+  const [restTime, setRestTime] = useState(() => getDefaultRestTime());
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [pickerType, setPickerType] = useState<"reps" | "weight" | "restTime" | null>(null);
-  const [weightUnit, setWeightUnit] = useState("LB");
+  const [weightUnit, setWeightUnit] = useState(() => getWeightUnit());
+
+  useEffect(() => {
+    setWeightUnitPref(weightUnit);
+  }, [weightUnit]);
   const [workoutSessionStartedAt, setWorkoutSessionStartedAt] = useState<number | null>(null);
   const [currentSlide, setCurrentSlide] = useState(1);
 

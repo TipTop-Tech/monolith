@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import { useQuery, usePowerSync } from '@powersync/react';
 import { useWorkout } from "../../context/WorkoutContext";
+import { useAuth } from "../../context/AuthContext";
 import { haptics } from "../../lib/haptics";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { ArrowLeft } from "lucide-react";
@@ -19,14 +20,15 @@ import { Button } from "../ui/button";
 export function WorkoutHistory() {
   const { exerciseId } = useParams<{ exerciseId: string }>();
   const { exercises } = useWorkout();
+  const { user } = useAuth();
   const db = usePowerSync();
   const navigate = useNavigate();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [setToDelete, setSetToDelete] = useState<{ id: string } | null>(null);
 
   const { data: exerciseHistoryRecords } = useQuery(
-    'SELECT * FROM workoutHistory WHERE exerciseId = ? ORDER BY date ASC',
-    [exerciseId]
+    'SELECT * FROM workoutHistory WHERE exerciseId = ? AND user_id = ? ORDER BY date ASC',
+    [exerciseId, user?.id ?? null]
   );
 
   /**
