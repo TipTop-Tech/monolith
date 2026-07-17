@@ -6,7 +6,10 @@ import { motion } from "motion/react";
 import { SPRING, INSTANT } from "../../lib/motion";
 import { useReducedMotion } from "../../hooks/useReducedMotion";
 import { useNavigate } from "react-router";
-import { ChevronRight, Plus, Sparkles, Trash2, ChevronDown, ChevronUp, MoreVertical, History } from "lucide-react";
+import { ChevronRight, Plus, Sparkles, Trash2, ChevronDown, ChevronUp, MoreVertical, History, Info } from "lucide-react";
+import { Drawer, DrawerContent, DrawerTitle } from "../ui/drawer";
+import { ExerciseGuidePanel } from "../active-workout/ExerciseGuidePanel";
+import type { Exercise } from "../../context/WorkoutContext";
 import { Button } from "../ui/button";
 import { SwipeableRow } from "../ui/SwipeableRow";
 
@@ -110,6 +113,7 @@ type RoutineExerciseRowProps = {
   } | null;
   onOpenHistory: () => void;
   onOpenExercise: () => void;
+  onOpenGuide: () => void;
   onRemove: () => void;
 };
 
@@ -122,6 +126,7 @@ function RoutineExerciseRow({
   lastSet = null,
   onOpenHistory,
   onOpenExercise,
+  onOpenGuide,
   onRemove,
 }: RoutineExerciseRowProps) {
   const OPEN_OFFSET = -96;
@@ -236,6 +241,15 @@ function RoutineExerciseRow({
           <div
             onClick={(e) => {
               e.stopPropagation();
+              onOpenGuide();
+            }}
+            className="w-10 h-10 flex items-center justify-center rounded-md bg-secondary-foreground/10 text-muted-foreground hover:bg-secondary-foreground/20 transition-colors"
+          >
+            <Info size={18} />
+          </div>
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
               onOpenHistory();
             }}
             className="w-10 h-10 flex items-center justify-center rounded-md bg-secondary-foreground/10 text-muted-foreground hover:bg-secondary-foreground/20 transition-colors"
@@ -259,6 +273,7 @@ export function Routines() {
   // const routineRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [isAddRoutineOpen, setIsAddRoutineOpen] = useState(false);
   const [isAIRoutineOpen, setIsAIRoutineOpen] = useState(false);
+  const [guideExercise, setGuideExercise] = useState<Exercise | null>(null);
   const [newRoutineName, setNewRoutineName] = useState("");
   const [isAddWorkoutOpen, setIsAddWorkoutOpen] = useState(false);
   const [selectedRoutineId, setSelectedRoutineId] = useState<string | null>(null);
@@ -628,6 +643,12 @@ export function Routines() {
                                   sets={routineExercise.sets}
                                   targetReps={routineExercise.targetReps}
                                   lastSet={lastSet}
+                                  onOpenGuide={() => {
+                                    if (exercise) {
+                                      haptics.tap();
+                                      setGuideExercise(exercise);
+                                    }
+                                  }}
                                   onOpenHistory={() => navigate(`/workout/${routineExercise.exerciseId}`)}
                                   onOpenExercise={() => {
                                     setCurrentRoutine(routine);
@@ -926,6 +947,20 @@ export function Routines() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Drawer
+        open={guideExercise !== null}
+        onOpenChange={(open) => {
+          if (!open) setGuideExercise(null);
+        }}
+      >
+        <DrawerContent className="max-h-[85vh]">
+          <DrawerTitle className="sr-only">Exercise guide</DrawerTitle>
+          <div className="overflow-y-auto">
+            {guideExercise && <ExerciseGuidePanel exercise={guideExercise} />}
+          </div>
+        </DrawerContent>
+      </Drawer>
     </>
   );
 }

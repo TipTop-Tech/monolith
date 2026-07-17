@@ -325,6 +325,9 @@ export const SettingsPage = () => {
             <NavRow label="Rate the App" onClick={() => openLink(LINKS.rate)} />
             <NavRow label="Contact Support" onClick={() => openLink(LINKS.support)} />
           </div>
+          <p className="text-sm text-muted-foreground user-text mt-3">
+            Exercise demo videos are AI-generated — made with Google Gemini.
+          </p>
         </CardContent>
       </Card>
     </div>

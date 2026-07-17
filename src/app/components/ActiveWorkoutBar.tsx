@@ -69,8 +69,16 @@ export function ActiveWorkoutBar() {
   const navigate = useNavigate();
 
   const [justDone, setJustDone] = useState(false);
+  const [guideInView, setGuideInView] = useState(false);
   const prevTimeRef = useRef(timeRemaining);
   const cardRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const onGuideView = (e: Event) =>
+      setGuideInView((e as CustomEvent).detail === true);
+    window.addEventListener("guideinview", onGuideView);
+    return () => window.removeEventListener("guideinview", onGuideView);
+  }, []);
 
   useEffect(() => {
     if (prevTimeRef.current > 0 && timeRemaining === 0) {
@@ -86,7 +94,8 @@ export function ActiveWorkoutBar() {
     if (location.pathname === "/") setJustDone(false);
   }, [location.pathname]);
 
-  if (!currentRoutine || location.pathname === "/") return null;
+  const onWorkoutPage = location.pathname === "/";
+  if (!currentRoutine || (onWorkoutPage && !guideInView)) return null;
 
   const currentExercise = exercises.find(
     (e) => e.id === currentRoutine.exercises[currentExerciseIndex]?.exerciseId,
@@ -101,7 +110,11 @@ export function ActiveWorkoutBar() {
         ref={cardRef}
         onClick={() => {
           haptics.tap();
-          navigate("/");
+          if (onWorkoutPage) {
+            window.dispatchEvent(new Event("scrolltotimer"));
+          } else {
+            navigate("/");
+          }
         }}
         className="pointer-events-auto w-full flex items-center gap-3 rounded-2xl bg-background/80 backdrop-blur-xl border border-foreground/10 shadow-lg pl-3 pr-2.5 py-2 text-left"
       >

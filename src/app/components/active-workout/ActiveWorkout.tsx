@@ -14,11 +14,18 @@ import {
 import { useWorkout } from "../../context/WorkoutContext";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate, useLocation } from "react-router";
-import { Play, Pause, RotateCcw, Plus, Edit2, X, Trash2 } from "lucide-react";
+import { Play, Pause, RotateCcw, Plus, Edit2, X, Trash2, ChevronDown } from "lucide-react";
+import { Capacitor } from "@capacitor/core";
+import { animate } from "motion";
 import { ScrollPicker } from "./ScrollPicker";
 import { WorkoutCarousel } from "./WorkoutCarousel";
+import { ExerciseGuidePanel } from "./ExerciseGuidePanel";
 import { haptics } from "../../lib/haptics";
 import { feedback, pulse } from "../../../utils/feedback";
+import { useReducedMotion } from "../../hooks/useReducedMotion";
+import { SPRING_SOFT } from "../../lib/motion";
+
+const NATIVE_SNAP = Capacitor.getPlatform() === "ios";
 
 export function ActiveWorkout() {
   const navigate = useNavigate();
@@ -56,10 +63,30 @@ export function ActiveWorkout() {
 
   const { showWarning, storageStatus, checkStorage, dismissWarning } = useStorageWarning();
 
+  const [showGuideCoachMark, setShowGuideCoachMark] = useState(() => {
+    try {
+      return localStorage.getItem("guideCoachMarkSeen") !== "true";
+    } catch {
+      return false;
+    }
+  });
+
+  const dismissGuideCoachMark = () => {
+    try {
+      localStorage.setItem("guideCoachMarkSeen", "true");
+    } catch {
+      void 0;
+    }
+    setShowGuideCoachMark(false);
+  };
+
   const isFirstRender = useRef(true);
   const wakeLockRef = useRef<any>(null); // Type any because WakeLockSentinel might not be in standard DOM lib yet
   const timerRef = useRef<HTMLButtonElement>(null);
   const prevTimeRef = useRef(0);
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const guideRef = useRef<HTMLDivElement>(null);
+  const reducedMotion = useReducedMotion();
 
   // Wake Lock and Notification Permission Effect
   useEffect(() => {
@@ -145,6 +172,130 @@ export function ActiveWorkout() {
   }, [currentRoutine, navigate]);
 
   useEffect(() => {
+    scrollerRef.current?.scrollTo({ top: 0 });
+  }, [currentRoutine, currentExerciseIndex]);
+
+  useEffect(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    let raf = 0;
+    let lastInView = false;
+    const onScroll = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const inView = scroller.scrollTop > scroller.clientHeight * 0.5;
+        if (inView !== lastInView) {
+          lastInView = inView;
+          window.dispatchEvent(new CustomEvent("guideinview", { detail: inView }));
+          if (inView) {
+            try {
+              localStorage.setItem("guideCoachMarkSeen", "true");
+            } catch {
+              void 0;
+            }
+            setShowGuideCoachMark(false);
+          }
+        }
+      });
+    };
+    scroller.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      scroller.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(raf);
+      window.dispatchEvent(new CustomEvent("guideinview", { detail: false }));
+    };
+  }, []);
+
+  useEffect(() => {
+    const onReturn = () => {
+      scrollerRef.current?.scrollTo({
+        top: 0,
+        behavior: reducedMotion ? "auto" : "smooth",
+      });
+    };
+    window.addEventListener("scrolltotimer", onReturn);
+    return () => window.removeEventListener("scrolltotimer", onReturn);
+  }, [reducedMotion]);
+
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (!el || NATIVE_SNAP) return;
+    let anim: { stop: () => void } | null = null;
+    let settleTimer: number | undefined;
+    let seqStart: number | null = null;
+    let lastY = el.scrollTop;
+
+    const cancel = () => {
+      anim?.stop();
+      anim = null;
+    };
+
+    const settle = () => {
+      if (anim) return;
+      const guideTop = guideRef.current?.offsetTop ?? el.clientHeight;
+      const y = el.scrollTop;
+      const from = seqStart ?? y;
+      seqStart = null;
+      const startedBeforeGuide = from < guideTop - 1;
+      if (startedBeforeGuide) {
+        if (y <= 0) return;
+      } else {
+        const movedUp = y < from;
+        if (y >= guideTop + (movedUp ? 56 : 0)) return;
+      }
+      const target = y < guideTop / 2 ? 0 : guideTop;
+      if (Math.abs(target - y) < 1) return;
+      if (reducedMotion) {
+        el.scrollTop = target;
+        return;
+      }
+      anim = animate(y, target, {
+        ...SPRING_SOFT,
+        restDelta: 0.5,
+        onUpdate: (v) => {
+          el.scrollTop = v;
+        },
+        onComplete: () => {
+          el.scrollTop = target;
+          anim = null;
+        },
+      });
+    };
+
+    const onScroll = () => {
+      if (anim) return;
+      if (seqStart === null) seqStart = lastY;
+      lastY = el.scrollTop;
+      window.clearTimeout(settleTimer);
+      settleTimer = window.setTimeout(settle, 120);
+    };
+    const onScrollEnd = () => {
+      if (anim) return;
+      window.clearTimeout(settleTimer);
+      settle();
+    };
+
+    const onWheel = () => {
+      cancel();
+      window.clearTimeout(settleTimer);
+      settleTimer = window.setTimeout(settle, 160);
+    };
+
+    el.addEventListener("scroll", onScroll, { passive: true });
+    el.addEventListener("scrollend", onScrollEnd);
+    el.addEventListener("wheel", onWheel, { passive: true });
+    el.addEventListener("pointerdown", cancel);
+    return () => {
+      cancel();
+      window.clearTimeout(settleTimer);
+      el.removeEventListener("scroll", onScroll);
+      el.removeEventListener("scrollend", onScrollEnd);
+      el.removeEventListener("wheel", onWheel);
+      el.removeEventListener("pointerdown", cancel);
+    };
+  }, [reducedMotion]);
+
+  useEffect(() => {
     if (prevTimeRef.current > 0 && timeRemaining === 0) {
       pulse(timerRef.current, "thud");
     }
@@ -226,8 +377,12 @@ export function ActiveWorkout() {
   }
 
   return (
-    <div className="h-full flex flex-col min-h-0 overflow-hidden">
-      <div className="flex-1 min-h-0 flex flex-col">
+    <div
+      ref={scrollerRef}
+      style={NATIVE_SNAP ? undefined : { scrollSnapType: "none" }}
+      className={`h-full overflow-y-auto hide-scrollbar${NATIVE_SNAP ? " snap-y snap-mandatory" : ""}`}
+    >
+      <div className="h-full min-h-0 flex flex-col snap-start snap-always">
         {/* Exercise Pills
         <div className="px-4 sm:px-6 pt-4 sm:pt-8 pb-3 sm:pb-6 overflow-x-auto">
           <div className="flex gap-2 sm:gap-4 pb-2">
@@ -360,7 +515,37 @@ export function ActiveWorkout() {
             setWeightUnit={setWeightUnit}
           />
         </div>
+
+        {currentExercise && (
+          <button
+            onClick={() => {
+              haptics.tap();
+              dismissGuideCoachMark();
+              guideRef.current?.scrollIntoView({
+                behavior: reducedMotion ? "auto" : "smooth",
+                block: "start",
+              });
+            }}
+            className="shrink-0 flex flex-col items-center justify-center gap-1 pt-1 pb-2 text-muted-foreground"
+          >
+            {showGuideCoachMark && (
+              <span className="label-font text-[9px] px-3 py-1 bg-primary text-primary-foreground">
+                NEW · FORM GUIDE BELOW
+              </span>
+            )}
+            <span className="flex items-center gap-2">
+              <span className="label-font text-[10px]">HOW TO</span>
+              <ChevronDown size={14} />
+            </span>
+          </button>
+        )}
       </div>
+
+      {currentExercise && (
+        <div ref={guideRef} className="snap-start">
+          <ExerciseGuidePanel exercise={currentExercise} />
+        </div>
+      )}
 
       {pickerType === "restTime" && (
         <ScrollPicker
