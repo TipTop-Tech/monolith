@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Edit2, Plus, X, Trash2 } from 'lucide-react';
 import {
   Carousel,
@@ -64,6 +64,37 @@ export function WorkoutCarousel(props: WorkoutCarouselProps) {
       setTimeout(() => { isProgrammaticRef.current = false; }, 100);
     }
   }, [api, props.currentSlide]);
+
+  const tweenNodes = useCallback((emblaApi: NonNullable<CarouselApi>) => {
+    const scrollProgress = emblaApi.scrollProgress();
+    const snapList = emblaApi.scrollSnapList();
+
+    const distanceBetweenSlides = snapList.length > 1 ? snapList[1] - snapList[0] : 1;
+
+    emblaApi.slideNodes().forEach((slideNode, index) => {
+      const slide = slideNode as HTMLElement;
+      const snapTarget = snapList[index];
+      if (snapTarget === undefined) return;
+
+      const diffToTarget = Math.abs(snapTarget - scrollProgress);
+      const normalizedDiff = distanceBetweenSlides > 0 ? diffToTarget / distanceBetweenSlides : 0;
+
+      const scale = Math.max(0.85, 1 - (normalizedDiff * 0.15));
+      const opacity = Math.max(0.3, 1 - (normalizedDiff * 0.7));
+
+      slide.style.transform = `scale(${scale})`;
+      slide.style.opacity = opacity.toString();
+      slide.style.transition = 'none'; // Ensure CSS transitions don't fight with the animation
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!api) return;
+
+    tweenNodes(api);
+    api.on('scroll', () => tweenNodes(api));
+    api.on('reInit', () => tweenNodes(api));
+  }, [api, tweenNodes]);
 
   return (
     <div className="w-full h-full flex flex-col items-center">
