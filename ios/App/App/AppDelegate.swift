@@ -47,3 +47,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
 }
+
+class MainViewController: CAPBridgeViewController {
+    override func capacitorDidLoad() {
+        bridge?.registerPluginInstance(LiveActivityPlugin())
+    }
+}

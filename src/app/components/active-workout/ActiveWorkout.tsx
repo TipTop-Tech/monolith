@@ -18,6 +18,7 @@ import { Play, Pause, RotateCcw, Plus, Edit2, X, Trash2 } from "lucide-react";
 import { ScrollPicker } from "./ScrollPicker";
 import { WorkoutCarousel } from "./WorkoutCarousel";
 import { haptics } from "../../lib/haptics";
+import { feedback, pulse } from "../../../utils/feedback";
 
 export function ActiveWorkout() {
   const navigate = useNavigate();
@@ -57,6 +58,8 @@ export function ActiveWorkout() {
 
   const isFirstRender = useRef(true);
   const wakeLockRef = useRef<any>(null); // Type any because WakeLockSentinel might not be in standard DOM lib yet
+  const timerRef = useRef<HTMLButtonElement>(null);
+  const prevTimeRef = useRef(0);
 
   // Wake Lock and Notification Permission Effect
   useEffect(() => {
@@ -122,7 +125,7 @@ export function ActiveWorkout() {
 
   const { data: exerciseHistoryRecords } = useQuery(
     'SELECT * FROM workoutHistory WHERE exerciseId = ? ORDER BY date ASC',
-    [currentExercise?.id]
+    [currentExercise?.id ?? null]
   );
 
   const visibleSets = exerciseHistoryRecords?.filter((set) => {
@@ -141,9 +144,16 @@ export function ActiveWorkout() {
     }
   }, [currentRoutine, navigate]);
 
+  useEffect(() => {
+    if (prevTimeRef.current > 0 && timeRemaining === 0) {
+      pulse(timerRef.current, "thud");
+    }
+    prevTimeRef.current = timeRemaining;
+  }, [timeRemaining]);
+
   const handleLogSet = async () => {
     if (!currentExercise || reps === 0 || weight === 0) return;
-    haptics.success(); // set logged / edit saved
+    feedback.success(timerRef.current); // set logged / edit saved
 
     if (editingSetId !== null) {
       await db.execute(
@@ -248,6 +258,7 @@ export function ActiveWorkout() {
 
           <div className="label-font text-muted-foreground mt-4 sm:mt-8">REST TIME</div>
           <button
+            ref={timerRef}
             onClick={() => setPickerType("restTime")}
             className="display-font text-[min(30vw,150px)] sm:text-[min(40vw,180px)] leading-none bevel-text-large mt-2 sm:mt-4 transition-all hover:scale-105 active:scale-95 drop-shadow-[0_0_12px_rgba(255,255,255,0.3)]"
           >
