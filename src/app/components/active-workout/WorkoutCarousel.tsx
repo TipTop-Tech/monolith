@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Edit2, Plus, X, Trash2 } from 'lucide-react';
 import {
   Carousel,
@@ -7,6 +7,7 @@ import {
   type CarouselApi
 } from '../ui/carousel';
 import { InlineWheel } from './InlineWheel';
+import { preloadSwipeSounds, playSwipeLeftSound, playSwipeRightSound } from '../../../utils/audio';
 
 interface WorkoutCarouselProps {
   currentSlide: number;
@@ -31,19 +32,36 @@ export function WorkoutCarousel(props: WorkoutCarouselProps) {
   const [selectedField, setSelectedField] = useState<'reps' | 'weight'>('reps');
   const [isLogSetPressed, setIsLogSetPressed] = useState(false);
   const slidesCount = Math.max(3, props.visibleSets.length + 2);
+  const previousSlideRef = useRef(props.currentSlide);
+  const isProgrammaticRef = useRef(false);
+
+  useEffect(() => {
+    preloadSwipeSounds();
+  }, []);
 
   useEffect(() => {
     if (!api) return;
 
     api.on('select', () => {
-      props.setCurrentSlide(api.selectedScrollSnap());
+      const currentSlide = api.selectedScrollSnap();
+      if (!isProgrammaticRef.current) {
+        if (currentSlide > previousSlideRef.current) {
+          playSwipeLeftSound();
+        } else if (currentSlide < previousSlideRef.current) {
+          playSwipeRightSound();
+        }
+      }
+      previousSlideRef.current = currentSlide;
+      props.setCurrentSlide(currentSlide);
     });
   }, [api, props.setCurrentSlide]);
 
   useEffect(() => {
     if (!api) return;
     if (api.selectedScrollSnap() !== props.currentSlide) {
+      isProgrammaticRef.current = true;
       api.scrollTo(props.currentSlide);
+      setTimeout(() => { isProgrammaticRef.current = false; }, 100);
     }
   }, [api, props.currentSlide]);
 

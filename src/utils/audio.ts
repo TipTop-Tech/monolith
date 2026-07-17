@@ -89,3 +89,56 @@ export const playStartupSound = async () => {
     // Leave hasPlayedStartupSound as false so subsequent user interaction can retry
   }
 };
+
+let isSwipePreloaded = false;
+
+export const preloadSwipeSounds = async () => {
+  try {
+    const promises = [
+      NativeAudio.preload({
+        assetId: 'swipe_left',
+        assetPath: Capacitor.getPlatform() === 'web' ? '/assets/swipeLeftFinal.mp3' : 'public/assets/swipeLeftFinal.mp3',
+        isComplex: false,
+        isUrl: Capacitor.getPlatform() === 'web',
+      }),
+      NativeAudio.preload({
+        assetId: 'swipe_right',
+        assetPath: Capacitor.getPlatform() === 'web' ? '/assets/swipeRightFinal.mp3' : 'public/assets/swipeRightFinal.mp3',
+        isComplex: false,
+        isUrl: Capacitor.getPlatform() === 'web',
+      })
+    ];
+    await Promise.all(promises);
+    isSwipePreloaded = true;
+  } catch (error) {
+    console.error('Failed to preload swipe sounds:', error);
+  }
+};
+
+export const playSwipeLeftSound = async () => {
+  if (!isSoundEnabled()) return;
+  try {
+    if (!isSwipePreloaded) {
+      await preloadSwipeSounds();
+    }
+    await NativeAudio.play({
+      assetId: 'swipe_left',
+    });
+  } catch (error) {
+    console.error('Error playing swipe left sound:', error);
+  }
+};
+
+export const playSwipeRightSound = async () => {
+  if (!isSoundEnabled()) return;
+  try {
+    if (!isSwipePreloaded) {
+      await preloadSwipeSounds();
+    }
+    await NativeAudio.play({
+      assetId: 'swipe_right',
+    });
+  } catch (error) {
+    console.error('Error playing swipe right sound:', error);
+  }
+};

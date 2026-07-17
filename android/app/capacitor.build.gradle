@@ -13,6 +13,7 @@ dependencies {
     implementation project(':capacitor-community-native-audio')
     implementation project(':capacitor-community-sqlite')
     implementation project(':capacitor-haptics')
+    implementation project(':capacitor-text-zoom')
     implementation project(':powersync-capacitor')
     implementation project(':revenuecat-purchases-capacitor')
     implementation project(':revenuecat-purchases-capacitor-ui')
