@@ -151,8 +151,8 @@ export function ActiveWorkout() {
     : null;
 
   const { data: exerciseHistoryRecords } = useQuery(
-    'SELECT * FROM workoutHistory WHERE exerciseId = ? ORDER BY date ASC',
-    [currentExercise?.id ?? null]
+    'SELECT * FROM workoutHistory WHERE exerciseId = ? AND user_id = ? ORDER BY date ASC',
+    [currentExercise?.id ?? null, user?.id ?? null]
   );
 
   const visibleSets = exerciseHistoryRecords?.filter((set) => {

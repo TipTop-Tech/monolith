@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from '@powersync/react';
 import { useWorkout } from "../../context/WorkoutContext";
+import { useAuth } from "../../context/AuthContext";
 import { haptics } from "../../lib/haptics";
 import { motion } from "motion/react";
 import { SPRING, INSTANT } from "../../lib/motion";
@@ -263,9 +264,10 @@ function RoutineExerciseRow({
 }
 
 export function Routines() {
+  const { user } = useAuth();
   const { routines, exercises, addRoutine, removeRoutine, addExerciseToRoutine, removeRoutineExercise, setCurrentRoutine, setCurrentExerciseIndex, setWorkoutSessionStartedAt, setReps, setWeight, setRestTime, setTimeRemaining, setIsTimerRunning, setPickerType } = useWorkout();
 
-  const { data: allWorkoutHistoryRecords } = useQuery('SELECT * FROM workoutHistory ORDER BY date ASC');
+  const { data: allWorkoutHistoryRecords } = useQuery('SELECT * FROM workoutHistory WHERE user_id = ? ORDER BY date ASC', [user?.id ?? null]);
   const navigate = useNavigate();
   const scrollRootRef = useRef<HTMLDivElement>(null);
   const routineRefs = useRef<(HTMLElement | null)[]>([]);
