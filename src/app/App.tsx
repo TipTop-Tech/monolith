@@ -18,7 +18,7 @@ export default function App() {
       <StartOverlay>
         <RouterProvider router={router} />
       </StartOverlay>
-      <Analytics />
+      <Analytics debug={false} />
     </AuthProvider>
   );
 }
