@@ -91,23 +91,31 @@ export const playStartupSound = async () => {
 };
 
 let isSwipePreloaded = false;
+const SWIPE_POOL_SIZE = 4;
+let currentSwipeLeftIndex = 0;
+let currentSwipeRightIndex = 0;
 
 export const preloadSwipeSounds = async () => {
   try {
-    const promises = [
-      NativeAudio.preload({
-        assetId: 'swipe_left',
-        assetPath: Capacitor.getPlatform() === 'web' ? '/assets/swipeLeftFinal.mp3' : 'public/assets/swipeLeftFinal.mp3',
-        isComplex: false,
-        isUrl: Capacitor.getPlatform() === 'web',
-      }),
-      NativeAudio.preload({
-        assetId: 'swipe_right',
-        assetPath: Capacitor.getPlatform() === 'web' ? '/assets/swipeRightFinal.mp3' : 'public/assets/swipeRightFinal.mp3',
-        isComplex: false,
-        isUrl: Capacitor.getPlatform() === 'web',
-      })
-    ];
+    const promises = [];
+    for (let i = 0; i < SWIPE_POOL_SIZE; i++) {
+      promises.push(
+        NativeAudio.preload({
+          assetId: `swipe_left_${i}`,
+          assetPath: Capacitor.getPlatform() === 'web' ? '/assets/deepClink.mp3' : 'public/assets/deepClink.mp3',
+          isComplex: true,
+          isUrl: Capacitor.getPlatform() === 'web',
+        })
+      );
+      promises.push(
+        NativeAudio.preload({
+          assetId: `swipe_right_${i}`,
+          assetPath: Capacitor.getPlatform() === 'web' ? '/assets/deepClink.mp3' : 'public/assets/deepClink.mp3',
+          isComplex: true,
+          isUrl: Capacitor.getPlatform() === 'web',
+        })
+      );
+    }
     await Promise.all(promises);
     isSwipePreloaded = true;
   } catch (error) {
@@ -122,8 +130,9 @@ export const playSwipeLeftSound = async () => {
       await preloadSwipeSounds();
     }
     await NativeAudio.play({
-      assetId: 'swipe_left',
+      assetId: `swipe_left_${currentSwipeLeftIndex}`,
     });
+    currentSwipeLeftIndex = (currentSwipeLeftIndex + 1) % SWIPE_POOL_SIZE;
   } catch (error) {
     console.error('Error playing swipe left sound:', error);
   }
@@ -136,8 +145,9 @@ export const playSwipeRightSound = async () => {
       await preloadSwipeSounds();
     }
     await NativeAudio.play({
-      assetId: 'swipe_right',
+      assetId: `swipe_right_${currentSwipeRightIndex}`,
     });
+    currentSwipeRightIndex = (currentSwipeRightIndex + 1) % SWIPE_POOL_SIZE;
   } catch (error) {
     console.error('Error playing swipe right sound:', error);
   }
