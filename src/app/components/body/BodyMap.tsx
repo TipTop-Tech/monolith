@@ -1,8 +1,11 @@
 import { useLocation, useNavigate } from "react-router";
 import { useState, useRef } from "react";
+import { useQuery } from "@powersync/react";
 import Model from "react-body-highlighter";
+import type { Muscle } from "react-body-highlighter/dist/component/metadata";
 import { useIsMobile } from "../ui/use-mobile";
 import { haptics } from "../../lib/haptics";
+import { useWorkout } from "../../context/WorkoutContext";
 
 const MUSCLE_TO_GROUP: { [key: string]: string } = {
   "chest": "chest",
@@ -42,6 +45,45 @@ export function BodyMap() {
   const [selectedMuscle, setSelectedMuscle] = useState<string | null>(null);
   const [emptyZone, setEmptyZone] = useState(false);
   const muscleHitRef = useRef(false);
+  const { exercises } = useWorkout();
+  const { data: workoutHistoryRows } = useQuery(
+    "SELECT * FROM workoutHistory ORDER BY date ASC"
+  );
+
+  const hasHistoryForMuscleGroup = (muscleName: string) => {
+    return (workoutHistoryRows ?? []).some((entry) => {
+      const exercise = exercises.find((item) => item.id === entry.exerciseId);
+      return exercise?.muscleGroups.includes(muscleName);
+    });
+  };
+
+  const getMuscleConsistencyScore = (muscleName: string) => {
+    const rows = workoutHistoryRows ?? [];
+    const now = Date.now();
+    const oneWeekAgo = now - 7 * 24 * 60 * 60 * 1000;
+    const trainingDays = new Set<string>();
+
+    rows.forEach((entry) => {
+      const exercise = exercises.find((item) => item.id === entry.exerciseId);
+      if (!exercise?.muscleGroups.includes(muscleName)) return;
+
+      const entryTime = new Date(entry.date).getTime();
+      if (entryTime < oneWeekAgo) return;
+
+      const dayKey = new Date(entryTime).toISOString().slice(0, 10);
+      trainingDays.add(dayKey);
+    });
+
+    return trainingDays.size;
+  };
+
+  const getFrequencyForMuscle = (muscleName: string) => {
+    const score = getMuscleConsistencyScore(muscleName);
+    if (score < 1) return 1;
+    if (score < 2) return 2;
+    if (score < 3) return 3;
+    return 4;
+  };
 
   const handleMuscleClick = (muscle: { muscle: string }) => {
     muscleHitRef.current = true; 
@@ -67,14 +109,18 @@ export function BodyMap() {
     setEmptyZone(true);
   };
 
-  const modelData = selectedMuscle
-    ? [
-        {
-          name: selectedMuscle,
-          muscles: [selectedMuscle],
-        },
-      ]
-    : [];
+  const modelData = Object.keys(MUSCLE_TO_GROUP)
+    .map((muscleName) => {
+      const frequency = getFrequencyForMuscle(muscleName);
+      return frequency > 0
+        ? {
+            name: muscleName,
+            muscles: [muscleName as Muscle],
+            frequency,
+          }
+        : null;
+    })
+    .filter(Boolean);
 
   const formatBodyLabel = (value: string) => value.replace(/-/g, " ");
 
@@ -114,7 +160,12 @@ export function BodyMap() {
           <Model
             data={modelData}
             type={view === "front" ? "anterior" : "posterior"}
-            highlightedColors={["#ffffff"]}
+            highlightedColors={[
+              "#2a2a2a", // no or low history
+              "#505050", // low
+              "#989898", // medium
+              "#ffffff", // very high
+            ]}
             style={{ background: "transparent", backgroundColor: "transparent", height: "100%" }}
             svgStyle={{ background: "transparent", backgroundColor: "transparent", height: "100%", width: "auto", maxWidth: "100%" }}
             onClick={handleMuscleClick}

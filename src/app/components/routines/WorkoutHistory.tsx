@@ -75,7 +75,7 @@ export function WorkoutHistory() {
 
   const chartData = hasHistory
     ? exerciseHistoryRecords
-      .map((set) => ({
+      .map((set, index) => ({
         date: new Date(set.date).toLocaleDateString("en-US", {
           month: "short",
           day: "numeric",
@@ -104,7 +104,7 @@ export function WorkoutHistory() {
         <div className="label-font text-muted-foreground mb-6">WEIGHT PROGRESS</div>
         {hasHistory ? (
           <div className="overflow-x-auto hide-scrollbar w-full">
-            <div style={{ minWidth: `${Math.max(100, (chartData.length / 5) * 100)}%`, height: 250 }}>
+            <div style={{ minWidth: `${Math.max(100, chartData.length * 60)}px`, height: 250 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#222" strokeOpacity={0.3} />
@@ -114,6 +114,10 @@ export function WorkoutHistory() {
                     tick={{ fill: "#6b6b6b", fontSize: 11 }}
                     tickLine={false}
                     axisLine={false}
+                    interval={0}
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
                   />
                   <YAxis
                     stroke="#6b6b6b"
