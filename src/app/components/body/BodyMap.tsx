@@ -7,6 +7,8 @@ import { useIsMobile } from "../ui/use-mobile";
 import { haptics } from "../../lib/haptics";
 import { useWorkout } from "../../context/WorkoutContext";
 import { playBodyMapSound } from "../../../utils/audio";
+import { motion } from "motion/react";
+import { useReducedMotion } from "../../hooks/useReducedMotion";
 
 const MUSCLE_TO_GROUP: { [key: string]: string } = {
   "chest": "chest",
@@ -31,6 +33,39 @@ const MUSCLE_TO_GROUP: { [key: string]: string } = {
   "knees": "quadriceps",
 };
 
+const ANIMATION_MODE: "snappy" | "dramatic" | "simultaneous" = "simultaneous";
+
+const getContainerVariants = (mode: typeof ANIMATION_MODE, reduced: boolean) => {
+  if (reduced) return { hidden: { opacity: 1 }, visible: { opacity: 1 } };
+  let staggerChildren = 0.05;
+  if (mode === "dramatic") staggerChildren = 0.15;
+  if (mode === "simultaneous") staggerChildren = 0;
+
+  return {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren,
+        delayChildren: 0.1,
+      },
+    },
+  };
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, scale: 0.8 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    transition: {
+      type: "spring",
+      stiffness: 350,
+      damping: 20,
+    }
+  }
+};
+
 export function BodyMap() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -47,6 +82,8 @@ export function BodyMap() {
   const [emptyZone, setEmptyZone] = useState(false);
   const muscleHitRef = useRef(false);
   const { exercises } = useWorkout();
+  const reducedMotion = useReducedMotion();
+  const containerVariants = getContainerVariants(ANIMATION_MODE, reducedMotion);
   const { data: workoutHistoryRows } = useQuery(
     "SELECT * FROM workoutHistory ORDER BY date ASC"
   );
@@ -134,8 +171,8 @@ export function BodyMap() {
     : "HOVER TO PREVIEW, TAP MUSCLE TO VIEW EXERCISES";
 
   return (
-    <div className="flex h-full flex-col items-center overflow-hidden px-3 py-2 sm:p-8">
-      <div className="flex shrink-0 justify-center gap-2 mb-4 sm:gap-6 sm:mb-8">
+    <motion.div variants={containerVariants} initial="hidden" animate="visible" className="flex h-full flex-col items-center overflow-hidden px-3 py-2 sm:p-8">
+      <motion.div variants={itemVariants} className="flex shrink-0 justify-center gap-2 mb-4 sm:gap-6 sm:mb-8">
         <button
           onClick={() => {
             setView("front");
@@ -158,9 +195,9 @@ export function BodyMap() {
         >
           <span className="black-glass-text">BACK</span>
         </button>
-      </div>
+      </motion.div>
 
-      <div className="flex min-h-0 w-full flex-1 items-center justify-center">
+      <motion.div variants={itemVariants} className="flex min-h-0 w-full flex-1 items-center justify-center">
         <div className="body-map-model relative h-full max-w-full" onClick={handleMapClick}>
           <Model
             data={modelData}
@@ -176,9 +213,9 @@ export function BodyMap() {
             onClick={handleMuscleClick}
           />
         </div>
-      </div>
+      </motion.div>
 
-      <div className="flex h-14 shrink-0 flex-col items-center justify-center text-center mt-2 sm:mt-6 sm:h-16">
+      <motion.div variants={itemVariants} className="flex h-14 shrink-0 flex-col items-center justify-center text-center mt-2 sm:mt-6 sm:h-16">
         {isMobile && selectedMuscle ? (
           <>
             <div className="display-font text-xl bevel-text sm:text-2xl">
@@ -197,7 +234,7 @@ export function BodyMap() {
             {instructionText}
           </div>
         )}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
