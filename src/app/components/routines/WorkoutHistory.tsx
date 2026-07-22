@@ -18,6 +18,41 @@ import {
 } from "../ui/dialog";
 import { Button } from "../ui/button";
 import { playHistorySound } from "../../../utils/audio";
+import { motion, AnimatePresence } from "motion/react";
+import { useReducedMotion } from "../../hooks/useReducedMotion";
+
+const ANIMATION_MODE: "snappy" | "dramatic" | "simultaneous" = "simultaneous";
+
+const getContainerVariants = (mode: typeof ANIMATION_MODE, reduced: boolean) => {
+  if (reduced) return { hidden: { opacity: 1 }, visible: { opacity: 1 } };
+  let staggerChildren = 0.05;
+  if (mode === "dramatic") staggerChildren = 0.15;
+  if (mode === "simultaneous") staggerChildren = 0;
+
+  return {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren,
+        delayChildren: 0.1,
+      },
+    },
+  };
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, scale: 0.8 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    transition: {
+      type: "spring",
+      stiffness: 350,
+      damping: 20,
+    }
+  }
+};
 
 export function WorkoutHistory() {
   const { exerciseId } = useParams<{ exerciseId: string }>();
@@ -27,6 +62,8 @@ export function WorkoutHistory() {
   const navigate = useNavigate();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [setToDelete, setSetToDelete] = useState<{ id: string } | null>(null);
+  const reducedMotion = useReducedMotion();
+  const containerVariants = getContainerVariants(ANIMATION_MODE, reducedMotion);
 
   useEffect(() => {
     playHistorySound();
@@ -61,19 +98,20 @@ export function WorkoutHistory() {
 
   if (!exercise) {
     return (
-      <div className="h-full overflow-auto p-8">
-        <button
+      <motion.div variants={containerVariants} initial="hidden" animate="visible" className="h-full overflow-auto p-8">
+        <motion.button
+          variants={itemVariants}
           onClick={() => navigate(-1)}
           className="flex items-center gap-3 mb-12 px-4 py-2 black-glass-button w-fit"
         >
           <ArrowLeft size={20} className="black-glass-text" />
           <span className="label-font black-glass-text">BACK</span>
-        </button>
+        </motion.button>
 
-        <div className="flex items-center justify-center p-6">
+        <motion.div variants={itemVariants} className="flex items-center justify-center p-6">
           <div className="label-font text-muted-foreground">NO HISTORY FOUND</div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     );
   }
 
@@ -92,21 +130,22 @@ export function WorkoutHistory() {
     : [];
 
   return (
-    <div className="h-full overflow-auto p-8">
-      <button
+    <motion.div variants={containerVariants} initial="hidden" animate="visible" className="h-full overflow-auto p-8">
+      <motion.button
+        variants={itemVariants}
         onClick={() => navigate(-1)}
         className="flex items-center gap-3 mb-12 px-4 py-2 black-glass-button w-fit"
       >
         <ArrowLeft size={20} className="black-glass-text" />
         <span className="label-font black-glass-text">BACK</span>
-      </button>
+      </motion.button>
 
-      <div className="display-font text-5xl bevel-text-large mb-2">{exercise.name}</div>
-      <div className="label-font text-muted-foreground mb-16">
+      <motion.div variants={itemVariants} className="display-font text-5xl bevel-text-large mb-2">{exercise.name}</motion.div>
+      <motion.div variants={itemVariants} className="label-font text-muted-foreground mb-16">
         {exercise.muscleGroups.join(" · ")}
-      </div>
+      </motion.div>
 
-      <div className="mb-16">
+      <motion.div variants={itemVariants} className="mb-16">
         <div className="label-font text-muted-foreground mb-6">WEIGHT PROGRESS</div>
         {hasHistory ? (
           <div className="overflow-x-auto hide-scrollbar w-full">
@@ -160,9 +199,9 @@ export function WorkoutHistory() {
             <span className="label-font text-muted-foreground text-sm">No Data Found</span>
           </div>
         )}
-      </div>
+      </motion.div>
 
-      <div>
+      <motion.div variants={itemVariants}>
         <div className="label-font text-muted-foreground mb-6">ALL SETS</div>
         {hasHistory && exerciseHistoryRecords ? (
           <div className="space-y-4">
@@ -195,7 +234,7 @@ export function WorkoutHistory() {
             <span className="label-font text-muted-foreground text-sm">No Data Found</span>
           </div>
         )}
-      </div>
+      </motion.div>
 
       {/**
        * Opens a dialog when the user tries to delete a set from the history.
@@ -218,6 +257,6 @@ export function WorkoutHistory() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </motion.div>
   );
 }
