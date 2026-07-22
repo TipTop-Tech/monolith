@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useQuery } from '@powersync/react';
 import { useWorkout } from "../../context/WorkoutContext";
 import { useAuth } from "../../context/AuthContext";
@@ -45,6 +45,53 @@ import {
 } from "../ui/alert-dialog";
 import { Textarea } from "../ui/textarea";
 import { generateRoutineWithAgent, type RoutineAgentResult, type TrainingExperience, type TrainingSex } from "../../lib/routineAgent";
+
+const GREETING_TITLES = [
+  "Keep Building",
+  "Little by Little",
+  "Keep it Simple",
+  "Stay Consistent",
+  "Embrace the Grind"
+];
+
+const MARCUS_AURELIUS_QUOTES = [
+  { text: "You have power over your mind - not outside events. Realize this, and you will find strength.", citation: "Meditations, Book 4, Section 3" },
+  { text: "The happiness of your life depends upon the quality of your thoughts.", citation: "Meditations, Book 3, Section 4" },
+  { text: "Waste no more time arguing about what a good man should be. Be one.", citation: "Meditations, Book 10, Section 16" },
+  { text: "It is not death that a man should fear, but he should fear never beginning to live.", citation: "Meditations, Book 12, Section 1" }
+];
+
+const ANIMATION_MODE: "snappy" | "dramatic" | "simultaneous" = "simultaneous";
+
+const getContainerVariants = (mode: typeof ANIMATION_MODE, reduced: boolean) => {
+  if (reduced) return { hidden: { opacity: 1 }, visible: { opacity: 1 } };
+  let staggerChildren = 0.05;
+  if (mode === "dramatic") staggerChildren = 0.15;
+  if (mode === "simultaneous") staggerChildren = 0;
+
+  return {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren,
+        delayChildren: 0.1,
+      },
+    },
+  };
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 10 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.4,
+      ease: "easeOut"
+    }
+  }
+};
 
 const BODY_PARTS = [
   { key: "chest", label: "Chest" },
@@ -266,6 +313,11 @@ function RoutineExerciseRow({
 export function Routines() {
   const { user } = useAuth();
   const { routines, exercises, addRoutine, removeRoutine, addExerciseToRoutine, removeRoutineExercise, setCurrentRoutine, setCurrentExerciseIndex, setWorkoutSessionStartedAt, setReps, setWeight, setRestTime, setTimeRemaining, setIsTimerRunning, setPickerType } = useWorkout();
+
+  const randomTitle = useMemo(() => GREETING_TITLES[Math.floor(Math.random() * GREETING_TITLES.length)], []);
+  const randomQuote = useMemo(() => MARCUS_AURELIUS_QUOTES[Math.floor(Math.random() * MARCUS_AURELIUS_QUOTES.length)], []);
+  const reducedMotion = useReducedMotion();
+  const containerVariants = getContainerVariants(ANIMATION_MODE, reducedMotion);
 
   const { data: allWorkoutHistoryRecords } = useQuery('SELECT * FROM workoutHistory WHERE user_id = ? ORDER BY date ASC', [user?.id ?? null]);
   const navigate = useNavigate();
@@ -516,7 +568,7 @@ export function Routines() {
 
   return (
     <>
-      <div className="relative h-full">
+      <motion.div variants={containerVariants} initial="hidden" animate="visible" className="relative h-full flex flex-col">
         {/* Delete Routine Confirmation Modal */}
         <AlertDialog open={routineToDelete !== null} onOpenChange={(open) => !open && setRoutineToDelete(null)}>
           <AlertDialogContent className="bg-background border-border bevel-element">
@@ -537,24 +589,44 @@ export function Routines() {
           </AlertDialogContent>
         </AlertDialog>
 
-        {routines.length === 0 ? (
-          <div className="h-full flex items-center justify-center p-8 pb-24">
-            <div className="text-center space-y-6 w-full max-w-sm">
-              <div className="label-font text-muted-foreground">ROUTINES</div>
-              <div className="display-font text-4xl bevel-text">No routines yet</div>
-              <div className="label-font text-muted-foreground text-xs tracking-[0.25em]">
-                CREATE ONE MANUALLY OR ASK THE AGENT TO BUILD ONE
+        <div className="flex-1 min-h-0 relative">
+          {routines.length === 0 ? (
+            <div className="absolute inset-0 flex flex-col">
+              <div className="pt-8 px-6 md:px-8 shrink-0">
+                <motion.div variants={itemVariants} className="display-font text-5xl bevel-text-large mb-2">
+                  {randomTitle}
+                </motion.div>
+                <motion.div variants={itemVariants} className="label-font text-muted-foreground mb-4">
+                  "{randomQuote.text}"<br />
+                  <span className="text-xs opacity-75">— Marcus Aurelius, {randomQuote.citation}</span>
+                </motion.div>
               </div>
-              <CreateRoutineButtons />
+              <div className="flex-1 flex items-center justify-center p-8 pb-24">
+                <div className="text-center space-y-6 w-full max-w-sm">
+                  <div className="label-font text-muted-foreground">ROUTINES</div>
+                  <div className="display-font text-4xl bevel-text">No routines yet</div>
+                  <div className="label-font text-muted-foreground text-xs tracking-[0.25em]">
+                    CREATE ONE MANUALLY OR ASK THE AGENT TO BUILD ONE
+                  </div>
+                  <CreateRoutineButtons />
+                </div>
+              </div>
             </div>
-          </div>
-        ) : (
-          <>
+          ) : (
             <div
               ref={scrollRootRef}
-              className="h-full overflow-y-scroll scroll-smooth snap-y snap-mandatory hide-scrollbar"
+              className="absolute inset-0 overflow-y-scroll scroll-smooth snap-y snap-mandatory hide-scrollbar"
               style={{ WebkitOverflowScrolling: "touch" }}
             >
+              <div className="pt-8 px-6 md:px-8 shrink-0 snap-start">
+                <motion.div variants={itemVariants} className="display-font text-5xl bevel-text-large mb-2">
+                  {randomTitle}
+                </motion.div>
+                <motion.div variants={itemVariants} className="label-font text-muted-foreground mb-4">
+                  "{randomQuote.text}"<br />
+                  <span className="text-xs opacity-75">— Marcus Aurelius, {randomQuote.citation}</span>
+                </motion.div>
+              </div>
               {
                 /**
                  * routines.flatMap iterates through all the routines
@@ -709,9 +781,9 @@ export function Routines() {
                 });
               })}
             </div>
-          </>
-        )}
-      </div>
+          )}
+        </div>
+      </motion.div>
 
       <Dialog open={isAddRoutineOpen} onOpenChange={setIsAddRoutineOpen}>
         <DialogContent>
