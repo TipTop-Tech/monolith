@@ -1,11 +1,12 @@
 import { useLocation, useNavigate } from "react-router";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery } from "@powersync/react";
 import Model from "react-body-highlighter";
 import type { Muscle } from "react-body-highlighter/dist/component/metadata";
 import { useIsMobile } from "../ui/use-mobile";
 import { haptics } from "../../lib/haptics";
 import { useWorkout } from "../../context/WorkoutContext";
+import { playBodyMapSound } from "../../../utils/audio";
 
 const MUSCLE_TO_GROUP: { [key: string]: string } = {
   "chest": "chest",
@@ -36,9 +37,9 @@ export function BodyMap() {
   const isMobile = useIsMobile();
   const initialView =
     location.state &&
-    typeof location.state === "object" &&
-    "view" in location.state &&
-    location.state.view === "back"
+      typeof location.state === "object" &&
+      "view" in location.state &&
+      location.state.view === "back"
       ? "back"
       : "front";
   const [view, setView] = useState<"front" | "back">(initialView);
@@ -49,6 +50,10 @@ export function BodyMap() {
   const { data: workoutHistoryRows } = useQuery(
     "SELECT * FROM workoutHistory ORDER BY date ASC"
   );
+
+  useEffect(() => {
+    playBodyMapSound();
+  }, []);
 
   const hasHistoryForMuscleGroup = (muscleName: string) => {
     return (workoutHistoryRows ?? []).some((entry) => {
@@ -86,7 +91,7 @@ export function BodyMap() {
   };
 
   const handleMuscleClick = (muscle: { muscle: string }) => {
-    muscleHitRef.current = true; 
+    muscleHitRef.current = true;
     const muscleName = muscle.muscle;
     const muscleGroup = MUSCLE_TO_GROUP[muscleName];
     if (!muscleGroup) return;
@@ -114,10 +119,10 @@ export function BodyMap() {
       const frequency = getFrequencyForMuscle(muscleName);
       return frequency > 0
         ? {
-            name: muscleName,
-            muscles: [muscleName as Muscle],
-            frequency,
-          }
+          name: muscleName,
+          muscles: [muscleName as Muscle],
+          frequency,
+        }
         : null;
     })
     .filter(Boolean);

@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router";
+
 import { useQuery, usePowerSync } from '@powersync/react';
 import { useWorkout } from "../../context/WorkoutContext";
 import { useAuth } from "../../context/AuthContext";
@@ -16,6 +17,7 @@ import {
   DialogTitle,
 } from "../ui/dialog";
 import { Button } from "../ui/button";
+import { playHistorySound } from "../../../utils/audio";
 
 export function WorkoutHistory() {
   const { exerciseId } = useParams<{ exerciseId: string }>();
@@ -25,6 +27,10 @@ export function WorkoutHistory() {
   const navigate = useNavigate();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [setToDelete, setSetToDelete] = useState<{ id: string } | null>(null);
+
+  useEffect(() => {
+    playHistorySound();
+  }, []);
 
   const { data: exerciseHistoryRecords } = useQuery(
     'SELECT * FROM workoutHistory WHERE exerciseId = ? AND user_id = ? ORDER BY date ASC',

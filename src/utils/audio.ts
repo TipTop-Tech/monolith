@@ -152,3 +152,73 @@ export const playSwipeRightSound = async () => {
     console.error('Error playing swipe right sound:', error);
   }
 };
+
+let isHistorySoundPreloaded = false;
+
+export const preloadHistorySound = async () => {
+  try {
+    if (Capacitor.getPlatform() !== 'web') {
+      await NativeAudio.configure({ focus: false });
+    }
+
+    await NativeAudio.preload({
+      assetId: 'history',
+      assetPath: Capacitor.getPlatform() === 'web' ? '/assets/deep_synth_ping.mp3' : 'public/assets/deep_synth_ping.mp3',
+      isComplex: false,
+      isUrl: Capacitor.getPlatform() === 'web',
+    });
+    isHistorySoundPreloaded = true;
+  } catch (error) {
+    console.error('Failed to preload history sound:', error);
+  }
+};
+
+export const playHistorySound = async () => {
+  if (!isSoundEnabled()) return;
+
+  try {
+    if (!isHistorySoundPreloaded) {
+      await preloadHistorySound();
+    }
+    await NativeAudio.play({
+      assetId: 'history',
+    });
+  } catch (error) {
+    console.error('Error playing history sound:', error);
+  }
+};
+
+let isBodyMapSoundPreloaded = false;
+
+export const preloadBodyMapSound = async () => {
+  try {
+    if (Capacitor.getPlatform() !== 'web') {
+      await NativeAudio.configure({ focus: false });
+    }
+
+    await NativeAudio.preload({
+      assetId: 'bodymap',
+      assetPath: Capacitor.getPlatform() === 'web' ? '/assets/gong_2.mp3' : 'public/assets/gong_2.mp3',
+      isComplex: false,
+      isUrl: Capacitor.getPlatform() === 'web',
+    });
+    isBodyMapSoundPreloaded = true;
+  } catch (error) {
+    console.error('Failed to preload body map sound:', error);
+  }
+};
+
+export const playBodyMapSound = async () => {
+  if (!isSoundEnabled()) return;
+
+  try {
+    if (!isBodyMapSoundPreloaded) {
+      await preloadBodyMapSound();
+    }
+    await NativeAudio.play({
+      assetId: 'bodymap',
+    });
+  } catch (error) {
+    console.error('Error playing body map sound:', error);
+  }
+};
