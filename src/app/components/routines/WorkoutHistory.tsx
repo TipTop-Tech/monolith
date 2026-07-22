@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router";
 
 import { useQuery, usePowerSync } from '@powersync/react';
@@ -18,7 +18,7 @@ import {
 } from "../ui/dialog";
 import { Button } from "../ui/button";
 import { playHistorySound } from "../../../utils/audio";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, animate } from "motion/react";
 import { useReducedMotion } from "../../hooks/useReducedMotion";
 
 const ANIMATION_MODE: "snappy" | "dramatic" | "simultaneous" = "simultaneous";
@@ -64,6 +64,8 @@ export function WorkoutHistory() {
   const [setToDelete, setSetToDelete] = useState<{ id: string } | null>(null);
   const reducedMotion = useReducedMotion();
   const containerVariants = getContainerVariants(ANIMATION_MODE, reducedMotion);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const animationRef = useRef<any>(null);
 
   useEffect(() => {
     playHistorySound();
@@ -129,6 +131,45 @@ export function WorkoutHistory() {
       }))
     : [];
 
+  useEffect(() => {
+    if (hasHistory && chartData.length > 0 && scrollContainerRef.current) {
+      const timeoutId = setTimeout(() => {
+        if (!scrollContainerRef.current) return;
+        
+        const targetScroll = scrollContainerRef.current.scrollWidth - scrollContainerRef.current.clientWidth;
+        
+        if (targetScroll > 0) {
+          if (reducedMotion) {
+            scrollContainerRef.current.scrollLeft = targetScroll;
+          } else {
+            animationRef.current = animate(scrollContainerRef.current.scrollLeft, targetScroll, {
+              onUpdate: (latest) => {
+                if (scrollContainerRef.current) {
+                  scrollContainerRef.current.scrollLeft = latest;
+                }
+              },
+              duration: 1.5,
+              ease: "easeInOut",
+            });
+          }
+        }
+      }, 500);
+
+      return () => {
+        clearTimeout(timeoutId);
+        if (animationRef.current) {
+          animationRef.current.stop();
+        }
+      };
+    }
+  }, [hasHistory, chartData.length, reducedMotion]);
+
+  const handleInterruptScroll = () => {
+    if (animationRef.current) {
+      animationRef.current.stop();
+    }
+  };
+
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible" className="h-full overflow-auto p-8">
       <motion.button
@@ -148,7 +189,13 @@ export function WorkoutHistory() {
       <motion.div variants={itemVariants} className="mb-16">
         <div className="label-font text-muted-foreground mb-6">WEIGHT PROGRESS</div>
         {hasHistory ? (
-          <div className="overflow-x-auto hide-scrollbar w-full">
+          <div 
+            className="overflow-x-auto hide-scrollbar w-full"
+            ref={scrollContainerRef}
+            onTouchStart={handleInterruptScroll}
+            onMouseDown={handleInterruptScroll}
+            onWheel={handleInterruptScroll}
+          >
             <div style={{ minWidth: `${Math.max(100, chartData.length * 60)}px`, height: 250 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData}>
