@@ -54,14 +54,13 @@ const getContainerVariants = (mode: typeof ANIMATION_MODE, reduced: boolean) => 
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, scale: 0.8 },
+  hidden: { opacity: 0, y: 10 },
   visible: {
     opacity: 1,
-    scale: 1,
+    y: 0,
     transition: {
-      type: "spring",
-      stiffness: 350,
-      damping: 20,
+      duration: 0.4,
+      ease: "easeOut"
     }
   }
 };
