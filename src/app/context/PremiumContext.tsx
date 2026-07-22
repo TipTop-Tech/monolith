@@ -31,7 +31,7 @@ export const PremiumProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (Capacitor.getPlatform() === 'web') {
           console.warn('RevenueCat is not supported on web. Mocking premium state for development.');
           // Mock data for web dev
-          setIsPro(false);
+          setIsPro(true);
           setIsLoading(false);
           return;
         }
@@ -87,7 +87,7 @@ export const PremiumProvider: React.FC<{ children: React.ReactNode }> = ({ child
     try {
       setIsLoading(true);
       const paywallResult = await RevenueCatUI.presentPaywall();
-      
+
       if (paywallResult.result === 'PURCHASED' || paywallResult.result === 'RESTORED') {
         const info = await Purchases.getCustomerInfo();
         updateCustomerState(info.customerInfo);

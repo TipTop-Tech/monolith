@@ -17,6 +17,7 @@ import { useNavigate, useLocation } from "react-router";
 import { Play, Pause, RotateCcw, Plus, Edit2, X, Trash2, ChevronDown } from "lucide-react";
 import { Capacitor } from "@capacitor/core";
 import { animate } from "motion";
+import { motion, AnimatePresence } from "motion/react";
 import { ScrollPicker } from "./ScrollPicker";
 import { WorkoutCarousel } from "./WorkoutCarousel";
 import { ExerciseGuidePanel } from "./ExerciseGuidePanel";
@@ -26,6 +27,39 @@ import { useReducedMotion } from "../../hooks/useReducedMotion";
 import { SPRING_SOFT } from "../../lib/motion";
 
 const NATIVE_SNAP = Capacitor.getPlatform() === "ios";
+
+const ANIMATION_MODE: "snappy" | "dramatic" | "simultaneous" = "simultaneous";
+
+const getContainerVariants = (mode: typeof ANIMATION_MODE, reduced: boolean) => {
+  if (reduced) return { hidden: { opacity: 1 }, visible: { opacity: 1 } };
+  let staggerChildren = 0.05;
+  if (mode === "dramatic") staggerChildren = 0.15;
+  if (mode === "simultaneous") staggerChildren = 0;
+
+  return {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren,
+        delayChildren: 0.1,
+      },
+    },
+  };
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, scale: 0.8 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    transition: {
+      type: "spring",
+      stiffness: 350,
+      damping: 20,
+    }
+  }
+};
 
 export function ActiveWorkout() {
   const navigate = useNavigate();
@@ -87,6 +121,7 @@ export function ActiveWorkout() {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const guideRef = useRef<HTMLDivElement>(null);
   const reducedMotion = useReducedMotion();
+  const containerVariants = getContainerVariants(ANIMATION_MODE, reducedMotion);
 
   // Wake Lock and Notification Permission Effect
   useEffect(() => {
@@ -382,7 +417,12 @@ export function ActiveWorkout() {
       style={NATIVE_SNAP ? undefined : { scrollSnapType: "none" }}
       className={`h-full overflow-y-auto hide-scrollbar${NATIVE_SNAP ? " snap-y snap-mandatory" : ""}`}
     >
-      <div className="h-full min-h-0 flex flex-col snap-start snap-always">
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="h-full min-h-0 flex flex-col snap-start snap-always"
+      >
         {/* Exercise Pills
         <div className="px-4 sm:px-6 pt-4 sm:pt-8 pb-3 sm:pb-6 overflow-x-auto">
           <div className="flex gap-2 sm:gap-4 pb-2">
@@ -409,19 +449,26 @@ export function ActiveWorkout() {
         {/* Rest Timer - Massive Typography */}
 
         <div className="flex flex-col items-center justify-center px-4 sm:px-6 py-4 sm:py-5 flex-1">
-          <div className="display-font text-4xl md:text-5xl bevel-text drop-shadow-[0_0_12px_rgba(255,255,255,0.3)]">{currentExercise?.name ?? "EXERCISE"}</div>
+          <motion.div variants={itemVariants} className="display-font text-4xl md:text-5xl bevel-text drop-shadow-[0_0_12px_rgba(255,255,255,0.3)]">{currentExercise?.name ?? "EXERCISE"}</motion.div>
 
-          <div className="label-font text-muted-foreground mt-4 sm:mt-8">REST TIME</div>
-          <button
+          <motion.div variants={itemVariants} className="label-font text-muted-foreground mt-4 sm:mt-8">REST TIME</motion.div>
+          <motion.button
+            variants={itemVariants}
             ref={timerRef}
             onClick={() => setPickerType("restTime")}
             className="display-font text-[min(30vw,150px)] sm:text-[min(40vw,180px)] leading-none bevel-text-large mt-2 sm:mt-4 transition-all hover:scale-105 active:scale-95 drop-shadow-[0_0_12px_rgba(255,255,255,0.3)]"
           >
-            {timeRemaining > 0 ? formatTime(timeRemaining) : "--:--"}
-          </button>
+            <motion.span
+              animate={isTimerRunning || reducedMotion ? undefined : { scale: [1, 1.02, 1] }}
+              transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+              className="block"
+            >
+              {timeRemaining > 0 ? formatTime(timeRemaining) : "--:--"}
+            </motion.span>
+          </motion.button>
 
           {/* Progress Bar - Directional Lighting */}
-          <div className="w-full max-w-sm h-1 bg-secondary mb-4 sm:mb-8">
+          <motion.div variants={itemVariants} className="w-full max-w-sm h-1 bg-secondary mb-4 sm:mb-8">
             <div
               className="h-full bg-primary transition-all duration-1000 ease-out"
               style={{
@@ -429,9 +476,9 @@ export function ActiveWorkout() {
                 boxShadow: "0 0 10px rgba(255, 255, 255, 0.3)",
               }}
             />
-          </div>
+          </motion.div>
 
-          <div className="flex gap-3 sm:gap-4 mt-2 items-center justify-center">
+          <motion.div variants={itemVariants} className="flex gap-3 sm:gap-4 mt-2 items-center justify-center">
             <button
               onPointerDown={() => setIsMinus10Pressed(true)}
               onPointerUp={() => setIsMinus10Pressed(false)}
@@ -493,10 +540,10 @@ export function ActiveWorkout() {
             >
               <span className="black-glass-text">+30S</span>
             </button>
-          </div>
+          </motion.div>
         </div>
 
-        <div className="flex-1 flex flex-col min-h-0 relative z-0">
+        <motion.div variants={itemVariants} className="flex-1 flex flex-col min-h-0 relative z-0">
           <WorkoutCarousel
             currentSlide={currentSlide}
             setCurrentSlide={setCurrentSlide}
@@ -514,10 +561,11 @@ export function ActiveWorkout() {
             weightUnit={weightUnit}
             setWeightUnit={setWeightUnit}
           />
-        </div>
+        </motion.div>
 
         {currentExercise && (
-          <button
+          <motion.button
+            variants={itemVariants}
             onClick={() => {
               haptics.tap();
               dismissGuideCoachMark();
@@ -537,9 +585,9 @@ export function ActiveWorkout() {
               <span className="label-font text-[10px]">HOW TO</span>
               <ChevronDown size={14} />
             </span>
-          </button>
+          </motion.button>
         )}
-      </div>
+      </motion.div>
 
       {currentExercise && (
         <div ref={guideRef} className="snap-start">
