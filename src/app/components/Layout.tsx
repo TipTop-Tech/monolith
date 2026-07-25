@@ -4,6 +4,7 @@ import { WorkoutProvider, useWorkout } from "../context/WorkoutContext";
 import { GlobalCanvas } from "./3d/GlobalCanvas";
 import { ActiveWorkoutBar } from "./ActiveWorkoutBar";
 import { LiveActivityManager } from "./LiveActivityManager";
+import { NoiseBackground } from "./ui/NoiseBackground";
 
 function BottomNav() {
   const location = useLocation();
@@ -70,6 +71,7 @@ export function Layout() {
   return (
     <WorkoutProvider>
       <LiveActivityManager />
+      <NoiseBackground />
       <div className="h-full flex flex-col min-h-0 pt-[env(safe-area-inset-top)]">
         <main className="flex-1 min-h-0 overflow-auto overscroll-none pointer-events-auto">
           <Outlet />
