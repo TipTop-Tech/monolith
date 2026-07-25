@@ -26,8 +26,18 @@ export const StartOverlay: React.FC<{ children: React.ReactNode }> = ({ children
 
   if (showOverlay && !hasStarted) {
     return (
-      <div className="fixed inset-0 z-[9999] bg-background flex flex-col items-center justify-center">
-        <h1 className="text-4xl font-bold mb-8 text-primary">Welcome</h1>
+      <div className="fixed inset-0 z-[10000] bg-#171414 flex flex-col items-center justify-center">
+        <img
+          src="/assets/Monolith Logo.svg"
+          alt="Monolith Logo"
+          className="w-[500px] h-[500px] mb-6 z-52"
+        />
+        <h1
+          className="text-4xl font-bold mb-8 text-primary"
+          style={{ textShadow: '0 0 10px hsl(var(--primary)), 0 0 20px hsl(var(--primary))' }}
+        >
+          Welcome
+        </h1>
         <p className="text-muted-foreground mb-8 text-center px-4 max-w-sm">
           Click start to enter the application.
         </p>
