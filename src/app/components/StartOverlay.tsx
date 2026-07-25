@@ -27,26 +27,27 @@ export const StartOverlay: React.FC<{ children: React.ReactNode }> = ({ children
   if (showOverlay && !hasStarted) {
     return (
       <div className="fixed inset-0 z-[10000] bg-#171414 flex flex-col items-center justify-center">
-        <img
-          src="/assets/Monolith Logo.svg"
-          alt="Monolith Logo"
-          className="w-[500px] h-[500px] mb-6 z-52"
-        />
+
         <h1
-          className="text-4xl font-bold mb-8 text-primary"
-          style={{ textShadow: '0 0 10px hsl(var(--primary)), 0 0 20px hsl(var(--primary))' }}
+          className="display-font text-[80px] bevel-text-large mb-2"
         >
           Welcome
         </h1>
-        <p className="text-muted-foreground mb-8 text-center px-4 max-w-sm">
-          Click start to enter the application.
-        </p>
-        <button
-          onClick={handleStart}
-          className="px-8 py-3 bg-primary text-primary-foreground rounded-full text-lg font-semibold hover:bg-primary/90 transition-colors shadow-lg active:scale-95"
-        >
-          Start
-        </button>
+
+        <div className="relative w-[500px] h-[400px] mb-6 z-52">
+          <img
+            src="/assets/Monolith Logo.svg"
+            alt="Monolith Logo"
+            className="w-full h-full"
+          />
+
+          <button
+            onClick={handleStart}
+            className="absolute left-[50%] top-[175px] -translate-x-1/2 -translate-y-1/2 w-[41.5px] h-[41.5px] rounded-full bg-white cursor-pointer z-50 group border-none outline-none shadow-lg"
+          >
+            <span className="absolute inset-0 rounded-full bg-white animate-ping opacity-75 group-hover:opacity-100 transition-opacity"></span>
+          </button>
+        </div>
       </div>
     );
   }
