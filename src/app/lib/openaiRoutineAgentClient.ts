@@ -3,8 +3,11 @@ import type { RoutineAgentInput, RoutineAgentResult } from "./routineAgent";
 
 const DEFAULT_AGENT_API_URL = "http://localhost:8787";
 
-type OpenAIAgentPayload = RoutineAgentInput & {
+export type HostedRoutineProvider = "openai" | "gemini";
+
+type HostedAgentPayload = RoutineAgentInput & {
   exercises: Exercise[];
+  provider: HostedRoutineProvider;
 };
 
 function getAgentApiBaseUrl() {
@@ -16,7 +19,7 @@ function getAgentApiBaseUrl() {
 
 function normalizeAgentResult(result: unknown): RoutineAgentResult {
   if (!result || typeof result !== "object") {
-    throw new Error("OpenAI agent returned an empty or invalid response.");
+    throw new Error("AI agent returned an empty or invalid response.");
   }
 
   const candidate = result as RoutineAgentResult;
@@ -24,7 +27,7 @@ function normalizeAgentResult(result: unknown): RoutineAgentResult {
   if (candidate.status === "needs_clarification") {
     return {
       status: "needs_clarification",
-      message: candidate.message || "The OpenAI agent needs more detail before generating the routine.",
+      message: candidate.message || "The AI agent needs more detail before generating the routine.",
       questions: Array.isArray(candidate.questions) ? candidate.questions : [],
     };
   }
@@ -33,16 +36,18 @@ function normalizeAgentResult(result: unknown): RoutineAgentResult {
     return candidate;
   }
 
-  throw new Error("OpenAI agent returned an unsupported response shape.");
+  throw new Error("AI agent returned an unsupported response shape.");
 }
 
-export async function generateRoutineWithOpenAI(
+export async function generateRoutineWithHostedAI(
   exercises: Exercise[],
-  input: RoutineAgentInput
+  input: RoutineAgentInput,
+  provider: HostedRoutineProvider
 ): Promise<RoutineAgentResult> {
-  const payload: OpenAIAgentPayload = {
+  const payload: HostedAgentPayload = {
     ...input,
     exercises,
+    provider,
   };
 
   const response = await fetch(`${getAgentApiBaseUrl()}/api/generate-routine`, {
@@ -59,9 +64,17 @@ export async function generateRoutineWithOpenAI(
     const message =
       responseBody && typeof responseBody.error === "string"
         ? responseBody.error
-        : `OpenAI agent request failed with status ${response.status}.`;
+        : `${provider === "gemini" ? "Gemini" : "OpenAI"} agent request failed with status ${response.status}.`;
     throw new Error(message);
   }
 
   return normalizeAgentResult(responseBody);
+}
+
+// Backwards-compatible alias for any older code that still imports this function.
+export async function generateRoutineWithOpenAI(
+  exercises: Exercise[],
+  input: RoutineAgentInput
+): Promise<RoutineAgentResult> {
+  return generateRoutineWithHostedAI(exercises, input, "openai");
 }
