@@ -3,11 +3,8 @@ import { randomUUID } from "node:crypto";
 import OpenAI from "openai";
 
 const PORT = Number(process.env.AGENT_SERVER_PORT || 8787);
-const MODEL = process.env.OPENAI_ROUTINE_MODEL || "gpt-4o-mini";
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const OPENAI_MODEL = process.env.OPENAI_ROUTINE_MODEL || "gpt-4o-mini";
+const GEMINI_MODEL = process.env.GEMINI_ROUTINE_MODEL || "gemini-2.5-flash";
 
 const routineSchema = {
   type: "object",
@@ -63,7 +60,7 @@ function sendJson(response, statusCode, body) {
   response.writeHead(statusCode, {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Methods": "POST, OPTIONS, GET",
     "Access-Control-Allow-Headers": "Content-Type",
   });
   response.end(JSON.stringify(body));
@@ -97,6 +94,13 @@ function normalizeText(value) {
   return String(value || "").trim();
 }
 
+function normalizeProvider(value) {
+  const provider = String(value || "openai").toLowerCase();
+  if (provider === "gemini") return "gemini";
+  if (provider === "openai") return "openai";
+  throw new Error(`Unsupported AI provider: ${value}. Use openai or gemini.`);
+}
+
 function buildExerciseCatalog(exercises) {
   return exercises
     .filter((exercise) => exercise && exercise.id && exercise.name)
@@ -112,7 +116,7 @@ function buildExerciseCatalog(exercises) {
     });
 }
 
-function sanitizeResult(rawResult, availableExercises) {
+function sanitizeResult(rawResult, availableExercises, provider) {
   const availableIds = new Set(availableExercises.map((exercise) => exercise.id));
 
   if (rawResult.status === "needs_clarification") {
@@ -150,7 +154,7 @@ function sanitizeResult(rawResult, availableExercises) {
   if (routineExercises.length < 3) {
     return {
       status: "needs_clarification",
-      message: "The AI response did not map cleanly to enough available exercises in the app.",
+      message: `The ${provider === "gemini" ? "Gemini" : "OpenAI"} response did not map cleanly to enough available exercises in the app.`,
       questions: [
         "Try naming a common split like chest/back, push, pull, legs, upper body, or full body.",
         "If you requested a specific exercise, make sure it exists in the app exercise list or allow a close substitute.",
@@ -162,10 +166,10 @@ function sanitizeResult(rawResult, availableExercises) {
     status: "ready",
     routine: {
       id: randomUUID(),
-      name: normalizeText(rawRoutine?.name) || "AI Workout",
+      name: normalizeText(rawRoutine?.name) || `${provider === "gemini" ? "Gemini" : "OpenAI"} Workout`,
       exercises: routineExercises,
     },
-    summary: normalizeText(rawResult.summary) || "Generated with the OpenAI routine agent.",
+    summary: normalizeText(rawResult.summary) || `Generated with the ${provider === "gemini" ? "Gemini" : "OpenAI"} routine agent.`,
     assumptions: Array.isArray(rawResult.assumptions)
       ? rawResult.assumptions.map(normalizeText).filter(Boolean)
       : [],
@@ -173,12 +177,12 @@ function sanitizeResult(rawResult, availableExercises) {
 }
 
 function buildSystemPrompt() {
-  return `You are the OpenAI routine-generation agent for Monolith, a minimal workout logging app.
+  return `You are the Monolith routine-generation agent for a minimal workout logging app.
 
 Your job is to turn the user's workout request into a realistic routine using ONLY the available exercises provided by the app.
 
 Hard rules:
-- Return only the requested JSON shape.
+- Return only valid JSON. Do not use markdown or code fences.
 - Use exact exercise IDs from the available exercise catalog. Do not invent exercise IDs.
 - If the user asks for a specific exercise that exists, include it.
 - If the user asks for a specific exercise that does not exist, choose the closest available substitute and explain that in assumptions.
@@ -212,30 +216,42 @@ function buildUserPrompt(payload, exerciseCatalog) {
       experience: payload.experience || "beginner",
       generateAnyway: Boolean(payload.generateAnyway),
       availableExercises: exerciseCatalog,
+      expectedJsonShape: routineSchema,
     },
     null,
     2
   );
 }
 
-async function handleGenerateRoutine(request, response) {
+function extractJsonObject(text) {
+  const cleaned = String(text || "")
+    .trim()
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/```$/i, "")
+    .trim();
+
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    const start = cleaned.indexOf("{");
+    const end = cleaned.lastIndexOf("}");
+    if (start >= 0 && end > start) {
+      return JSON.parse(cleaned.slice(start, end + 1));
+    }
+    throw new Error("AI provider returned text that could not be parsed as JSON.");
+  }
+}
+
+async function generateWithOpenAI(payload, exerciseCatalog) {
   if (!process.env.OPENAI_API_KEY) {
-    sendJson(response, 500, {
-      error: "OPENAI_API_KEY is not set on the backend. Set it as an environment variable and restart npm run dev:ai.",
-    });
-    return;
+    throw new Error("OPENAI_API_KEY is not set. Set it as an environment variable and restart npm run dev:ai.");
   }
 
-  const payload = await readJson(request);
-  const exerciseCatalog = buildExerciseCatalog(payload.exercises || []);
-
-  if (exerciseCatalog.length === 0) {
-    sendJson(response, 400, { error: "No exercises were provided to the OpenAI agent." });
-    return;
-  }
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
   const completion = await openai.chat.completions.create({
-    model: MODEL,
+    model: OPENAI_MODEL,
     temperature: 0.35,
     messages: [
       { role: "system", content: buildSystemPrompt() },
@@ -256,8 +272,69 @@ async function handleGenerateRoutine(request, response) {
     throw new Error("OpenAI returned an empty response.");
   }
 
-  const parsed = JSON.parse(content);
-  sendJson(response, 200, sanitizeResult(parsed, exerciseCatalog));
+  return extractJsonObject(content);
+}
+
+async function generateWithGemini(payload, exerciseCatalog) {
+  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  if (!apiKey) {
+    throw new Error("GEMINI_API_KEY is not set. Set GEMINI_API_KEY or GOOGLE_API_KEY as an environment variable and restart npm run dev:ai.");
+  }
+
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [
+        {
+          role: "user",
+          parts: [
+            {
+              text: `${buildSystemPrompt()}\n\nReturn JSON matching this schema:\n${JSON.stringify(routineSchema, null, 2)}\n\nUser data and exercise catalog:\n${buildUserPrompt(payload, exerciseCatalog)}`,
+            },
+          ],
+        },
+      ],
+      generationConfig: {
+        temperature: 0.35,
+        responseMimeType: "application/json",
+      },
+    }),
+  });
+
+  const body = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const detail = body?.error?.message || response.statusText || "Unknown Gemini API error.";
+    throw new Error(`Gemini request failed: ${detail}`);
+  }
+
+  const content = body?.candidates?.[0]?.content?.parts?.map((part) => part.text || "").join("\n");
+  if (!content) {
+    throw new Error("Gemini returned an empty response.");
+  }
+
+  return extractJsonObject(content);
+}
+
+async function handleGenerateRoutine(request, response) {
+  const payload = await readJson(request);
+  const provider = normalizeProvider(payload.provider);
+  const exerciseCatalog = buildExerciseCatalog(payload.exercises || []);
+
+  if (exerciseCatalog.length === 0) {
+    sendJson(response, 400, { error: "No exercises were provided to the AI routine agent." });
+    return;
+  }
+
+  const rawResult =
+    provider === "gemini"
+      ? await generateWithGemini(payload, exerciseCatalog)
+      : await generateWithOpenAI(payload, exerciseCatalog);
+
+  sendJson(response, 200, sanitizeResult(rawResult, exerciseCatalog, provider));
 }
 
 const server = createServer(async (request, response) => {
@@ -273,7 +350,13 @@ const server = createServer(async (request, response) => {
     }
 
     if (request.method === "GET" && request.url === "/health") {
-      sendJson(response, 200, { ok: true, model: MODEL });
+      sendJson(response, 200, {
+        ok: true,
+        openaiModel: OPENAI_MODEL,
+        geminiModel: GEMINI_MODEL,
+        hasOpenAIKey: Boolean(process.env.OPENAI_API_KEY),
+        hasGeminiKey: Boolean(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY),
+      });
       return;
     }
 
@@ -281,11 +364,12 @@ const server = createServer(async (request, response) => {
   } catch (error) {
     console.error(error);
     sendJson(response, 500, {
-      error: error instanceof Error ? error.message : "OpenAI routine server failed.",
+      error: error instanceof Error ? error.message : "AI routine server failed.",
     });
   }
 });
 
 server.listen(PORT, () => {
-  console.log(`OpenAI routine agent server running at http://localhost:${PORT}`);
+  console.log(`AI routine agent server running at http://localhost:${PORT}`);
+  console.log(`OpenAI model: ${OPENAI_MODEL}; Gemini model: ${GEMINI_MODEL}`);
 });
