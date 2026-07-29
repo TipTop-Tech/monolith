@@ -26,6 +26,18 @@ import { Textarea } from "../ui/textarea";
 import { generateRoutineWithAgent, type RoutineAgentResult, type TrainingExperience, type TrainingSex } from "../../lib/routineAgent";
 import { generateRoutineWithHostedAI, type HostedRoutineProvider } from "../../lib/openaiRoutineAgentClient";
 
+type AgentMode = HostedRoutineProvider | "local";
+
+const AGENT_MODE_OPTIONS: { value: AgentMode; label: string; helper: string }[] = [
+  { value: "openai", label: "OpenAI", helper: "Best for nuanced prompts" },
+  { value: "gemini", label: "Gemini", helper: "Alternate hosted AI" },
+  { value: "local", label: "Local", helper: "No API key fallback" },
+];
+
+function getAgentModeLabel(mode: AgentMode) {
+  return AGENT_MODE_OPTIONS.find((option) => option.value === mode)?.label ?? "Local";
+}
+
 const BODY_PARTS = [
   { key: "chest", label: "Chest" },
   { key: "front-deltoids", label: "Front Deltoids" },
@@ -217,7 +229,7 @@ export function Routines() {
   const [aiBodyWeight, setAiBodyWeight] = useState("");
   const [aiSex, setAiSex] = useState<TrainingSex>("unspecified");
   const [aiExperience, setAiExperience] = useState<TrainingExperience>("beginner");
-  const [aiAgentMode, setAiAgentMode] = useState<HostedRoutineProvider | "local">("openai");
+  const [aiAgentMode, setAiAgentMode] = useState<AgentMode>("openai");
   const [aiResult, setAiResult] = useState<RoutineAgentResult | null>(null);
   const [isGeneratingRoutine, setIsGeneratingRoutine] = useState(false);
 
@@ -649,7 +661,7 @@ export function Routines() {
           <DialogHeader>
             <DialogTitle>Create routine with agent</DialogTitle>
             <DialogDescription>
-              Describe the workout, then choose OpenAI, Gemini, or Local from the Generate Preview control.
+              Describe the workout, then choose the agent with the physical buttons below.
             </DialogDescription>
           </DialogHeader>
 
@@ -666,10 +678,47 @@ export function Routines() {
                 className="min-h-28"
               />
               <p className="text-xs leading-5 text-muted-foreground">
-                Use the dropdown attached to Generate Preview to switch between OpenAI, Gemini, and Local.
+                Choose OpenAI for nuanced prompts, Gemini as another hosted model, or Local as the offline fallback.
               </p>
             </div>
 
+            <div className="space-y-2 rounded-2xl border border-border bg-secondary/35 p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="label-font text-xs text-muted-foreground">AGENT MODE</div>
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    Currently using: <span className="text-foreground">{getAgentModeLabel(aiAgentMode)} Agent</span>
+                  </div>
+                </div>
+                <Sparkles size={16} className="text-muted-foreground" />
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                {AGENT_MODE_OPTIONS.map((option) => {
+                  const isSelected = aiAgentMode === option.value;
+
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => {
+                        setAiAgentMode(option.value);
+                        setAiResult(null);
+                      }}
+                      disabled={isGeneratingRoutine}
+                      className={`rounded-md border px-3 py-2 text-left transition-all active:scale-[0.98] ${
+                        isSelected
+                          ? "border-white/40 bg-accent text-foreground"
+                          : "border-white/10 bg-background/60 text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+                      }`}
+                    >
+                      <div className="label-font text-[10px] tracking-[0.25em]">{option.label}</div>
+                      <div className="mt-1 text-[10px] leading-3 opacity-80">{option.helper}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
@@ -780,30 +829,14 @@ export function Routines() {
             <Button variant="outline" onClick={() => setIsAIRoutineOpen(false)}>
               Cancel
             </Button>
-            <div className="flex flex-1 items-center gap-0 overflow-hidden rounded-md border border-input bg-background">
-              <Button
-                variant="ghost"
-                className="flex-1 rounded-none border-0 px-3"
-                onClick={() => void handleGenerateAIRoutine(false)}
-                disabled={isGeneratingRoutine}
-              >
-                {isGeneratingRoutine ? "Generating..." : "Generate preview"}
-              </Button>
-              <select
-                aria-label="AI agent mode"
-                value={aiAgentMode}
-                onChange={(event) => {
-                  setAiAgentMode(event.target.value as HostedRoutineProvider | "local");
-                  setAiResult(null);
-                }}
-                disabled={isGeneratingRoutine}
-                className="h-10 border-l border-border bg-background px-2 text-xs text-foreground outline-none"
-              >
-                <option value="openai">OpenAI</option>
-                <option value="gemini">Gemini</option>
-                <option value="local">Local</option>
-              </select>
-            </div>
+            <Button
+              onClick={() => void handleGenerateAIRoutine(false)}
+              disabled={isGeneratingRoutine}
+            >
+              {isGeneratingRoutine
+                ? `Generating with ${getAgentModeLabel(aiAgentMode)}...`
+                : `Generate preview with ${getAgentModeLabel(aiAgentMode)}`}
+            </Button>
             <Button onClick={handleAddGeneratedRoutine} disabled={aiResult?.status !== "ready" || isGeneratingRoutine}>
               Add routine
             </Button>
