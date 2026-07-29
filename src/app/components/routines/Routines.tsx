@@ -665,47 +665,33 @@ export function Routines() {
             </DialogDescription>
           </DialogHeader>
 
-<div className="space-y-2">
-  <div className="label-font text-xs text-muted-foreground">AGENT MODE</div>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <div className="label-font text-xs text-muted-foreground">PROMPT</div>
+              <Textarea
+                value={aiPrompt}
+                onChange={(event) => {
+                  setAiPrompt(event.target.value);
+                  setAiResult(null);
+                }}
+                placeholder="Make me a 1 hour upper body workout. I am a distance freestyle swimmer, sore from yesterday, and I do not want to lift too heavy."
+                className="min-h-28"
+              />
+              <p className="text-xs leading-5 text-muted-foreground">
+                Choose OpenAI for nuanced prompts, Gemini as another hosted model, or Local as the offline fallback.
+              </p>
+            </div>
 
-  <div className="grid grid-cols-3 gap-2">
-    <Button
-      type="button"
-      variant={aiAgentMode === "openai" ? "default" : "outline"}
-      onClick={() => setAiAgentMode("openai")}
-      className="button-font text-xs"
-    >
-      OPENAI
-    </Button>
-
-    <Button
-      type="button"
-      variant={aiAgentMode === "gemini" ? "default" : "outline"}
-      onClick={() => setAiAgentMode("gemini")}
-      className="button-font text-xs"
-    >
-      GEMINI
-    </Button>
-
-    <Button
-      type="button"
-      variant={aiAgentMode === "local" ? "default" : "outline"}
-      onClick={() => setAiAgentMode("local")}
-      className="button-font text-xs"
-    >
-      LOCAL
-    </Button>
-  </div>
-
-  <p className="text-xs text-muted-foreground">
-    Currently using:{" "}
-    {aiAgentMode === "openai"
-      ? "OpenAI Agent"
-      : aiAgentMode === "gemini"
-      ? "Gemini Agent"
-      : "Local Dictionary Agent"}
-  </p>
-</div>
+            <div className="space-y-2 rounded-2xl border border-border bg-secondary/35 p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="label-font text-xs text-muted-foreground">AGENT MODE</div>
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    Currently using: <span className="text-foreground">{getAgentModeLabel(aiAgentMode)} Agent</span>
+                  </div>
+                </div>
+                <Sparkles size={16} className="text-muted-foreground" />
+              </div>
 
               <div className="grid grid-cols-3 gap-2">
                 {AGENT_MODE_OPTIONS.map((option) => {
