@@ -69,7 +69,7 @@ export const StartOverlay: React.FC<{ children: React.ReactNode }> = ({ children
               }}
             >
               <img
-                src="/assets/Monolith Logo.svg"
+                src="/assets/Monolith_Logo.svg"
                 alt="Monolith Logo"
                 className="w-full h-full pointer-events-none"
               />
