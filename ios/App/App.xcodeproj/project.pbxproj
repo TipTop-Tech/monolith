@@ -13,7 +13,6 @@
 		2866CF1C2FFF85000070F6CC /* WorkoutActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2866CF1B2FFF85000070F6CC /* WorkoutActivityAttributes.swift */; };
 		2866CF1D2FFF85000070F6CC /* LiveActivityPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2866CF1A2FFF85000070F6CC /* LiveActivityPlugin.swift */; };
 		2866CF1E2FFF85000070F6CC /* WorkoutActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2866CF1B2FFF85000070F6CC /* WorkoutActivityAttributes.swift */; };
-		2866CF212FFF89B10070F6CC /* LiveActivityPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2866CF1A2FFF85000070F6CC /* LiveActivityPlugin.swift */; };
 		2FAD9763203C412B000D30F8 /* config.xml in Resources */ = {isa = PBXBuildFile; fileRef = 2FAD9762203C412B000D30F8 /* config.xml */; };
 		4D22ABE92AF431CB00220026 /* CapApp-SPM in Frameworks */ = {isa = PBXBuildFile; productRef = 4D22ABE82AF431CB00220026 /* CapApp-SPM */; };
 		50379B232058CBB4000EE86E /* capacitor.config.json in Resources */ = {isa = PBXBuildFile; fileRef = 50379B222058CBB4000EE86E /* capacitor.config.json */; };
@@ -264,7 +263,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				2866CF1E2FFF85000070F6CC /* WorkoutActivityAttributes.swift in Sources */,
-				2866CF212FFF89B10070F6CC /* LiveActivityPlugin.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -328,7 +326,7 @@
 				INFOPLIST_FILE = WorkoutWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = WorkoutWidget;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -371,7 +369,7 @@
 				INFOPLIST_FILE = WorkoutWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = WorkoutWidget;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
