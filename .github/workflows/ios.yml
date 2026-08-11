@@ -13,14 +13,29 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Web App
+        run: npm run build
+
+      - name: Sync Capacitor
+        run: npx cap sync ios
+
       - name: Show Xcode version
         run: xcodebuild -version
 
       - name: Build
         run: |
           xcodebuild \
-            -project YourApp.xcodeproj \
-            -scheme YourApp \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
             -sdk iphonesimulator \
             -configuration Debug \
             CODE_SIGNING_ALLOWED=NO \
