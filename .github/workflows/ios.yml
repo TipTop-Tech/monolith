@@ -65,6 +65,8 @@ jobs:
               <string>app-store</string>
               <key>destination</key>
               <string>export</string>
+              <key>teamID</key>
+              <string>7R3NC9TF85</string>
           </dict>
           </plist>
           EOF
@@ -86,7 +88,7 @@ jobs:
             -authenticationKeyPath $RUNNER_TEMP/AuthKey/AuthKey_${{ secrets.APPSTORE_API_KEY_ID }}.p8 \
             -authenticationKeyID ${{ secrets.APPSTORE_API_KEY_ID }} \
             -authenticationKeyIssuerID ${{ secrets.APPSTORE_ISSUER_ID }} \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
+            DEVELOPMENT_TEAM="7R3NC9TF85" \
             clean archive
 
       - name: Export IPA
