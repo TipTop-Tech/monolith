@@ -78,7 +78,7 @@ jobs:
 
       - name: Build and Archive
         run: |
-          xcodebuild \
+          xcodebuild archive \
             -project ios/App/App.xcodeproj \
             -scheme App \
             -configuration Release \
