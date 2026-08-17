@@ -90,6 +90,7 @@ jobs:
             -authenticationKeyIssuerID ${{ secrets.APPSTORE_ISSUER_ID }} \
             DEVELOPMENT_TEAM="7R3NC9TF85" \
             PROVISIONING_PROFILE_SPECIFIER="" \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
             -verbose \
             clean archive
 
