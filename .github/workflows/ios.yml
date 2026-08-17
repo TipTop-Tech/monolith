@@ -86,6 +86,7 @@ jobs:
             -authenticationKeyPath $RUNNER_TEMP/AuthKey/AuthKey_${{ secrets.APPSTORE_API_KEY_ID }}.p8 \
             -authenticationKeyID ${{ secrets.APPSTORE_API_KEY_ID }} \
             -authenticationKeyIssuerID ${{ secrets.APPSTORE_ISSUER_ID }} \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
             clean archive
 
       - name: Export IPA
