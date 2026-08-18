@@ -88,6 +88,9 @@ jobs:
             -authenticationKeyPath $RUNNER_TEMP/AuthKey/AuthKey_${{ secrets.APPSTORE_API_KEY_ID }}.p8 \
             -authenticationKeyID ${{ secrets.APPSTORE_API_KEY_ID }} \
             -authenticationKeyIssuerID ${{ secrets.APPSTORE_ISSUER_ID }} \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
             DEVELOPMENT_TEAM="7R3NC9TF85" \
             -verbose \
             clean archive
