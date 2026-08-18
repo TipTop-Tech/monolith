@@ -62,12 +62,30 @@ jobs:
           security list-keychain -d user -s $KEYCHAIN_PATH
           security default-keychain -s $KEYCHAIN_PATH
 
-      - name: Install the widget provisioning profile
+      - name: Install the provisioning profiles
         env:
+          BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.BUILD_PROVISION_PROFILE_BASE64 }}
           WIDGET_PROVISIONING_PROFILE_BASE64: ${{ secrets.WIDGET_PROVISIONING_PROFILE_BASE64 }}
         run: |
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          echo -n "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode -o ~/Library/MobileDevice/Provisioning\ Profiles/app.mobileprovision
           echo -n "$WIDGET_PROVISIONING_PROFILE_BASE64" | base64 --decode -o ~/Library/MobileDevice/Provisioning\ Profiles/widget.mobileprovision
+          
+          # Extract UUIDs and Names
+          APP_UUID=$(grep -aA1 UUID ~/Library/MobileDevice/Provisioning\ Profiles/app.mobileprovision | grep -o "[-A-Z0-9]\{36\}")
+          WIDGET_UUID=$(grep -aA1 UUID ~/Library/MobileDevice/Provisioning\ Profiles/widget.mobileprovision | grep -o "[-A-Z0-9]\{36\}")
+          APP_NAME=$(grep -aA1 '<key>Name</key>' ~/Library/MobileDevice/Provisioning\ Profiles/app.mobileprovision | grep '<string>' | sed -e 's/.*<string>\(.*\)<\/string>.*/\1/')
+          WIDGET_NAME=$(grep -aA1 '<key>Name</key>' ~/Library/MobileDevice/Provisioning\ Profiles/widget.mobileprovision | grep '<string>' | sed -e 's/.*<string>\(.*\)<\/string>.*/\1/')
+          
+          # Rename to UUID
+          mv ~/Library/MobileDevice/Provisioning\ Profiles/app.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/$APP_UUID.mobileprovision
+          mv ~/Library/MobileDevice/Provisioning\ Profiles/widget.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/$WIDGET_UUID.mobileprovision
+          
+          # Export to ENV
+          echo "APP_PROVISIONING_PROFILE=$APP_UUID" >> $GITHUB_ENV
+          echo "WIDGET_PROVISIONING_PROFILE=$WIDGET_UUID" >> $GITHUB_ENV
+          echo "APP_PROVISIONING_PROFILE_NAME=$APP_NAME" >> $GITHUB_ENV
+          echo "WIDGET_PROVISIONING_PROFILE_NAME=$WIDGET_NAME" >> $GITHUB_ENV
 
       - name: Generate ExportOptions.plist
         run: |
@@ -84,6 +102,13 @@ jobs:
               <string>7R3NC9TF85</string>
               <key>manageAppVersionAndBuildNumber</key>
               <true/>
+              <key>provisioningProfiles</key>
+              <dict>
+                  <key>com.tiptop.monolith</key>
+                  <string>${{ env.APP_PROVISIONING_PROFILE_NAME }}</string>
+                  <key>com.tiptop.monolith.WorkoutWidget</key>
+                  <string>${{ env.WIDGET_PROVISIONING_PROFILE_NAME }}</string>
+              </dict>
           </dict>
           </plist>
           EOF
