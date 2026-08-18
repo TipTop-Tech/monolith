@@ -1,3 +1,10 @@
+# ==========================================
+# APPLE DISTRIBUTION WORKFLOW ONLY
+# This workflow is strictly configured for Apple Distribution (Manual Signing).
+# Note: Because this enforces Apple Distribution during the Archive step,
+# Xcode's Automatic Signing cannot be used. You must ensure your provisioning
+# profiles are either installed locally or explicitly managed.
+# ==========================================
 name: Setup iOS
 
 on:
@@ -91,6 +98,8 @@ jobs:
             -authenticationKeyPath $RUNNER_TEMP/AuthKey/AuthKey_${{ secrets.APPSTORE_API_KEY_ID }}.p8 \
             -authenticationKeyID ${{ secrets.APPSTORE_API_KEY_ID }} \
             -authenticationKeyIssuerID ${{ secrets.APPSTORE_ISSUER_ID }} \
+            CODE_SIGN_STYLE="Manual" \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
             DEVELOPMENT_TEAM="7R3NC9TF85" \
             -verbose \
             clean archive
