@@ -6,11 +6,11 @@ import { Button } from "../ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import { LogOut, User, Crown, RefreshCcw, Settings, ChevronRight } from "lucide-react";
-import { usePremium } from "../../context/PremiumContext";
+// import { usePremium } from "../../context/PremiumContext";
 
 export const AccountPage = () => {
   const { user } = useAuth();
-  const { isPro, isLoading, presentPaywall, presentCustomerCenter, restorePurchases } = usePremium();
+  // const { isPro, isLoading, presentPaywall, presentCustomerCenter, restorePurchases } = usePremium();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -63,7 +63,7 @@ export const AccountPage = () => {
         </CardContent>
       </Card>
 
-      <Card>
+      {/* <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <Crown className={`w-5 h-5 ${isPro ? "text-yellow-500" : "text-muted-foreground"}`} />
@@ -97,6 +97,18 @@ export const AccountPage = () => {
               </>
             )}
           </div>
+        </CardContent>
+      </Card> */}
+
+      <Card>
+        <CardHeader className="flex flex-row items-center gap-2">
+          <Crown className="w-5 h-5 text-muted-foreground" />
+          <CardTitle className="text-base">Premium</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            Premium coming soon.
+          </p>
         </CardContent>
       </Card>
 
