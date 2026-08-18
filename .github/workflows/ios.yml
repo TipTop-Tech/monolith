@@ -53,6 +53,7 @@ jobs:
           security import $CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
           security list-keychain -d user -s $KEYCHAIN_PATH
+          security default-keychain -s $KEYCHAIN_PATH
 
       - name: Generate ExportOptions.plist
         run: |
@@ -67,6 +68,8 @@ jobs:
               <string>export</string>
               <key>teamID</key>
               <string>7R3NC9TF85</string>
+              <key>manageAppVersionAndBuildNumber</key>
+              <true/>
           </dict>
           </plist>
           EOF
@@ -88,9 +91,6 @@ jobs:
             -authenticationKeyPath $RUNNER_TEMP/AuthKey/AuthKey_${{ secrets.APPSTORE_API_KEY_ID }}.p8 \
             -authenticationKeyID ${{ secrets.APPSTORE_API_KEY_ID }} \
             -authenticationKeyIssuerID ${{ secrets.APPSTORE_ISSUER_ID }} \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO \
             DEVELOPMENT_TEAM="7R3NC9TF85" \
             -verbose \
             clean archive
