@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Capacitor } from '@capacitor/core';
 import { playStartupSound } from '../../utils/audio';
 import { StaticNoiseBackground } from './ui/NoiseBackground';
 import { motion, useAnimation, AnimatePresence } from 'motion/react';
@@ -11,18 +10,13 @@ export const StartOverlay: React.FC<{ children: React.ReactNode }> = ({ children
   const noiseControls = useAnimation();
 
   useEffect(() => {
-    if (Capacitor.getPlatform() === 'web') {
-      setShowOverlay(true);
-      // Subtle background noise drift before start
-      noiseControls.start({
-        x: ["0%", "-2%", "0%"],
-        y: ["0%", "2%", "0%"],
-        transition: { duration: 15, ease: "linear", repeat: Infinity }
-      });
-    } else {
-      // On mobile, just play the sound (if it's the first time)
-      playStartupSound();
-    }
+    setShowOverlay(true);
+    // Subtle background noise drift before start
+    noiseControls.start({
+      x: ["0%", "-2%", "0%"],
+      y: ["0%", "2%", "0%"],
+      transition: { duration: 15, ease: "linear", repeat: Infinity }
+    });
   }, [noiseControls]);
 
   const handleStart = async () => {
