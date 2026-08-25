@@ -2,6 +2,7 @@ import { supabase } from '../database/supabase';
 import { db } from '../database';
 import { Capacitor } from '@capacitor/core';
 import { SignInWithApple } from '@capacitor-community/apple-sign-in';
+import { GoogleSignIn } from '@capawesome/capacitor-google-sign-in';
 
 export interface User {
   id: string;
@@ -47,11 +48,30 @@ export class AuthService {
    */
   static async oauthGoogle() {
     await this.clearLocalData();
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-    });
-    if (error) throw error;
-    return data;
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const result = await GoogleSignIn.signIn();
+        if (result && result.idToken) {
+          const { data, error } = await supabase.auth.signInWithIdToken({
+            provider: 'google',
+            token: result.idToken,
+          });
+          if (error) throw error;
+          return data;
+        } else {
+          throw new Error('No identity token returned from Google Sign In');
+        }
+      } catch (err) {
+        console.error("Native Google Sign In error", err);
+        throw err;
+      }
+    } else {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+      });
+      if (error) throw error;
+      return data;
+    }
   }
 
   /**

@@ -1,5 +1,12 @@
 {
   "appId": "com.tiptop.monolith",
   "appName": "Monolith",
-  "webDir": "dist"
+  "webDir": "dist",
+  "plugins": {
+    "GoogleSignIn": {
+      "clientId": "179560489431-u1o6e9ki25nnetmn41um8dgpviuhknfk.apps.googleusercontent.com",
+      "iosClientId": "179560489431-f9i3gcg5v2jr3tetur9lmre9hemnhjbp.apps.googleusercontent.com",
+      "scopes": ["profile", "email"]
+    }
+  }
 }

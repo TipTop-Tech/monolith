@@ -4,7 +4,7 @@ import PackageDescription
 // DO NOT MODIFY THIS FILE - managed by Capacitor CLI commands
 let package = Package(
     name: "CapApp-SPM",
-    platforms: [.iOS(.v15)],
+    platforms: [.iOS(.v16)],
     products: [
         .library(
             name: "CapApp-SPM",
@@ -17,6 +17,7 @@ let package = Package(
         .package(name: "CapacitorCommunitySqlite", path: "..\..\..\node_modules\@capacitor-community\sqlite"),
         .package(name: "CapacitorHaptics", path: "..\..\..\node_modules\@capacitor\haptics"),
         .package(name: "CapacitorTextZoom", path: "..\..\..\node_modules\@capacitor\text-zoom"),
+        .package(name: "CapawesomeCapacitorGoogleSignIn", path: "..\..\..\node_modules\@capawesome\capacitor-google-sign-in"),
         .package(name: "PowersyncCapacitor", path: "..\..\..\node_modules\@powersync\capacitor"),
         .package(name: "RevenuecatPurchasesCapacitor", path: "..\..\..\node_modules\@revenuecat\purchases-capacitor"),
         .package(name: "RevenuecatPurchasesCapacitorUi", path: "..\..\..\node_modules\@revenuecat\purchases-capacitor-ui")
@@ -32,6 +33,7 @@ let package = Package(
                 .product(name: "CapacitorCommunitySqlite", package: "CapacitorCommunitySqlite"),
                 .product(name: "CapacitorHaptics", package: "CapacitorHaptics"),
                 .product(name: "CapacitorTextZoom", package: "CapacitorTextZoom"),
+                .product(name: "CapawesomeCapacitorGoogleSignIn", package: "CapawesomeCapacitorGoogleSignIn"),
                 .product(name: "PowersyncCapacitor", package: "PowersyncCapacitor"),
                 .product(name: "RevenuecatPurchasesCapacitor", package: "RevenuecatPurchasesCapacitor"),
                 .product(name: "RevenuecatPurchasesCapacitorUi", package: "RevenuecatPurchasesCapacitorUi")
