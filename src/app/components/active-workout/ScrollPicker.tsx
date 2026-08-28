@@ -36,7 +36,7 @@ export function ScrollPicker({
   const [selectedValue, setSelectedValue] = useState(value);
   const [isCustomMode, setIsCustomMode] = useState(false);
   const [customValue, setCustomValue] = useState(value.toString());
-  const [scrollPosition, setScrollPosition] = useState(0);
+  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const animationFrameRef = useRef<number>();
   const isInitialRender = useRef(true);
@@ -44,6 +44,7 @@ export function ScrollPicker({
   // does not fire when the wheel auto scrolls to position on open
   // ^could consider that as something that feels cool?
   const lastHapticValueRef = useRef(value);
+  const lastHapticTimeRef = useRef(0);
   const suppressHapticsRef = useRef(false);
   const selectionStartedRef = useRef(false);
 
@@ -62,7 +63,6 @@ export function ScrollPicker({
       suppressHapticsRef.current = true;
       lastHapticValueRef.current = selectedValue;
       scrollRef.current.scrollTop = scrollTop;
-      setScrollPosition(scrollTop);
     }
   }, [isCustomMode]);
 
@@ -82,10 +82,6 @@ export function ScrollPicker({
       isInitialRender.current = false;
       return;
     }
-
-    if (!isCustomMode) {
-      playClinkSound();
-    }
   }, [selectedValue, isCustomMode]);
 
   const handleScroll = () => {
@@ -96,15 +92,42 @@ export function ScrollPicker({
     animationFrameRef.current = requestAnimationFrame(() => {
       if (scrollRef.current) {
         const scrollTop = scrollRef.current.scrollTop;
-        setScrollPosition(scrollTop);
+        
+        itemRefs.current.forEach((el, index) => {
+          if (!el) return;
+          const itemScrollPosition = index * itemHeight;
+          const distance = Math.abs(itemScrollPosition - scrollTop);
+          const maxDistance = itemHeight * 2.5;
+          const normalizedDistance = Math.min(distance / maxDistance, 1);
+          const easedDistance = normalizedDistance * normalizedDistance;
+          
+          const scale = 1 - easedDistance * 0.6;
+          const opacity = 1 - easedDistance * 0.7;
+          
+          el.style.transform = `scale(${scale}) translateZ(0)`;
+          el.style.opacity = opacity.toString();
+        });
+
         const index = Math.round(scrollTop / itemHeight);
         const clampedIndex = Math.max(0, Math.min(index, values.length - 1));
         const newValue = values[clampedIndex];
+        
         if (newValue !== lastHapticValueRef.current) {
           lastHapticValueRef.current = newValue;
-          if (!suppressHapticsRef.current) haptics.select();
+          
+          const now = Date.now();
+          if (now - lastHapticTimeRef.current > 30 && !suppressHapticsRef.current) {
+            haptics.select();
+            if (!isCustomMode) {
+              playClinkSound();
+            }
+            lastHapticTimeRef.current = now;
+          }
         }
-        setSelectedValue(newValue);
+        
+        if (newValue !== selectedValue) {
+          setSelectedValue(newValue);
+        }
       }
     });
   };
@@ -121,7 +144,7 @@ export function ScrollPicker({
 
   const getItemStyle = (index: number) => {
     const itemScrollPosition = index * itemHeight;
-    const centerPosition = scrollPosition;
+    const centerPosition = scrollRef.current ? scrollRef.current.scrollTop : values.indexOf(selectedValue) * itemHeight;
     const distance = Math.abs(itemScrollPosition - centerPosition);
     const maxDistance = itemHeight * 2.5;
     const normalizedDistance = Math.min(distance / maxDistance, 1);
@@ -131,9 +154,9 @@ export function ScrollPicker({
     const opacity = 1 - easedDistance * 0.7;
 
     return {
-      transform: `scale(${scale})`,
+      transform: `scale(${scale}) translateZ(0)`,
       opacity: opacity,
-      transition: 'transform 0.1s ease-out, opacity 0.1s ease-out',
+      willChange: 'transform, opacity',
     };
   };
 
@@ -220,6 +243,7 @@ export function ScrollPicker({
                   {values.map((val, index) => (
                     <div
                       key={val}
+                      ref={(el) => (itemRefs.current[index] = el)}
                       className="flex items-center justify-center snap-center"
                       style={{
                         height: `${itemHeight}px`,
