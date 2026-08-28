@@ -10,6 +10,20 @@ export interface User {
   username?: string;
 }
 
+/**
+ * Generates a random raw nonce and its SHA-256 hash (digest)
+ * for use with secure OAuth flows in Supabase.
+ */
+const generateNonce = async () => {
+  const rawNonce = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+  const encoder = new TextEncoder();
+  const data = encoder.encode(rawNonce);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const nonceDigest = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return { rawNonce, nonceDigest };
+};
+
 export class AuthService {
   /**
    * Logs in a user using email and password.
@@ -54,11 +68,13 @@ export class AuthService {
           clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID || '179560489431-u1o6e9ki25nnetmn41um8dgpviuhknfk.apps.googleusercontent.com',
           scopes: ['profile', 'email'],
         });
-        const result = await GoogleSignIn.signIn();
+        const { rawNonce, nonceDigest } = await generateNonce();
+        const result = await GoogleSignIn.signIn({ nonce: nonceDigest });
         if (result && result.idToken) {
           const { data, error } = await supabase.auth.signInWithIdToken({
             provider: 'google',
             token: result.idToken,
+            nonce: rawNonce,
           });
           if (error) throw error;
           return data;
@@ -85,16 +101,19 @@ export class AuthService {
     await this.clearLocalData();
     if (Capacitor.isNativePlatform()) {
       try {
+        const { rawNonce, nonceDigest } = await generateNonce();
         const { response } = await SignInWithApple.authorize({
           clientId: import.meta.env.VITE_APPLE_CLIENT_ID || 'com.monolith.app',
           redirectURI: import.meta.env.VITE_APPLE_REDIRECT_URI || 'https://monolith.com/api/auth/callback',
           scopes: 'email name',
+          nonce: nonceDigest,
         });
         
         if (response && response.identityToken) {
           const { data, error } = await supabase.auth.signInWithIdToken({
             provider: 'apple',
             token: response.identityToken,
+            nonce: rawNonce,
           });
           if (error) throw error;
           return data;
