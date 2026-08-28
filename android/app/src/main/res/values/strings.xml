@@ -4,4 +4,5 @@
     <string name="title_activity_main">Monolith</string>
     <string name="package_name">com.tiptop.monolith</string>
     <string name="custom_url_scheme">com.tiptop.monolith</string>
+    <string name="server_client_id">179560489431-u1o6e9ki25nnetmn41um8dgpviuhknfk.apps.googleusercontent.com</string>
 </resources>

@@ -50,6 +50,10 @@ export class AuthService {
     await this.clearLocalData();
     if (Capacitor.isNativePlatform()) {
       try {
+        await GoogleSignIn.initialize({
+          clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID || '179560489431-u1o6e9ki25nnetmn41um8dgpviuhknfk.apps.googleusercontent.com',
+          scopes: ['profile', 'email'],
+        });
         const result = await GoogleSignIn.signIn();
         if (result && result.idToken) {
           const { data, error } = await supabase.auth.signInWithIdToken({
