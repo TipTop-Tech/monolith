@@ -108,7 +108,7 @@ export function WelcomeHeader() {
             onClick={handleClose}
           >
             <motion.div
-              className="relative w-full max-w-sm rounded-3xl overflow-hidden bg-background/80 border border-border/50 shadow-2xl backdrop-blur-xl"
+              className="relative w-full max-w-sm max-h-[85dvh] flex flex-col rounded-3xl overflow-hidden bg-background/80 border border-border/50 shadow-2xl backdrop-blur-xl"
               variants={contentVariants}
               onClick={(e) => e.stopPropagation()}
             >
@@ -120,7 +120,7 @@ export function WelcomeHeader() {
                 <X size={16} />
               </button>
 
-              <div className="relative aspect-square w-full bg-muted overflow-hidden">
+              <div className="relative aspect-square w-full shrink-0 bg-muted overflow-hidden">
                 <img
                   src="/assets/aurelius.jpg"
                   alt="Marcus Aurelius"
@@ -129,7 +129,7 @@ export function WelcomeHeader() {
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-background/10 to-transparent" />
               </div>
 
-              <div className="p-6 pt-2 relative z-10">
+              <div className="p-6 pt-2 relative z-10 flex-1 overflow-y-auto overscroll-contain">
                 <h3 className="display-font text-3xl bevel-text mb-2 text-foreground">Marcus Aurelius</h3>
                 <div className="label-font text-xs tracking-widest text-muted-foreground mb-4">
                   121 AD - 180 AD
