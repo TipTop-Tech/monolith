@@ -4,6 +4,8 @@
 <dict>
 	<key>CAPACITOR_DEBUG</key>
 	<string>$(CAPACITOR_DEBUG)</string>
+	<key>GIDClientID</key>
+	<string>179560489431-f9i3gcg5v2jr3tetur9lmre9hemnhjbp.apps.googleusercontent.com</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
