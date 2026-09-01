@@ -321,7 +321,7 @@ export const SettingsPage = () => {
           <div className="divide-y divide-foreground/10">
             <InfoRow label="Version" value={APP_VERSION} />
             <NavRow label="Terms of Service" onClick={() => openLink(LINKS.terms)} />
-            <NavRow label="Privacy Policy" onClick={() => openLink(LINKS.privacy)} />
+            <NavRow label="Privacy Policy" onClick={() => navigate("/settings/privacy")} />
             <NavRow label="Rate the App" onClick={() => openLink(LINKS.rate)} />
             <NavRow label="Contact Support" onClick={() => openLink(LINKS.support)} />
           </div>

@@ -11,6 +11,7 @@ import { SignUpPage } from "./components/auth/SignUpPage";
 import { AccountPage } from "./components/auth/AccountPage";
 import { SettingsPage } from "./components/settings/SettingsPage";
 import { AppearancePage } from "./components/settings/AppearancePage";
+import { PrivacyPolicyPage } from "./components/settings/PrivacyPolicyPage";
 import { PremiumGate } from "./components/ui/PremiumGate";
 
 export const router = createBrowserRouter([
@@ -34,6 +35,7 @@ export const router = createBrowserRouter([
           { path: "account", Component: AccountPage },
           { path: "settings", Component: SettingsPage },
           { path: "settings/appearance", Component: AppearancePage },
+          { path: "settings/privacy", Component: PrivacyPolicyPage },
         ],
       },
     ],
