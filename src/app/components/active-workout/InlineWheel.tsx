@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { haptics } from "../../lib/haptics";
+import { playClinkSound, preloadClinkSound } from "../../../utils/audio";
 
 interface InlineWheelProps {
   value: number;
@@ -20,12 +21,12 @@ export function InlineWheel({
   formatValue,
   itemHeight = 60,
 }: InlineWheelProps) {
-  const [selectedValue, setSelectedValue] = useState(value);
-  const [scrollPosition, setScrollPosition] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const animationFrameRef = useRef<number>();
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const lastHapticValueRef = useRef(value);
+  const lastHapticTimeRef = useRef(0);
   const suppressHapticsRef = useRef(false);
   const selectionStartedRef = useRef(false);
 
@@ -39,14 +40,13 @@ export function InlineWheel({
     lastHapticValueRef.current = value;
     const top = index * itemHeight;
     scrollRef.current.scrollTop = top;
-    setScrollPosition(top);
   }, []);
 
   useEffect(() => {
-    audioRef.current = new Audio("/assets/clink.mp3");
-    audioRef.current.volume = 0.5;
+    preloadClinkSound();
     return () => {
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
       haptics.selectEnd();
     };
   }, []);
@@ -56,25 +56,44 @@ export function InlineWheel({
     animationFrameRef.current = requestAnimationFrame(() => {
       if (!scrollRef.current) return;
       const scrollTop = scrollRef.current.scrollTop;
-      setScrollPosition(scrollTop);
+      
       const index = Math.round(scrollTop / itemHeight);
       const clampedIndex = Math.max(0, Math.min(index, values.length - 1));
       const newValue = values[clampedIndex];
+
+      itemRefs.current.forEach((el, i) => {
+        if (!el) return;
+        const distance = Math.abs(i * itemHeight - scrollTop);
+        const normalized = Math.min(distance / (itemHeight * 2.5), 1);
+        const eased = normalized * normalized;
+        el.style.transform = `scale(${1 - eased * 0.55})`;
+        el.style.opacity = (1 - eased * 0.7).toString();
+        
+        const span = el.firstElementChild as HTMLElement;
+        if (span) {
+          span.className = `display-font leading-none ${
+            i === clampedIndex
+              ? "text-4xl text-primary bevel-text-large"
+              : "text-2xl text-muted-foreground"
+          }`;
+        }
+      });
+
       if (newValue !== lastHapticValueRef.current) {
         lastHapticValueRef.current = newValue;
-        if (!suppressHapticsRef.current) {
+        
+        const now = Date.now();
+        if (now - lastHapticTimeRef.current > 40 && !suppressHapticsRef.current) {
           haptics.select();
-          const clink = audioRef.current?.cloneNode() as HTMLAudioElement | undefined;
-          if (clink) {
-            clink.volume = 0.5;
-            clink.play().catch(() => {});
-          }
+          playClinkSound();
+          lastHapticTimeRef.current = now;
         }
       }
-      if (newValue !== selectedValue) {
-        setSelectedValue(newValue);
+      
+      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+      scrollTimeoutRef.current = setTimeout(() => {
         onChange(newValue);
-      }
+      }, 150);
     });
   };
 
@@ -87,7 +106,8 @@ export function InlineWheel({
   };
 
   const getItemStyle = (index: number) => {
-    const distance = Math.abs(index * itemHeight - scrollPosition);
+    const centerPosition = scrollRef.current ? scrollRef.current.scrollTop : Math.max(0, values.indexOf(value)) * itemHeight;
+    const distance = Math.abs(index * itemHeight - centerPosition);
     const normalized = Math.min(distance / (itemHeight * 2.5), 1);
     const eased = normalized * normalized;
     return {
@@ -126,12 +146,13 @@ export function InlineWheel({
         {values.map((val, index) => (
           <div
             key={val}
+            ref={(el) => (itemRefs.current[index] = el)}
             className="flex items-center justify-center snap-center"
             style={{ height: itemHeight, ...getItemStyle(index) }}
           >
             <span
               className={`display-font leading-none ${
-                val === selectedValue
+                val === value
                   ? "text-4xl text-primary bevel-text-large"
                   : "text-2xl text-muted-foreground"
               }`}

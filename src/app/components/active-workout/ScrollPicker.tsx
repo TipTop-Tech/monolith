@@ -33,13 +33,13 @@ export function ScrollPicker({
   selectedUnit,
   onUnitChange,
 }: ScrollPickerProps) {
-  const [selectedValue, setSelectedValue] = useState(value);
   const [isCustomMode, setIsCustomMode] = useState(false);
   const [customValue, setCustomValue] = useState(value.toString());
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const animationFrameRef = useRef<number>();
   const isInitialRender = useRef(true);
+  const currentValueRef = useRef(value);
   // one tick each time the value changes
   // does not fire when the wheel auto scrolls to position on open
   // ^could consider that as something that feels cool?
@@ -57,11 +57,11 @@ export function ScrollPicker({
 
   useEffect(() => {
     if (scrollRef.current && !isCustomMode) {
-      const index = values.indexOf(selectedValue);
+      const index = values.indexOf(currentValueRef.current);
       const scrollTop = index * itemHeight;
       // for preventing haptics on auto scroll to position on open
       suppressHapticsRef.current = true;
-      lastHapticValueRef.current = selectedValue;
+      lastHapticValueRef.current = currentValueRef.current;
       scrollRef.current.scrollTop = scrollTop;
     }
   }, [isCustomMode]);
@@ -82,7 +82,7 @@ export function ScrollPicker({
       isInitialRender.current = false;
       return;
     }
-  }, [selectedValue, isCustomMode]);
+  }, [isCustomMode]);
 
   const handleScroll = () => {
     if (animationFrameRef.current) {
@@ -92,6 +92,10 @@ export function ScrollPicker({
     animationFrameRef.current = requestAnimationFrame(() => {
       if (scrollRef.current) {
         const scrollTop = scrollRef.current.scrollTop;
+        
+        const index = Math.round(scrollTop / itemHeight);
+        const clampedIndex = Math.max(0, Math.min(index, values.length - 1));
+        const newValue = values[clampedIndex];
         
         itemRefs.current.forEach((el, index) => {
           if (!el) return;
@@ -106,17 +110,22 @@ export function ScrollPicker({
           
           el.style.transform = `scale(${scale}) translateZ(0)`;
           el.style.opacity = opacity.toString();
+          
+          const span = el.firstElementChild as HTMLElement;
+          if (span) {
+            if (index === clampedIndex) {
+              span.className = "display-font leading-none text-[min(25vw,90px)] text-primary bevel-text-large";
+            } else {
+              span.className = "display-font leading-none text-[min(20vw,50px)] text-muted-foreground";
+            }
+          }
         });
-
-        const index = Math.round(scrollTop / itemHeight);
-        const clampedIndex = Math.max(0, Math.min(index, values.length - 1));
-        const newValue = values[clampedIndex];
         
         if (newValue !== lastHapticValueRef.current) {
           lastHapticValueRef.current = newValue;
           
           const now = Date.now();
-          if (now - lastHapticTimeRef.current > 30 && !suppressHapticsRef.current) {
+          if (now - lastHapticTimeRef.current > 40 && !suppressHapticsRef.current) {
             haptics.select();
             if (!isCustomMode) {
               playClinkSound();
@@ -125,8 +134,8 @@ export function ScrollPicker({
           }
         }
         
-        if (newValue !== selectedValue) {
-          setSelectedValue(newValue);
+        if (newValue !== currentValueRef.current) {
+          currentValueRef.current = newValue;
         }
       }
     });
@@ -144,7 +153,7 @@ export function ScrollPicker({
 
   const getItemStyle = (index: number) => {
     const itemScrollPosition = index * itemHeight;
-    const centerPosition = scrollRef.current ? scrollRef.current.scrollTop : values.indexOf(selectedValue) * itemHeight;
+    const centerPosition = scrollRef.current ? scrollRef.current.scrollTop : values.indexOf(currentValueRef.current) * itemHeight;
     const distance = Math.abs(itemScrollPosition - centerPosition);
     const maxDistance = itemHeight * 2.5;
     const normalizedDistance = Math.min(distance / maxDistance, 1);
@@ -166,10 +175,10 @@ export function ScrollPicker({
       if (!isNaN(parsed)) {
         onChange(parsed);
       } else {
-        onChange(selectedValue);
+        onChange(currentValueRef.current);
       }
     } else {
-      onChange(selectedValue);
+      onChange(currentValueRef.current);
     }
     onClose();
   };
@@ -251,7 +260,7 @@ export function ScrollPicker({
                       }}
                     >
                       <span
-                        className={`display-font leading-none ${val === selectedValue
+                        className={`display-font leading-none ${val === currentValueRef.current
                           ? "text-[min(25vw,90px)] text-primary bevel-text-large"
                           : "text-[min(20vw,50px)] text-muted-foreground"
                           }`}
