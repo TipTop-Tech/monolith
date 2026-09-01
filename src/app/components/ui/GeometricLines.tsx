@@ -67,12 +67,12 @@ export function GeometricLines({ triggerKey, onComplete }: GeometricLinesProps) 
                 times: [0, 0.1, 0.8, 1], // Fade in quickly, hold, fade out smoothly
               }
             }}
-            className="absolute top-0 bg-white rounded-full"
+            className="absolute top-0 bg-primary rounded-full"
             style={{
               left: `${line.left}%`,
               width: `${line.width}px`,
               height: `${line.height}px`,
-              boxShadow: '0 0 8px rgba(255, 255, 255, 0.3)',
+              boxShadow: '0 0 8px var(--primary-glow)',
             }}
           />
         ))}

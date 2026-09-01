@@ -433,7 +433,7 @@ export function ActiveWorkout() {
             style={{
               position: "fixed",
               inset: 0,
-              backgroundColor: "white",
+              backgroundColor: "var(--primary)",
               zIndex: 9999,
               pointerEvents: "none",
               mixBlendMode: "overlay"
@@ -480,14 +480,15 @@ export function ActiveWorkout() {
           {/* Rest Timer - Massive Typography */}
 
           <div className="flex flex-col items-center justify-center px-4 sm:px-6 py-4 sm:py-5 flex-1">
-            <motion.div variants={itemVariants} className="display-font text-4xl md:text-5xl bevel-text drop-shadow-[0_0_12px_rgba(255,255,255,0.3)]">{currentExercise?.name ?? "EXERCISE"}</motion.div>
+            <motion.div variants={itemVariants} className="display-font text-4xl md:text-5xl bevel-text" style={{ filter: "drop-shadow(0 0 12px var(--primary-glow))" }}>{currentExercise?.name ?? "EXERCISE"}</motion.div>
 
             <motion.div variants={itemVariants} className="label-font text-muted-foreground mt-4 sm:mt-8">REST TIME</motion.div>
             <motion.button
               variants={itemVariants}
               ref={timerRef}
               onClick={() => setPickerType("restTime")}
-              className="display-font text-[min(30vw,150px)] sm:text-[min(40vw,180px)] leading-none bevel-text-large mt-2 sm:mt-4 transition-all hover:scale-105 active:scale-95 drop-shadow-[0_0_12px_rgba(255,255,255,0.3)]"
+              className="display-font text-[min(30vw,150px)] sm:text-[min(40vw,180px)] leading-none bevel-text-large mt-2 sm:mt-4 transition-all hover:scale-105 active:scale-95"
+              style={{ filter: "drop-shadow(0 0 12px var(--primary-glow))" }}
             >
               <motion.span
                 animate={isTimerRunning || reducedMotion ? undefined : { scale: [1, 1.02, 1] }}
@@ -504,7 +505,7 @@ export function ActiveWorkout() {
                 className="h-full bg-primary transition-all duration-1000 ease-out"
                 style={{
                   width: `${100 - progress}%`,
-                  boxShadow: "0 0 10px rgba(255, 255, 255, 0.3)",
+                  boxShadow: "0 0 10px var(--primary-glow)",
                 }}
               />
             </motion.div>

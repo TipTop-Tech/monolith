@@ -10,6 +10,8 @@
   --popover-foreground: #e8e8e8;
   --primary: #ffffff;
   --primary-foreground: #0f0f0f;
+  --primary-glow: rgba(255, 255, 255, 0.3);
+  --primary-glow-strong: rgba(255, 255, 255, 0.8);
   --secondary: #1c1c1c;
   --secondary-foreground: #e8e8e8;
   --muted: #1a1a1a;
@@ -70,6 +72,8 @@
   --popover-foreground: #201d1a;
   --primary: #201d1a;
   --primary-foreground: #faf8f5;
+  --primary-glow: rgba(32, 29, 26, 0.3);
+  --primary-glow-strong: rgba(32, 29, 26, 0.8);
   --secondary: #e0dcd5;
   --secondary-foreground: #201d1a;
   --muted: #e0dcd5;
@@ -127,6 +131,8 @@
   --popover-foreground: #f0e6da;
   --primary: #e8863c;
   --primary-foreground: #1a1109;
+  --primary-glow: rgba(232, 134, 60, 0.3);
+  --primary-glow-strong: rgba(232, 134, 60, 0.8);
   --secondary: #241c17;
   --secondary-foreground: #f0e6da;
   --muted: #201813;

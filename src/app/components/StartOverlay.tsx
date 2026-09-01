@@ -70,9 +70,10 @@ export const StartOverlay: React.FC<{ children: React.ReactNode }> = ({ children
 
               <motion.button
                 onClick={handleStart}
-                className="absolute left-[50%] top-[175px] -translate-x-1/2 -translate-y-1/2 w-[41.5px] h-[41.5px] rounded-full bg-white cursor-pointer z-50 group border-none outline-none shadow-[0_0_15px_rgba(255,255,255,0.3)]"
+                className="absolute left-[50%] top-[175px] -translate-x-1/2 -translate-y-1/2 w-[41.5px] h-[41.5px] rounded-full bg-primary cursor-pointer z-50 group border-none outline-none"
+                style={{ boxShadow: "0 0 15px var(--primary-glow)" }}
                 animate={isWarping ? { opacity: 0, scale: 0 } : {
-                  boxShadow: ["0 0 15px rgba(255,255,255,0.3)", "0 0 30px rgba(255,255,255,0.8)", "0 0 15px rgba(255,255,255,0.3)"],
+                  boxShadow: ["0 0 15px var(--primary-glow)", "0 0 30px var(--primary-glow-strong)", "0 0 15px var(--primary-glow)"],
                   scale: [1, 1.05, 1]
                 }}
                 transition={{
