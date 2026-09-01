@@ -420,7 +420,7 @@ export function Routines() {
     const routine = routines.find(r => r.id === selectedRoutineId);
     if (routine) {
       const newLength = routine.exercises.length + 1;
-      const targetPageIndex = Math.floor((newLength - 1) / 5);
+      const targetPageIndex = Math.floor((newLength - 1) / 4);
       requestAnimationFrame(() => {
         setTimeout(() => {
           const node = sectionRefs.current[`${selectedRoutineId}-page-${targetPageIndex}`];
@@ -602,14 +602,14 @@ export function Routines() {
               {
                 /**
                  * routines.flatMap iterates through all the routines
-                 * For each routine, it splits it into pages of 5 exercises
+                 * For each routine, it splits it into pages of 4 exercises
                  * If a routine has no exercises, it creates a single page with no exercises
                  */
               }
               {routines.flatMap((routine, routineIndex) => {
                 const pages = [];
-                for (let i = 0; i < routine.exercises.length; i += 5) {
-                  pages.push(routine.exercises.slice(i, i + 5));
+                for (let i = 0; i < routine.exercises.length; i += 4) {
+                  pages.push(routine.exercises.slice(i, i + 4));
                 }
                 if (pages.length === 0) pages.push([]);
                 /**
@@ -617,7 +617,7 @@ export function Routines() {
                  * five exercises
                  */
                 return pages.map((pageExercises, pageIndex) => {
-                  const globalIndexOffset = pageIndex * 5;
+                  const globalIndexOffset = pageIndex * 4;
                   const isLastRoutine = routineIndex === routines.length - 1;
                   const isLastPage = pageIndex === pages.length - 1;
 
