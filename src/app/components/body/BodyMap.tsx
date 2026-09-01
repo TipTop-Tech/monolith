@@ -119,6 +119,7 @@ export function BodyMap() {
   };
 
   const getFrequencyForMuscle = (muscleName: string) => {
+    if (muscleName === selectedMuscle) return 5;
     const score = getMuscleConsistencyScore(muscleName);
     if (score < 1) return 1;
     if (score < 2) return 2;
@@ -206,6 +207,7 @@ export function BodyMap() {
               "#505050", // low
               "#989898", // medium
               "#ffffff", // very high
+              "var(--primary)", // selected
             ]}
             style={{ background: "transparent", backgroundColor: "transparent", height: "100%" }}
             svgStyle={{ background: "transparent", backgroundColor: "transparent", height: "100%", width: "auto", maxWidth: "100%" }}
