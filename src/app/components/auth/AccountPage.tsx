@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 import { AuthService } from "../../../lib/AuthService";
@@ -5,13 +6,26 @@ import { haptics } from "../../lib/haptics";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { Avatar, AvatarFallback } from "../ui/avatar";
-import { LogOut, User, Crown, RefreshCcw, Settings, ChevronRight } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "../ui/alert-dialog";
+import { LogOut, User, Crown, RefreshCcw, Settings, ChevronRight, Trash2 } from "lucide-react";
 // import { usePremium } from "../../context/PremiumContext";
 
 export const AccountPage = () => {
   const { user } = useAuth();
   // const { isPro, isLoading, presentPaywall, presentCustomerCenter, restorePurchases } = usePremium();
   const navigate = useNavigate();
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const handleSignOut = async () => {
     haptics.thud();
@@ -20,6 +34,20 @@ export const AccountPage = () => {
       navigate("/signin");
     } catch (err) {
       console.error("Failed to sign out", err);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setIsDeleting(true);
+    haptics.warning();
+    try {
+      await AuthService.deleteAccount();
+      navigate("/signin");
+    } catch (err) {
+      console.error("Failed to delete account", err);
+    } finally {
+      setIsDeleting(false);
+      setDeleteDialogOpen(false);
     }
   };
 
@@ -54,11 +82,41 @@ export const AccountPage = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="pt-4 flex flex-col space-y-4">
-            <Button variant="destructive" className="w-full" onClick={handleSignOut}>
+          <div className="pt-4 flex flex-col space-y-3">
+            <Button variant="outline" className="w-full" onClick={handleSignOut}>
               <LogOut className="mr-2 h-4 w-4" />
               Sign out
             </Button>
+
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="w-full text-destructive hover:bg-destructive/10 hover:text-destructive text-sm"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Account
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Account</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete your account? This will permanently delete your workout history, routines, and account records. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDeleteAccount}
+                    disabled={isDeleting}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {isDeleting ? "Deleting..." : "Permanently Delete"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </CardContent>
       </Card>

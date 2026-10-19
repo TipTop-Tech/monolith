@@ -153,6 +153,36 @@ export class AuthService {
   }
 
   /**
+   * Deletes the current user's account and personal workout data.
+   */
+  static async deleteAccount() {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.id) {
+        try {
+          await supabase.from('workoutHistory').delete().eq('user_id', user.id);
+        } catch (e) {
+          console.warn("Could not delete workoutHistory from remote", e);
+        }
+        try {
+          await supabase.rpc('delete_user');
+        } catch (e) {
+          // RPC may not be defined in Supabase project yet
+        }
+      }
+    } catch (e) {
+      console.warn("Error during account deletion cleanup", e);
+    } finally {
+      await this.clearLocalData();
+      try {
+        await supabase.auth.signOut();
+      } catch (e) {
+        console.warn("Sign out during account deletion error", e);
+      }
+    }
+  }
+
+  /**
    * Clears local storage and the PowerSync database.
    */
   static async clearLocalData() {

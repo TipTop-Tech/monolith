@@ -12,10 +12,10 @@ import { Switch } from "../ui/switch";
 
 const APP_VERSION = "0.0.1";
 const LINKS = {
-  terms: "https://monolith.app/terms",
-  privacy: "https://monolith.app/privacy",
+  terms: "https://mind360.ai/terms",
+  privacy: "https://mind360.ai/privacy",
   rate: "https://apps.apple.com/app/monolith",
-  support: "mailto:support@monolith.app",
+  support: "mailto:ishaankumarb65@gmail.com",
 };
 
 function formatTime(seconds: number): string {
